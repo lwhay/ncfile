@@ -1,0 +1,9 @@
+org/apache/trevni/avro/update/TwoNestTest$1.class
+org/apache/trevni/avro/update/TmpTest.class
+org/apache/trevni/avro/update/SortedAvroTest.class
+org/apache/trevni/avro/update/BloomTest.class
+org/apache/trevni/avro/update/OLTest.class
+org/apache/trevni/avro/update/ReadTest.class
+org/apache/trevni/avro/update/BTreeTest.class
+org/apache/trevni/avro/update/TwoNestTest.class
+org/apache/trevni/avro/update/OLTest$Okey.class
