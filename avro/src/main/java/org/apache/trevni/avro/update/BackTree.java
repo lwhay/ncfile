@@ -272,7 +272,7 @@ public class BackTree {
             KeyofBTree rr = btree.find(new KeyofBTree(key));
             if (rr == null)
                 return null;
-            return new CombKey(rr.values, rr.types);
+            return new CombKey(rr.values);
         } else {
             return key.get(vOFKFields);
         }
@@ -289,20 +289,20 @@ public class BackTree {
             if (rr == null)
                 return null;
             for (int i = 0; i < valueFields.length; i++) {
-                if (rr.types[i]) {
-                    res.put(i, Integer.parseInt(rr.values[i].toString()));
-                } else {
-                    res.put(i, Long.parseLong(rr.values[i].toString()));
-                }
+                //                if (rr.types[i]) {
+                res.put(i, rr.values[i]);
+                //                } else {
+                //                    res.put(i, Long.parseLong(rr.values[i].toString()));
+                //                }
             }
         } else {
-            Object[] rr = key.get();
+            int[] rr = key.get();
             for (int i = 0; i < valueFields.length; i++) {
-                if (key.getType(i)) {
-                    res.put(i, Integer.parseInt(rr[vOFKFields[i]].toString()));
-                } else {
-                    res.put(i, Long.parseLong(rr[vOFKFields[i]].toString()));
-                }
+                //                if (key.getType(i)) {
+                res.put(i, rr[vOFKFields[i]]);
+                //                } else {
+                //                    res.put(i, Long.parseLong(rr[vOFKFields[i]].toString()));
+                //                }
             }
         }
         return res;

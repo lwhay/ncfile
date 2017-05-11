@@ -11,6 +11,7 @@ import org.apache.avro.Schema;
 import org.apache.trevni.update.BlockDescriptor;
 import org.apache.trevni.update.FileColumnMetaData;
 import org.apache.trevni.update.FileMetaData;
+import org.apache.trevni.update.InsertColumnFileWriter;
 import org.apache.trevni.update.OutputBuffer;
 
 public class AvroColumnWriter {
@@ -25,7 +26,6 @@ public class AvroColumnWriter {
     OutputBuffer buf;
     int index;
 
-    static final byte[] MAGIC = new byte[] { 'T', 'r', 'v', 2 };
     public static final String SCHEMA_KEY = "avro.schema";
 
     class Blocks {
@@ -139,7 +139,7 @@ public class AvroColumnWriter {
     }
 
     private void writeHeader() throws IOException {
-        buf.write(MAGIC);
+        buf.write(InsertColumnFileWriter.MAGIC);
         buf.writeFixed32(rowcount);
         buf.writeFixed32(columncount);
         filemeta.write(buf);

@@ -90,9 +90,9 @@ public class InputBuffer {
             case BOOLEAN:
                 return (T) Boolean.valueOf(readBoolean());
             case INT:
-                return (T) Integer.valueOf(readInt());
+                return (T) Integer.valueOf(readFixed32());
             case LONG:
-                return (T) Long.valueOf(readLong());
+                return (T) Long.valueOf(readFixed64());
             case FIXED32:
                 return (T) Integer.valueOf(readFixed32());
             case FIXED64:
@@ -118,10 +118,10 @@ public class InputBuffer {
                 readBoolean();
                 break;
             case INT:
-                readInt();
+                readFixed32();
                 break;
             case LONG:
-                readLong();
+                readFixed64();
                 break;
             case FIXED32:
             case FLOAT:
@@ -158,7 +158,7 @@ public class InputBuffer {
             return runValue;
         }
 
-        int length = readInt();
+        int length = readFixed32();
         if (length >= 0) // not a run
             return length;
 

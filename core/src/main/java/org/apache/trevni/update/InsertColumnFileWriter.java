@@ -27,7 +27,7 @@ public class InsertColumnFileWriter {
     private Blocks[] blocks;
 
     private int addRow;
-    static final byte[] MAGIC = new byte[] { 'T', 'r', 'v', 2 };
+    public static final byte[] MAGIC = new byte[] { 'N', 'E', 'C', 'I' };
 
     class Blocks {
         private List<BlockDescriptor> blocks;
@@ -129,6 +129,16 @@ public class InsertColumnFileWriter {
         appendTo(head, data);
     }
 
+    /*
+     * write array column incremently
+     */
+    public void flushTo(File file) throws IOException {
+        OutputStream data = new FileOutputStream(file);
+        OutputStream head = new FileOutputStream(
+                new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head"));
+        flushTo(head, data);
+    }
+
     //  public void insertTo(File file) throws IOException {
     //    OutputStream data = new FileOutputStream(file);
     //    OutputStream head = new FileOutputStream(new File(file.getPath().substring(0, file.getPath().lastIndexOf(".")) + ".head"));
@@ -139,6 +149,16 @@ public class InsertColumnFileWriter {
         rowcount = addRow;
 
         writeSourceColumns(data);
+        writeHeader(head);
+    }
+
+    /*
+     * write array column incremently
+     */
+    public void flushTo(OutputStream head, OutputStream data) throws IOException {
+        rowcount = addRow;
+
+        flushSourceColumns(data);
         writeHeader(head);
     }
 
@@ -222,6 +242,7 @@ public class InsertColumnFileWriter {
         }
         RandomAccessFile tmpNestFile = new RandomAccessFile(path + "tmpnest", "rw");
 
+        int tmp = 0;
         for (int i = 0; i < rowcount; i++) {
             int index = gapFile.readInt();
             int nest = nestFile.readInt();
@@ -240,7 +261,8 @@ public class InsertColumnFileWriter {
                 int length = values[index].nextLength();
                 //                nest[i] += length;
                 tmpnest += length;
-                buf.writeLength(length);
+                tmp += length;
+                buf.writeLength(tmp); //stored the array column incremently.
                 row++;
             }
             tmpNestFile.writeInt(tmpnest);
@@ -289,6 +311,55 @@ public class InsertColumnFileWriter {
                         buf.reset();
                     }
                     buf.writeLength((Integer) x);
+                    row++;
+                }
+            } else {
+                for (Object x : insert[i].toArray()) {
+                    if (buf.isFull()) {
+                        BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+                        blocks[i].add(b);
+                        row = 0;
+                        buf.writeTo(out);
+                        buf.reset();
+                    }
+                    buf.writeValue(x, type);
+                    row++;
+                }
+            }
+
+            insert[i].clear();
+
+            if (buf.size() != 0) {
+                BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+                blocks[i].add(b);
+                buf.writeTo(out);
+                buf.reset();
+            }
+        }
+        insert = null;
+        buf.close();
+    }
+
+    /*
+     * write array column incremently
+     */
+    private void flushSourceColumns(OutputStream out) throws IOException {
+        OutputBuffer buf = new OutputBuffer();
+        for (int i = 0; i < columncount; i++) {
+            ValueType type = meta[i].getType();
+            int row = 0;
+            if (type == ValueType.NULL) {
+                int tmp = 0;
+                for (Object x : insert[i].toArray()) {
+                    if (buf.isFull()) {
+                        BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+                        blocks[i].add(b);
+                        row = 0;
+                        buf.writeTo(out);
+                        buf.reset();
+                    }
+                    tmp += (int) x;
+                    buf.writeLength((Integer) tmp);
                     row++;
                 }
             } else {

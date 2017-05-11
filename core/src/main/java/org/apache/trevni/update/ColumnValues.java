@@ -37,6 +37,7 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
     private int block = -1;
     private int row = 0;
     private T previous;
+    private int offset = 0;
 
     private int arrayLength;
 
@@ -63,6 +64,11 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
 
     public ValueType getType() {
         return type;
+    }
+
+    public void create() throws IOException {
+        offset = 0;
+        seek(0);
     }
 
     /**
@@ -159,6 +165,20 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
             throw new TrevniRuntimeException("Column is not array: " + column.metaData.getName());
         assert arrayLength == 0;
         return arrayLength = values.readLength();
+    }
+
+    /*
+     * while the array column is incremently stored, return the array Length and the first offset.
+     */
+    public int[] nextLengthAndOffset() throws IOException {
+        if (!column.metaData.isArray())
+            throw new TrevniRuntimeException("Column is not array: " + column.metaData.getName());
+        assert arrayLength == 0;
+        int[] res = new int[2];
+        res[1] = offset;
+        offset = values.readLength();
+        res[0] = arrayLength = offset - res[1];
+        return res;
     }
 
     /**

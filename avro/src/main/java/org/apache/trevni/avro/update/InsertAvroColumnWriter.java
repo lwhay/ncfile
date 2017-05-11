@@ -111,19 +111,8 @@ public class InsertAvroColumnWriter<K, V> {
                 return;
             }
         }
-        //    if(!files[fileIndex].exists()){
-        //    if(sort.size() == 500){
         appendTo(new File(path + "file" + String.valueOf(fileIndex) + ".trv"));
 
-        //    }else{
-        //      appendTo(files[fileIndex], tmpFile);
-        //      File headFile = new File(files[fileIndex].getPath().substring(0, files[fileIndex].getPath().lastIndexOf(".")) + ".head");
-        //      File tmpHeadFile = new File(tmpFile.getPath().substring(0, tmpFile.getPath().lastIndexOf(".")) + ".head");
-        //      files[fileIndex].delete();
-        //      headFile.delete();
-        //      tmpFile.renameTo(files[fileIndex]);
-        //      tmpHeadFile.renameTo(headFile);
-        //    }
         fileIndex++;
         end = System.currentTimeMillis();
         System.out.println("############" + (++x) + "\ttime: " + (end - start) + "ms");
@@ -134,7 +123,11 @@ public class InsertAvroColumnWriter<K, V> {
 
     public int flush() throws IOException {
         if (!sort.isEmpty()) {
-            appendTo(new File(path + "file" + String.valueOf(fileIndex) + ".trv"));
+            if (fileIndex > 0) {
+                appendTo(new File(path + "file" + String.valueOf(fileIndex) + ".trv"));
+            } else {
+                flushTo(new File(path + "file" + String.valueOf(fileIndex) + ".trv"));
+            }
             fileIndex++;
             end = System.currentTimeMillis();
             System.out.println("Trevni#######" + (++x) + "\ttime: " + (end - start) + "ms");
@@ -191,25 +184,6 @@ public class InsertAvroColumnWriter<K, V> {
         v[column].add(o);
     }
 
-    //  public void appendTo(File fromfile, File tofile) throws IOException {
-    //    for (V record : sort.values(mul)) {
-    //      int count = append(record, schema, 0);
-    //      assert (count == meta.length);
-    //    }
-    //    writer.setInsert(v);
-    //    writer.setGap(compGap(fromfile));
-    //    v = null;
-    //    v = new ListArr[meta.length];
-    //    for (int k = 0; k < v.length; k++) {
-    //      v[k] = new ListArr();
-    //    }
-    //    long t1 = System.currentTimeMillis();
-    //    writer.setReadFile(fromfile);
-    //    writer.insertTo(tofile);
-    //    long t2 = System.currentTimeMillis();
-    //    System.out.println("@@@write time:  " + (t2 - t1));
-    //  }
-
     public void appendTo(File file) throws IOException {
         while (sort.size() != 0) {
             for (V record : sort.values(mul)) {
@@ -234,6 +208,37 @@ public class InsertAvroColumnWriter<K, V> {
         }
         long t1 = System.currentTimeMillis();
         writer.appendTo(file);
+        long t2 = System.currentTimeMillis();
+        System.out.println("@@@write time:  " + (t2 - t1));
+    }
+
+    /*
+     * write array column incremently
+     */
+    public void flushTo(File file) throws IOException {
+        while (sort.size() != 0) {
+            for (V record : sort.values(mul)) {
+                int count = append(record, schema, 0);
+                assert (count == meta.length);
+            }
+        }
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        if (file.exists()) {
+            //            file.delete();
+            NestManager.shDelete(file.getAbsolutePath());
+            NestManager
+                    .shDelete(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head");
+        }
+        writer.setInsert(v);
+        v = null;
+        v = new ListArr[meta.length];
+        for (int k = 0; k < v.length; k++) {
+            v[k] = new ListArr();
+        }
+        long t1 = System.currentTimeMillis();
+        writer.flushTo(file);
         long t2 = System.currentTimeMillis();
         System.out.println("@@@write time:  " + (t2 - t1));
     }

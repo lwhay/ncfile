@@ -322,7 +322,7 @@ public class NestManager {
 
     public static void shDelete(String path) {
         try {
-            Process proc = Runtime.getRuntime().exec("rm " + path);
+            Process proc = Runtime.getRuntime().exec("rm -f " + path);
             StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "Error");
             StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), "Output");
             errorGobbler.start();
@@ -490,7 +490,7 @@ public class NestManager {
             if (kks.get(kIn).compareTo(sort[le].getKey(), le - 1) == 0) {
                 cc[kIn]++;
             } else {
-                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0].toString());
+                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
             }
             if (cach.hasNextSort(le))
                 sort[le] = cach.nextSort(le);
@@ -523,7 +523,7 @@ public class NestManager {
                 if (kks.get(kIn).compareTo(sort[le].getKey(), le) == 0) {
                     cc[kIn]++;
                 } else {
-                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0].toString());
+                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
                 }
                 if (cach.hasNextSort(le))
                     sort[le] = cach.nextSort(le);
@@ -540,7 +540,7 @@ public class NestManager {
                 if (kks.get(kIn).compareTo(sort[le].getKey(), le) == 0) {
                     cc[kIn]++;
                 } else {
-                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0].toString());
+                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
                 }
                 if (cach.hasNextSort(le))
                     sort[le] = cach.nextSort(le);
@@ -558,7 +558,7 @@ public class NestManager {
                 if (kks.get(kIn).compareTo(o, le) == 0) {
                     cc[kIn]++;
                 } else {
-                    System.out.println("!!!!!!!!!!!error:" + o.getKey(0).get()[0].toString());
+                    System.out.println("!!!!!!!!!!!error:" + o.getKey(0).get()[0]);
                 }
             }
             //            int p = offsetTree[le].get(o.getKey(le)).intValue();
@@ -578,7 +578,7 @@ public class NestManager {
             if (kks.get(kIn).compareTo(sort[le].getKey(), le) == 0) {
                 cc[kIn]++;
             } else {
-                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0].toString());
+                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
             }
             if (cach.hasNextSort(le))
                 sort[le] = cach.nextSort(le);
@@ -611,7 +611,7 @@ public class NestManager {
                     && cach.getMergePlace(le, mergeIndex[le]) == place[le].intValue()) {
                 mergeIndex[le] = mergeIndex[le].intValue() + 1;
             } else {
-                System.out.println("!!!!delete error: no that delete:" + o.getKey(0).get()[0].toString());
+                System.out.println("!!!!delete error: no that delete:" + o.getKey(0).get()[0]);
             }
             place[le] = place[le].intValue() + 1;
         }
@@ -749,9 +749,11 @@ public class NestManager {
             if (type == ValueType.NULL) {
                 RandomAccessFile in = new RandomAccessFile((tmpPath + "array" + a), "rw");
                 int len = in.readInt();
+                int tmp = 0;
                 //                System.out.println("         rowcount: " + len);
                 for (int k = 0; k < len; k++) {
-                    writer.writeArrayColumn(i, in.readInt());
+                    tmp += in.readInt();
+                    writer.writeArrayColumn(i, tmp); //write array column incremently
                 }
                 writer.flush(i);
                 in.close();
@@ -837,9 +839,14 @@ public class NestManager {
         for (int j = 0; j < level; j++) {
             int index = 0;
             reader.createSchema(keySchemas[j]);
+            String[] tmp = new String[keyFields[j].length];
             while (reader.hasNext()) {
-                Record r = reader.next();
-                offsetTree[j].put(new CombKey(r), index++);
+                for (int tt = 0; tt < keyFields[j].length; tt++) {
+                    tmp[tt] = reader.next(tt++).toString();
+                }
+                offsetTree[j].put(new KeyofBTree(tmp), index++);
+                //                Record r = reader.next();
+                //                offsetTree[j].put(new KeyofBTree(r), index++);
             }
             offsetTree[j].write();
         }
@@ -1183,6 +1190,7 @@ public class NestManager {
 
     public void delete(Record data) throws IOException {
         int le = getLevel(data);
+        //        System.out.println("delete level" + le);
         FlagData fd = cach.find(data, le, false);
         if (fd == null) {
             if (!filter[le].isActivated()) {
@@ -2188,9 +2196,21 @@ public class NestManager {
             files[i] = new File(resultPath + "file" + String.valueOf(i) + ".trv");
         }
         if (index == 1) {
-            merge(files);
+            //            merge(files);
             new File(resultPath + "file0.head").renameTo(new File(resultPath + "result.head"));
             new File(resultPath + "file0.trv").renameTo(new File(resultPath + "result.trv"));
+            reader = new ColumnReader<Record>(new File(resultPath + "result.trv"));
+            for (int j = 0; j < level; j++) {
+                int in = 0;
+                reader.createSchema(keySchemas[j]);
+                while (reader.hasNext()) {
+                    Record r = reader.next();
+                    offsetTree[j].put(new KeyofBTree(r), in++);
+                }
+                offsetTree[j].write();
+            }
+            reader.close();
+            reader = null;
         } else {
             merge(files);
             writer.mergeFiles(files, tmpPath);

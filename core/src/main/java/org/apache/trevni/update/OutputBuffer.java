@@ -52,10 +52,10 @@ public class OutputBuffer extends ByteArrayOutputStream {
                 writeBoolean((Boolean) value);
                 break;
             case INT:
-                writeInt((Integer) value);
+                writeFixed32((Integer) value);
                 break;
             case LONG:
-                writeLong((Long) value);
+                writeFixed64((Long) value);
                 break;
             case FIXED32:
                 writeFixed32((Integer) value);
@@ -97,7 +97,7 @@ public class OutputBuffer extends ByteArrayOutputStream {
 
     public void writeLength(int length) throws IOException {
         bitCount = 0;
-        writeInt(length);
+        writeFixed32(length);
     }
 
     private static final Charset UTF8 = Charset.forName("UTF-8");

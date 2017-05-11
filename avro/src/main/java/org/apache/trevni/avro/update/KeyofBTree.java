@@ -3,28 +3,70 @@ package org.apache.trevni.avro.update;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.avro.Schema.Field;
+import org.apache.avro.generic.GenericData.Record;
+
 import btree.Serializable;
 import btree.Utils;
 
 public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
-    Object[] values;
-    boolean[] types;
+    int[] values;
 
     public KeyofBTree() {
-
     }
 
     public KeyofBTree(CombKey key) {
         values = key.get();
-        types = key.getTypes();
+    }
+
+    public KeyofBTree(Record record) {
+        List<Field> fs = record.getSchema().getFields();
+        int len = fs.size();
+        this.values = new int[len];
+        for (int i = 0; i < len; i++) {
+            values[i] = Integer.parseInt(record.get(i).toString());
+        }
+    }
+
+    public KeyofBTree(String[] keys) {
+        values = new int[keys.length];
+        for (int i = 0; i < keys.length; i++)
+            values[i] = Integer.parseInt(keys[i]);
+    }
+
+    public KeyofBTree(String[] keys, int len) {
+        values = new int[len];
+        for (int i = 0; i < len; i++)
+            values[i] = Integer.parseInt(keys[i]);
+    }
+
+    public KeyofBTree(Record record, int len) {
+        this.values = new int[len];
+        List<Field> fs = record.getSchema().getFields();
+        for (int i = 0; i < len; i++) {
+            values[i] = Integer.parseInt(record.get(i).toString());
+        }
+    }
+
+    public KeyofBTree(Record record, int[] keyFields) {
+        int len = keyFields.length;
+        this.values = new int[len];
+        List<Field> fs = record.getSchema().getFields();
+        for (int i = 0; i < len; i++) {
+            values[i] = Integer.parseInt(record.get(keyFields[i]).toString());
+        }
     }
 
     public KeyofBTree(byte[] data) {
         deseriablize(data);
     }
 
-    public Object[] getKey() {
+    public int[] getKey() {
         return values;
+    }
+
+    public int getLength() {
+        return values.length;
     }
 
     public byte[] getBytes4(int data) {
@@ -53,16 +95,16 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     public byte[] serialize() {
         List<Byte> res = new ArrayList<Byte>();
         int i = 0;
-        for (Object v : values) {
-            if (types[i]) {
-                res.add((byte) 0);
-                for (byte b : getBytes4(Integer.parseInt(v.toString())))
-                    res.add(b);
-            } else {
-                res.add((byte) 1);
-                for (byte b : getBytes8(Long.parseLong(v.toString())))
-                    res.add(b);
-            }
+        for (int v : values) {
+            //            if (types[i]) {
+            //                res.add((byte) 0);
+            for (byte b : getBytes4(v))
+                res.add(b);
+            //            } else {
+            //                res.add((byte) 1);
+            //                for (byte b : getBytes8(Long.parseLong(v.toString())))
+            //                    res.add(b);
+            //            }
         }
         byte[] ee = new byte[res.size()];
         for (i = 0; i < ee.length; i++) {
@@ -74,52 +116,47 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     @Override
     public void deseriablize(byte[] data) {
         int index = 0;
-        int len = data.length;
-        List<Object> vs = new ArrayList<Object>();
-        String tt = "";
-        int i = 0;
-        while (index < len) {
-            byte t = data[index++];
-            tt += t;
-            if (t == (byte) 0) {
-                vs.add(Utils.getInt(data, index));
-                index += 4;
-            } else {
-                vs.add(Utils.getLong(data, index));
-                index += 8;
-            }
+        int len = data.length / 4;
+        values = new int[len];
+        //        List<Object> vs = new ArrayList<Object>();
+        int in = 0;
+        while (in < len) {
+            //            byte t = data[index++];
+            //            tt += t;
+            //            if (t == (byte) 0) {
+            //            vs.add(Utils.getInt(data, index));
+            values[in] = Utils.getInt(data, index);
+            in++;
+            index += 4;
+            //            } else {
+            //                vs.add(Utils.getLong(data, index));
+            //                index += 8;
+            //            }
         }
-        types = new boolean[tt.length()];
-        i = 0;
-        for (byte x : tt.getBytes()) {
-            if (x == (byte) '0') {
-                types[i++] = true;
-            } else {
-                types[i++] = false;
-            }
-        }
-        values = vs.toArray();
+        //        i = 0;
+        //        for (byte x : tt.getBytes()) {
+        //            if (x == (byte) '0') {
+        //                types[i++] = true;
+        //            } else {
+        //                types[i++] = false;
+        //            }
+        //        }
+        //        values = vs.toArray();
     }
 
     @Override
     public int hashCode() {
-        return (int) values[0];
+        return values[0];
     }
 
     @Override
     public int compareTo(KeyofBTree o) {
         int len = values.length;
         for (int i = 0; i < len; i++) {
-            int re;
-            if (types[i]) {
-                re = ((int) values[i] > (int) o.values[i]) ? 1 : (((int) values[i] < (int) o.values[i]) ? -1 : 0);
-            } else {
-                re = ((long) values[i] > (int) o.values[i]) ? 1 : (((int) values[i] < (long) o.values[i]) ? -1 : 0);
-            }
-            //            int re = (Long.parseLong(values[i].toString()) > Long.parseLong(o.values[i].toString())) ? 1
-            //                    : ((Long.parseLong(values[i].toString()) < Long.parseLong(o.values[i].toString())) ? -1 : 0);
-            if (re != 0)
-                return re;
+            if (values[i] > o.values[i])
+                return 1;
+            if (values[i] < o.values[i])
+                return -1;
         }
         return 0;
     }

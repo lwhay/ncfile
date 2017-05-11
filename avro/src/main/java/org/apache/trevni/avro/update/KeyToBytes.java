@@ -27,14 +27,14 @@ public class KeyToBytes {
     }
 
     public KeyToBytes(CombKey key) {
-        boolean[] types = key.getTypes();
-        Object[] keys = key.get();
+        //        boolean[] types = key.getTypes();
+        int[] keys = key.get();
         bytes = new byte[keys.length][];
         for (int i = 0; i < key.getLength(); i++) {
-            if (types[i])
-                createIntField(Integer.parseInt(keys[i].toString()), i);
-            else
-                createLongField(Integer.parseInt(keys[i].toString()), i);
+            //            if (types[i])
+            createIntField(keys[i], i);
+            //            else
+            //                createLongField(Integer.parseInt(keys[i].toString()), i);
         }
     }
 

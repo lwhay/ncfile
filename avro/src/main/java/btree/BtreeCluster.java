@@ -422,10 +422,10 @@ public class BtreeCluster<T extends Comparable<T>, V> {
         @SuppressWarnings("unchecked")
         public Node insert(T key, V value, TreeCache cache) {
             int pos = -1;
-            if (this.size == 0 || key.compareTo((T) this.keys[0]) < 0) {
-                pos = 0;
-            } else if (key.compareTo((T) this.keys[this.size - 1]) > 0) {
+            if (this.size > 0 && key.compareTo((T) this.keys[this.size - 1]) > 0) {
                 pos = this.size;
+            } else if (this.size == 0 || key.compareTo((T) this.keys[0]) < 0) {
+                pos = 0;
             } else {
                 pos = Utils.bSearch(this.keys, 0, this.size, key);
                 if (this.keys[pos] == key) {
@@ -453,10 +453,10 @@ public class BtreeCluster<T extends Comparable<T>, V> {
             Object[] newKeys = new Object[keyNum + 1];
             int[] newPointers = new int[keyNum + 2];
             int pos = -1;
-            if (this.size == 0 || key.compareTo((T) this.keys[0]) < 0) {
-                pos = 0;
-            } else if (key.compareTo((T) this.keys[this.size - 1]) > 0) {
+            if (this.size > 0 && key.compareTo((T) this.keys[this.size - 1]) > 0) {
                 pos = this.size;
+            } else if (this.size == 0 || key.compareTo((T) this.keys[0]) < 0) {
+                pos = 0;
             } else {
                 pos = Utils.bSearch(this.keys, 0, this.size, key);
                 if (((T) this.keys[pos]).compareTo(key) == 0) {
@@ -693,10 +693,10 @@ public class BtreeCluster<T extends Comparable<T>, V> {
             Object[] newKeys = new Object[keyNum];
             Object[] newPointers = new Object[keyNum];
             int pos = -1;
-            if (this.size == 0 || key.compareTo((T) this.keys[0]) < 0) {
-                pos = 0;
-            } else if (key.compareTo((T) this.keys[this.size - 1]) > 0) {
+            if (this.size > 0 && key.compareTo((T) this.keys[this.size - 1]) > 0) {
                 pos = this.size;
+            } else if (this.size == 0 || key.compareTo((T) this.keys[0]) < 0) {
+                pos = 0;
             } else {
                 pos = Utils.bSearch(this.keys, 0, this.size, key);
                 if (((T) this.keys[pos]).compareTo(key) == 0) {

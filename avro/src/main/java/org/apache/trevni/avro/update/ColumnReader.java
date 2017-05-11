@@ -85,6 +85,11 @@ public class ColumnReader<D> implements Closeable {
         }
     }
 
+    public Object next(int c) throws IOException {
+        values[readNO[c]].startRow();
+        return values[readNO[c]].nextValue();
+    }
+
     public boolean hasNext() {
         return values[readNO[0]].hasNext();
     }
@@ -160,27 +165,54 @@ public class ColumnReader<D> implements Closeable {
                 }
                 return record;
             case ARRAY:
-                int newRow = 0;
-                values[readNO[column]].startBlock(0);
-                for (int i = 0; i < row; i++) {
-                    newRow += values[readNO[column]].nextLength();
+                int length;
+                int offset = 0;
+                if (row == 0) {
+                    values[readNO[column]].startBlock(0);
+                    length = values[readNO[column]].nextLength();
+                } else {
+                    values[readNO[column]].startBlock(row - 1);
+                    values[readNO[column]].nextLengthAndOffset();
                     values[readNO[column]].startRow();
+                    int[] rr = values[readNO[column]].nextLengthAndOffset();
+                    length = rr[0];
+                    offset = rr[1];
                 }
-                int length = values[readNO[column]].nextLength();
                 List elements = (List) new GenericData.Array(length, s);
                 for (int i = 0; i < length; i++) {
                     this.column = startColumn;
                     Object value;
                     if (isSimple(s.getElementType()))
-                        value = readValue(s, ++column, (newRow + i));
+                        value = readValue(s, ++column, (offset + i));
                     else {
                         column++;
-                        value = read(s.getElementType(), (newRow + i));
+                        value = read(s.getElementType(), (offset + i));
                     }
                     elements.add(value);
                 }
                 column = startColumn + arrayWidths[startColumn];
                 return elements;
+            //                int newRow = 0;
+            //                values[readNO[column]].startBlock(0);
+            //                for (int i = 0; i < row; i++) {
+            //                    newRow += values[readNO[column]].nextLength();
+            //                    values[readNO[column]].startRow();
+            //                }
+            //                int length = values[readNO[column]].nextLength();
+            //                List elements = (List) new GenericData.Array(length, s);
+            //                for (int i = 0; i < length; i++) {
+            //                    this.column = startColumn;
+            //                    Object value;
+            //                    if (isSimple(s.getElementType()))
+            //                        value = readValue(s, ++column, (newRow + i));
+            //                    else {
+            //                        column++;
+            //                        value = read(s.getElementType(), (newRow + i));
+            //                    }
+            //                    elements.add(value);
+            //                }
+            //                column = startColumn + arrayWidths[startColumn];
+            //                return elements;
             default:
                 throw new TrevniRuntimeException("Unknown schema: " + s);
         }
@@ -201,8 +233,13 @@ public class ColumnReader<D> implements Closeable {
                 }
                 return record;
             case ARRAY:
+                int length;
+
                 values[readNO[column]].startRow();
-                int length = values[readNO[column]].nextLength();
+                int[] rr = values[readNO[column]].nextLengthAndOffset();
+                length = rr[0];
+                //                offset = rr[1];
+                //                int length = values[readNO[column]].nextLength();
                 List elements = (List) new GenericData.Array(length, s);
                 for (int i = 0; i < length; i++) {
                     this.column = startColumn;
@@ -243,7 +280,7 @@ public class ColumnReader<D> implements Closeable {
 
     public void create() throws IOException {
         for (ColumnValues v : values) {
-            v.seek(0);
+            v.create();
         }
     }
 

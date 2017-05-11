@@ -99,10 +99,10 @@ public class InsertColumnFileReader implements Closeable {
         try {
             in.readFully(magic);
         } catch (IOException e) {
-            throw new IOException("Not a data file.");
+            throw new IOException("Not a neci file.");
         }
         if (!(Arrays.equals(InsertColumnFileWriter.MAGIC, magic)))
-            throw new IOException("Not a data file.");
+            throw new IOException("Not a neci file.");
     }
 
     private void readFileColumnMetaData(InputBuffer in) throws IOException {

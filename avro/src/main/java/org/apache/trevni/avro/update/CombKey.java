@@ -7,61 +7,47 @@ import org.apache.avro.generic.GenericData.Record;
 import org.apache.trevni.ValueType;
 
 public class CombKey implements Comparable<CombKey> {
-    private Object[] keys;
-    private boolean[] types;
+    private int[] keys;
 
     public CombKey(int len) {
-        keys = new Object[len];
-        types = new boolean[len];
+        keys = new int[len];
     }
 
     public CombKey(Record record) {
         List<Field> fs = record.getSchema().getFields();
         int len = fs.size();
-        this.keys = new Object[len];
-        this.types = new boolean[len];
+        this.keys = new int[len];
         for (int i = 0; i < len; i++) {
-            types[i] = isInteger(fs.get(i));
-            keys[i] = record.get(i);
+            keys[i] = Integer.parseInt(record.get(i).toString());
         }
     }
 
     public CombKey(Record record, int len) {
-        this.keys = new Object[len];
-        this.types = new boolean[len];
+        this.keys = new int[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
-            types[i] = isInteger(fs.get(i));
-            keys[i] = record.get(i);
+            keys[i] = Integer.parseInt(record.get(i).toString());
         }
     }
 
     public CombKey(KeyofBTree o) {
         this.keys = o.values;
-        this.types = o.types;
     }
 
     public CombKey(Record record, int[] keyFields) {
         int len = keyFields.length;
-        this.keys = new Object[len];
-        this.types = new boolean[len];
+        this.keys = new int[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
-            types[i] = isInteger(fs.get(keyFields[i]));
-            keys[i] = record.get(keyFields[i]);
+            keys[i] = Integer.parseInt(record.get(keyFields[i]).toString());
         }
     }
 
-    public CombKey(Object[] keys, ValueType[] tt) {
-        assert (keys.length == tt.length);
+    public CombKey(int[] keys) {
         this.keys = keys;
-        this.types = new boolean[keys.length];
-        for (int i = 0; i < keys.length; i++) {
-            types[i] = isInteger(tt[i]);
-        }
     }
 
-    boolean isInteger(Field f) {
+    public static boolean isInteger(Field f) {
         switch (f.schema().getType()) {
             case INT:
                 return true;
@@ -83,39 +69,32 @@ public class CombKey implements Comparable<CombKey> {
         }
     }
 
-    public CombKey(Object[] keys, boolean[] types) {
-        assert (keys.length == types.length);
-        this.keys = keys;
-        this.types = types;
-    }
-
     @Override
     public int compareTo(CombKey o) {
         assert (this.getLength() == o.getLength());
-        assert (types == o.types);
         for (int i = 0; i < getLength(); i++) {
-            if (types[i]) {
-                long k1 = Long.parseLong(keys[i].toString());
-                long k2 = Long.parseLong(o.keys[i].toString());
-                if (k1 > k2)
-                    return 1;
-                else if (k1 < k2)
-                    return -1;
-            } else {
-                String k1 = keys[i].toString();
-                String k2 = o.keys[i].toString();
-                if (k1.compareTo(k2) > 0)
-                    return 1;
-                else if (k1.compareTo(k2) < 0)
-                    return -1;
-            }
+            if (keys[i] > o.keys[i])
+                return 1;
+            else if (keys[i] < o.keys[i])
+                return -1;
+        }
+        return 0;
+    }
+
+    public int compareTo(KeyofBTree o) {
+        assert (this.getLength() == o.getLength());
+        for (int i = 0; i < getLength(); i++) {
+            if (keys[i] > o.values[i])
+                return 1;
+            else if (keys[i] < o.values[i])
+                return -1;
         }
         return 0;
     }
 
     @Override
     public int hashCode() {
-        return keys[0].hashCode();
+        return keys[0];
     }
 
     @Override
@@ -127,7 +106,7 @@ public class CombKey implements Comparable<CombKey> {
         return keys.length;
     }
 
-    public Object[] get() {
+    public int[] get() {
         return keys;
     }
 
@@ -136,20 +115,10 @@ public class CombKey implements Comparable<CombKey> {
     }
 
     public CombKey get(int[] fields) {
-        Object[] k = new Object[fields.length];
-        boolean[] t = new boolean[fields.length];
+        int[] k = new int[fields.length];
         for (int i = 0; i < fields.length; i++) {
             k[i] = keys[fields[i]];
-            t[i] = types[fields[i]];
         }
-        return new CombKey(k, t);
-    }
-
-    public boolean getType(int i) {
-        return types[i];
-    }
-
-    public boolean[] getTypes() {
-        return types;
+        return new CombKey(k);
     }
 }
