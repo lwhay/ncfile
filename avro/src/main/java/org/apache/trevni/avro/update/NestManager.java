@@ -30,9 +30,10 @@ public class NestManager {
     private int free;
     private int mul;
 
-    private OffsetTree[] offsetTree;
-    private BackTree[] backTree;
-    private ForwardTree[] forwardTree;
+    private LevelTree[] tree;
+    //    private OffsetTree[] offsetTree;
+    //    private BackTree[] backTree;
+    //    private ForwardTree[] forwardTree;
 
     private CachList cach;
 
@@ -70,9 +71,10 @@ public class NestManager {
         if (rf.exists()) {
             reader = new ColumnReader<Record>(rf);
         }
-        offsetTree = new OffsetTree[level];
-        backTree = new BackTree[level - 1];
-        forwardTree = new ForwardTree[level - 1];
+        tree = new LevelTree[level];
+        //        offsetTree = new OffsetTree[level];
+        //        backTree = new BackTree[level - 1];
+        //        forwardTree = new ForwardTree[level - 1];
         filter = new BloomFilter[level];
         //        int[][] lff = new int[level][];
         //        for (int i = 0; i < level; i++) {
@@ -86,63 +88,72 @@ public class NestManager {
 
         for (int i = level - 1; i > 0; i--) {
             filter[i] = new BloomFilter(schemas[i].getBloomFile(), schemas[i].getSchema(), schemas[i].getKeyFields());
-            offsetTree[i] = new OffsetTree(schemas[i].getKeyFields(), keySchemas[i],
-                    resultPath + "offsetTree/" + schemas[i].getSchema().getName());
+            //            offsetTree[i] = new OffsetTree(schemas[i].getKeyFields(), keySchemas[i],
+            //                    resultPath + "offsetTree/" + schemas[i].getSchema().getName());
             schemas[i - 1].setNestedSchema(setSchema(schemas[i - 1].getSchema(), schemas[i].getNestedSchema()));
-            backTree[level - i - 1] = new BackTree(schemas[i].getKeyFields(), schemas[i].getOutKeyFields(),
-                    schemas[i].getSchema(), resultPath + "backTree/" + schemas[i].getSchema().getName());
+            //            backTree[level - i - 1] = new BackTree(schemas[i].getKeyFields(), schemas[i].getOutKeyFields(),
+            //                    schemas[i].getSchema(), resultPath + "backTree/" + schemas[i].getSchema().getName());
         }
         filter[0] = new BloomFilter(schemas[0].getBloomFile(), schemas[0].getSchema(), schemas[0].getKeyFields());
-        offsetTree[0] = new OffsetTree(schemas[0].getKeyFields(), keySchemas[0],
-                resultPath + "offsetTree/" + schemas[0].getSchema().getName());
+        //        offsetTree[0] = new OffsetTree(schemas[0].getKeyFields(), keySchemas[0],
+        //                resultPath + "offsetTree/" + schemas[0].getSchema().getName());
 
-        for (int i = 0; i < forwardTree.length; i++)
-            forwardTree[i] = new ForwardTree(keyFields[i], keyFields[i + 1], keySchemas[i], keySchemas[i + 1],
-                    (resultPath + "forwardTree/" + schemas[i].getSchema().getName()));
+        tree[0] = new LevelTree(resultPath + schemas[0].getSchema().getName(), schemas[0].getKeyFields(), true, false,
+                schemas[1].getKeyFields(), keySchemas[1], null);
+        for (int i = 1; i < level - 1; i++)
+            tree[i] = new LevelTree(resultPath + schemas[i].getSchema().getName(), schemas[i].getKeyFields(), false,
+                    false, schemas[i + 1].getKeyFields(), keySchemas[i + 1], schemas[i].getOutKeyFields());
+        tree[level - 1] = new LevelTree(resultPath + schemas[level - 1].getSchema().getName(),
+                schemas[level - 1].getKeyFields(), false, true, null, null, schemas[level - 1].getOutKeyFields());
     }
 
     public void close() throws IOException {
         if (!cach.isEmpty())
             merge();
         reader.close();
-        for (ForwardTree f : forwardTree)
-            f.close();
-        for (BackTree b : backTree)
-            b.close();
-        for (OffsetTree o : offsetTree)
-            o.close();
+        for (LevelTree t : tree)
+            t.close();
+        //        for (ForwardTree f : forwardTree)
+        //            f.close();
+        //        for (BackTree b : backTree)
+        //            b.close();
+        //        for (OffsetTree o : offsetTree)
+        //            o.close();
         for (BloomFilter bb : filter)
             bb.close();
     }
 
     public void openTree() {
-        for (OffsetTree o : offsetTree)
-            o.create();
-        for (BackTree b : backTree)
-            b.create();
-        for (ForwardTree f : forwardTree)
-            f.create();
+        for (LevelTree t : tree)
+            t.create();
+        //        for (OffsetTree o : offsetTree)
+        //            o.create();
+        //        for (BackTree b : backTree)
+        //            b.create();
+        //        for (ForwardTree f : forwardTree)
+        //            f.create();
     }
 
     public boolean exists(Record r) {
         int le = getLevel(r);
-        return (offsetTree[le].get(new CombKey(r, keyFields[le])) != null);
+        return (tree[le].findOffset(new KeyofBTree(r, keyFields[le])) != null);
     }
 
     public Integer getOffset(Record r) {
         int le = getLevel(r);
-        return offsetTree[le].get(new CombKey(r, keyFields[le]));
+        return tree[le].findOffset(new KeyofBTree(r, keyFields[le]));
     }
 
-    public CombKey getUpperKey(Record r) {
+    public KeyofBTree getUpperKey(Record r) {
         int le = getLevel(r);
-        return backTree[level - le - 1].get(new CombKey(r, keyFields[le]));
+        assert (le > 0);
+        return tree[le].findBackKey(new KeyofBTree(r, keyFields[le]));
     }
 
     public List<Record> getForwardKey(Record r) {
         int le = getLevel(r);
         if (le < level)
-            return forwardTree[le].findDiskRecord(new KeyofBTree(new CombKey(r, keyFields[le])));
+            return tree[le].findForwardDiskRecord(new KeyofBTree(r, keyFields[le]));
         else
             return null;
     }
@@ -182,7 +193,7 @@ public class NestManager {
             dLoad(schemas[1], schemas[0]); //write directly with column-store according to the highest primary key order
         } else {
             prLoad(schemas[level - 1], schemas[level - 2]); //read two primary files, write with row-store according to the next nested key order
-            for (int i = level - 2; i > 1; i++) {
+            for (int i = level - 2; i > 1; i--) {
                 orLoad(schemas[i], schemas[i - 1], i); //read a primary file and a row-store file, write with row store according to the next nested key order
             }
             laLoad(schemas[1], schemas[0]); //read a primary file and a row-store file, write with column-store according to the highest primary key order
@@ -228,10 +239,10 @@ public class NestManager {
         int[] number = new int[level];
         for (int i = 0; i < level; i++) {
             while (cach.hasNext(i)) {
-                Entry<CombKey, FlagData> ne = cach.next(i);
+                Entry<KeyofBTree, FlagData> ne = cach.next(i);
                 if (ne.getValue().getFlag() == (byte) 4) {
                     int nest = 1;
-                    int place = (int) offsetTree[i].get(ne.getKey());
+                    int place = (int) tree[i].findOffset(ne.getKey());
                     Record r = reader.search(schemas[i].getSchema(), place); //read the record from disk to complement the update-insert(5) record
                     Record exF = cach.extraFind(r, i, false).getData();
                     for (int k = 0; k < r.getSchema().getFields().size(); k++) {
@@ -283,7 +294,7 @@ public class NestManager {
                     }
                 } else if (ne.getValue().getFlag() == (byte) 2) {
                     number[i]--;
-                    cach.addToMergeList(offsetTree[i].get(ne.getKey()).intValue(), null, i); //find the place in in disk, and add to mergeList with null value(means delete)
+                    cach.addToMergeList(tree[i].findOffset(ne.getKey()).intValue(), null, i); //find the place in in disk, and add to mergeList with null value(means delete)
                 } else {
                     if (ne.getValue().getFlag() == (byte) 1)
                         number[i]++;
@@ -294,7 +305,7 @@ public class NestManager {
             //            cach.clear(i);
             if (i > 0) {
                 while (cach.extraHasNext(i)) {
-                    Entry<CombKey, FlagData> ne = cach.extraNext(i);
+                    Entry<KeyofBTree, FlagData> ne = cach.extraNext(i);
                     NestCombKey fk = findKey(ne.getValue().getData(), i);
                     cach.addToSortList(fk, ne.getValue(), i);
                 }
@@ -309,12 +320,12 @@ public class NestManager {
         sortToMerge();
         long t2 = System.currentTimeMillis();
         System.out.println("sortList -> mergeList: " + (t2 - t1));
-        updateBtree(number);
-        long t3 = System.currentTimeMillis();
-        System.out.println("update Btree and bloom filter: " + (t3 - t2));
         mergeWrite();
+        long t3 = System.currentTimeMillis();
+        System.out.println("merge write: " + (t3 - t2));
+        updateTreeBloom();
         long end = System.currentTimeMillis();
-        System.out.println("merge write: " + (end - t3));
+        System.out.println("update Btree and bloom filter: " + (end - t3));
         System.out.println("sum time: " + (end - start));
         openTree();
         //        newMap(tmpMerge);
@@ -374,8 +385,6 @@ public class NestManager {
         }
         reader.create();
         reader.createSchema(nestKeySchemas[0]);
-        //        int len = reader.getRowCount(0);
-        //        int index = 0;
 
         Integer[] mergeIndex = new Integer[level];
         for (int i = 0; i < level; i++)
@@ -394,22 +403,13 @@ public class NestManager {
         }
 
         while (reader.hasNext()) {
-            //            boolean skip = true;
-            //            for (int i = 0; i < level; i++) {
-            //                if (sort[i] != null) {
-            //                    skip = false;
-            //                    break;
-            //                }
-            //            }
-            //            if (skip)
-            //                break;
             Record nestKey = reader.next();
             //            index++;
             List<NestCombKey>[] keys = new List[level];
             for (int i = 0; i < level; i++) {
                 keys[i] = new ArrayList<NestCombKey>();
             }
-            keys[0].add(new NestCombKey(new CombKey(nestKey, keyFields[0].length)));
+            keys[0].add(new NestCombKey(new KeyofBTree(nestKey, keyFields[0].length)));
             comNestKey(nestKey.get(keyFields[0].length), 1, keys, keys[0].get(0));
 
             List<NestCombKey> kks = new ArrayList<NestCombKey>();
@@ -459,15 +459,6 @@ public class NestManager {
         }
         for (int i = 0; i < level; i++)
             cach.sortMergeList(i);
-        //        for (int i = 0; i < level; i++) {
-        //            if (sort[i] != null) {
-        //                cach.addToMergeList(place[i], sort[i].getValue(), i);
-        //                while (cach.hasNextSort(i))
-        //                    cach.addToMergeList(place[i], cach.nextSort(i).getValue(), i);
-        //                cach.sortClear(i);
-        //            }
-        //            cach.sortMergeList(i);
-        //        }
         cach.sortClear();
         for (int i = 0; i < arrayColumns.length; i++) {
             arrayColumns[i].seek(0);
@@ -490,7 +481,7 @@ public class NestManager {
             if (kks.get(kIn).compareTo(sort[le].getKey(), le - 1) == 0) {
                 cc[kIn]++;
             } else {
-                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
+                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).values[0]);
             }
             if (cach.hasNextSort(le))
                 sort[le] = cach.nextSort(le);
@@ -523,7 +514,7 @@ public class NestManager {
                 if (kks.get(kIn).compareTo(sort[le].getKey(), le) == 0) {
                     cc[kIn]++;
                 } else {
-                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
+                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).values[0]);
                 }
                 if (cach.hasNextSort(le))
                     sort[le] = cach.nextSort(le);
@@ -540,7 +531,7 @@ public class NestManager {
                 if (kks.get(kIn).compareTo(sort[le].getKey(), le) == 0) {
                     cc[kIn]++;
                 } else {
-                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
+                    System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).values[0]);
                 }
                 if (cach.hasNextSort(le))
                     sort[le] = cach.nextSort(le);
@@ -558,15 +549,9 @@ public class NestManager {
                 if (kks.get(kIn).compareTo(o, le) == 0) {
                     cc[kIn]++;
                 } else {
-                    System.out.println("!!!!!!!!!!!error:" + o.getKey(0).get()[0]);
+                    System.out.println("!!!!!!!!!!!error:" + o.getKey(0).values[0]);
                 }
             }
-            //            int p = offsetTree[le].get(o.getKey(le)).intValue();
-            //            if (place[le].intValue() != p) {
-            //                System.out.println();
-            //                System.out.println("key0: " + o.getKey(0).get(0) + "key" + le + ": " + o.getKey(le).get());
-            //                System.out.println("place: " + place[le] + "\toffset: " + p);
-            //            }
             place[le] = place[le].intValue() + 1;
         }
 
@@ -578,7 +563,7 @@ public class NestManager {
             if (kks.get(kIn).compareTo(sort[le].getKey(), le) == 0) {
                 cc[kIn]++;
             } else {
-                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).get()[0]);
+                System.out.println("!!!!!!!!!!!error:" + sort[le].getKey().getKey(0).values[0]);
             }
             if (cach.hasNextSort(le))
                 sort[le] = cach.nextSort(le);
@@ -611,129 +596,13 @@ public class NestManager {
                     && cach.getMergePlace(le, mergeIndex[le]) == place[le].intValue()) {
                 mergeIndex[le] = mergeIndex[le].intValue() + 1;
             } else {
-                System.out.println("!!!!delete error: no that delete:" + o.getKey(0).get()[0]);
+                System.out.println("!!!!delete error: no that delete:" + o.getKey(0).values[0]);
             }
             place[le] = place[le].intValue() + 1;
         }
         if (le < (level - 1)) {
             sortToMerge(keys, (le + 1), count, place, mergeIndex, mergeLen);
         }
-    }
-
-    public void updateBtree(int[] number) throws IOException {
-        int[] numElements = new int[level];
-        BloomFilterBuilder[] builder = new BloomFilterBuilder[level];
-        for (int i = 0; i < level; i++) {
-            if (!filter[i].isActivated())
-                filter[i].activate();
-            numElements[i] = filter[i].getNumElements() + number[i];
-            filter[i].cover();
-            builder[i] = createBloom(numElements[i], i);
-        }
-
-        forwardTree[0].createMerge((int) (numElements[0] / 500));
-        backTree[level - 2].createMerge((int) (numElements[1] / 500));
-        Entry<CombKey, List<Record>> en = forwardTree[0].nextMerge();
-        if (backTree[level - 2].isbtree()) {
-            while (en != null) {
-                builder[0].add(en.getKey());
-                for (Record r : en.getValue()) {
-                    backTree[level - 2].put(new CombKey(r), en.getKey());
-                    builder[1].add(new CombKey(r));
-                }
-                en = forwardTree[0].nextMerge();
-            }
-        } else {
-            while (en != null) {
-                builder[0].add(en.getKey());
-                for (Record r : en.getValue()) {
-                    builder[1].add(new CombKey(r));
-                }
-                en = forwardTree[0].nextMerge();
-            }
-        }
-        for (int i = 1; i < (level - 1); i++) {
-            forwardTree[i].createMerge((int) (numElements[i] / 500));
-            backTree[level - i - 2].createMerge((int) (numElements[i + 1] / 500));
-            en = forwardTree[i].nextMerge();
-            if (backTree[level - i - 2].isbtree()) {
-                while (en != null) {
-                    for (Record r : en.getValue()) {
-                        backTree[level - i - 2].put(new CombKey(r), en.getKey());
-                        builder[i + 1].add(new CombKey(r));
-                    }
-                    en = forwardTree[i].nextMerge();
-                }
-            } else {
-                while (en != null) {
-                    for (Record r : en.getValue()) {
-                        builder[i + 1].add(new CombKey(r));
-                    }
-                    en = forwardTree[i].nextMerge();
-                }
-            }
-        }
-
-        for (BackTree bb : backTree) {
-            bb.write();
-        }
-        for (BloomFilterBuilder b : builder) {
-            b.write();
-        }
-        //        forwardTree[0].createMerge((int) (numElements[0] / 500));
-        //        for (int i = 0; i < backTree.length; i++) {
-        //            backTree[i].createMerge((int) (numElements[level - i - 1] / 500));
-        //        }
-        for (int i = 0; i < offsetTree.length; i++) {
-            offsetTree[i].createMerge((int) (numElements[i] / 500));
-        }
-        //        RandomAccessFile[] arrayColumns = new RandomAccessFile[level - 1];
-        //        Integer[] count = new Integer[level - 1];
-        //        for (int i = 0; i < level - 1; i++) {
-        //            count[i] = new Integer(0);
-        //            arrayColumns[i] = new RandomAccessFile((tmpPath + "array" + i), "rw");
-        //            arrayColumns[i].seek(4);
-        //        }
-        //        Integer[] place = new Integer[level];
-        //        for (int i = 0; i < level; i++)
-        //            place[i] = new Integer(0);
-        //        Entry<CombKey, List<Record>> en = forwardTree[0].nextMerge();
-        //        while (en != null) {
-        //            if (en.getValue() != null) {
-        //                offsetTree[0].put(en.getKey(), place[0].intValue());
-        //                builder[0].add(en.getKey());
-        //                place[0] = place[0].intValue() + 1;
-        //                updateTree(en.getKey(), en.getValue(), 1, place, arrayColumns, count, builder);
-        //            }
-        //            en = forwardTree[0].nextMerge();
-        //        }
-        //        for (int i = 0; i < (level - 1); i++) {
-        //            arrayColumns[i].seek(0);
-        //            arrayColumns[i].writeInt(count[i].intValue());
-        //            arrayColumns[i].close();
-        //        }
-    }
-
-    public void updateTree(CombKey upperKey, List<Record> nests, int le, Integer[] place,
-            RandomAccessFile[] arrayColumns, Integer[] count, BloomFilterBuilder[] builder) throws IOException {
-        assert (le < level);
-        //        .write(getBytes(nests.size()), index[le - 1].intValue(), 4);
-        //        index[le - 1] = index[le - 1].intValue() + 4;
-        count[le - 1] = count[le - 1].intValue() + 1;
-        if (!nests.isEmpty()) {
-            arrayColumns[le - 1].writeInt(nests.size());
-            for (Record key : nests) {
-                backTree[level - le - 1].put(new CombKey(key), upperKey);
-                offsetTree[le].put(key, place[le].intValue(), true);
-                builder[le].add(key, true);
-                place[le] = place[le].intValue() + 1;
-                if (le < (level - 1)) {
-                    List<Record> rs = forwardTree[le].find(new CombKey(key));
-                    updateTree(new CombKey(key), rs, (le + 1), place, arrayColumns, count, builder);
-                }
-            }
-        } else
-            arrayColumns[le - 1].writeInt(0);
     }
 
     public void mergeWrite() throws IOException {
@@ -745,12 +614,10 @@ public class NestManager {
         int a = 0;
         int array = 0;
         for (ValueType type : types) {
-            //            System.out.println("%%%column: " + i);
             if (type == ValueType.NULL) {
                 RandomAccessFile in = new RandomAccessFile((tmpPath + "array" + a), "rw");
                 int len = in.readInt();
                 int tmp = 0;
-                //                System.out.println("         rowcount: " + len);
                 for (int k = 0; k < len; k++) {
                     tmp += in.readInt();
                     writer.writeArrayColumn(i, tmp); //write array column incremently
@@ -758,53 +625,36 @@ public class NestManager {
                 writer.flush(i);
                 in.close();
                 in = null;
-                //                new File(tmpPath + "array" + a).delete();
                 shDelete(tmpPath + "array" + a);
                 a++;
                 i++;
                 array = i;
             } else {
                 int len = reader.getRowCount(i);
-                //                System.out.println("         rowcount: " + len);
                 Entry<Integer, FlagData> en = cach.mergeNext(a);
                 int k = 0;
                 while (en != null && k < len) {
                     while (k < en.getKey()) {
                         writer.writeColumn(i, reader.nextValue(i));
                         k++;
-                        //                        System.out.println(k);
                     }
                     if (en.getValue() == null) {
                         reader.nextValue(i);
                         k++;
-                        //                        System.out.println(k);
                         en = cach.mergeNext(a);
                     } else {
                         byte f = en.getValue().getFlag();
                         if (f == (byte) 3) {
                             Object v = reader.nextValue(i);
                             k++;
-                            //                            System.out.println(k);
                             Object up = en.getValue().getData().get(i - array);
                             if (up != null)
                                 v = up;
                             writer.writeColumn(i, v);
                             en = cach.mergeNext(a);
-                            //                            while (en != null && en.getValue() != null) {
-                            //                                writer.writeColumn(i, en.getValue().getData().get(i - array));
-                            //                                en = cach.mergeNext(a);
-                            //                            }
                         } else {
                             writer.writeColumn(i, en.getValue().getData().get(i - array));
                             en = cach.mergeNext(a);
-                            //                            while (en != null && en.getValue() != null) {
-                            //                                writer.writeColumn(i, en.getValue().getData().get(i - array));
-                            //                                en = cach.mergeNext(a);
-                            //                            }
-                            //                            if (k < len) {
-                            //                                writer.writeColumn(i, reader.nextValue(i));
-                            //                                k++;
-                            //                            }
                         }
                     }
                 }
@@ -815,7 +665,6 @@ public class NestManager {
                 while (k < len) {
                     writer.writeColumn(i, reader.nextValue(i));
                     k++;
-                    //                    System.out.println(k);
                 }
                 writer.flush(i);
                 cach.mergeWriteCreate();
@@ -827,62 +676,75 @@ public class NestManager {
         writer.close();
         reader = null;
         writer = null;
-        //        new File(resultPath + "result.trv").delete();
-        //        new File(resultPath + "result.head").delete();
-        shDelete(resultPath + "result.trv");
-        shDelete(resultPath + "result.head");
+        new File(resultPath + "result.trv").delete();
+        new File(resultPath + "result.head").delete();
+        //        shDelete(resultPath + "result.trv");
+        //        shDelete(resultPath + "result.head");
         new File(tmpPath + "result.tmp").renameTo(new File(resultPath + "result.trv"));
         new File(tmpPath + "result.head").renameTo(new File(resultPath + "result.head"));
         System.gc();
         reader = new ColumnReader<Record>(new File(resultPath + "result.trv"));
-        long t1 = System.currentTimeMillis();
-        for (int j = 0; j < level; j++) {
-            int index = 0;
-            reader.createSchema(keySchemas[j]);
-            String[] tmp = new String[keyFields[j].length];
-            while (reader.hasNext()) {
-                for (int tt = 0; tt < keyFields[j].length; tt++) {
-                    tmp[tt] = reader.next(tt++).toString();
-                }
-                offsetTree[j].put(new KeyofBTree(tmp), index++);
-                //                Record r = reader.next();
-                //                offsetTree[j].put(new KeyofBTree(r), index++);
-            }
-            offsetTree[j].write();
+    }
+
+    public void updateTreeBloom() throws IOException {
+        reader.createSchema(nestKeySchemas[0]);
+        BloomFilterBuilder[] builder = new BloomFilterBuilder[level];
+        for (int i = 0; i < level; i++) {
+            tree[i].createMerge(reader.getLevelRowCount(i) / 4000);
+            filter[i].cover();
+            builder[i] = createBloom(reader.getLevelRowCount(i), i);
         }
-        //        int[] index = new int[level];
-        //        for (int m = 0; m < level; m++)
-        //            index[m] = 0;
-        //        Params param = new Params(new File(resultPath + "result.trv"));
-        //        param.setSchema(nestKeySchemas[0]);
-        //        InsertAvroColumnReader<Record> re = new InsertAvroColumnReader<Record>(param);
-        //        while (re.hasNext()) {
-        //            Record record = re.next();
-        //            if (level > 1)
-        //                //                forwardTree.put(record);
-        //                offsetTree[0].put(record, index[0]++, true);
-        //            List<Record> rs = (List<Record>) record.get(keyFields[0].length);
-        //            for (int j = 1; j < level - 1; j++) {
-        //                List<Record> tmp = new ArrayList<Record>();
-        //                tmp.addAll(rs);
-        //                rs.clear();
-        //                for (int k = 0; k < tmp.size(); k++) {
-        //                    Record r = tmp.get(k);
-        //                    rs.addAll((List<Record>) r.get(keyFields[j].length));
-        //                    offsetTree[j].put(r, index[j], true);
-        //                    index[j]++;
-        //                }
-        //            }
-        //            for (int k = 0; k < rs.size(); k++) {
-        //                offsetTree[level - 1].put(rs.get(k), index[level - 1], true);
-        //                index[level - 1]++;
-        //            }
-        //        }
-        //        re.close();
-        //        for (OffsetTree o : offsetTree)
-        //            o.write();
-        long t2 = System.currentTimeMillis();
-        System.out.println("offsetTree update time:" + (t2 - t1));
+        Integer[] index = new Integer[level];
+        for (int m = 0; m < level; m++)
+            index[m] = 0;
+        while (reader.hasNext()) {
+            Record record = reader.next();
+            updateTreeBloom(0, null, index, record, builder);
+        }
+        for (int i = 0; i < level; i++) {
+            tree[i].write();
+            builder[i].write();
+        }
+    }
+
+    private void updateTreeBloom(int le, KeyofBTree backKey, Integer[] index, Record record,
+            BloomFilterBuilder[] builder) throws IOException {
+        KeyofBTree k = new KeyofBTree(record, keyFields[le].length);
+        builder[le].add(k);
+        if (le < (level - 1)) {
+            List<Record> rs = (List<Record>) (record.get(keyFields[le].length));
+            List<Record> tm = new ArrayList<Record>();
+            for (Record r : rs) {
+                Record m = new Record(keySchemas[le + 1]);
+                for (int i = 0; i < keyFields[le + 1].length; i++)
+                    m.put(i, r.get(i));
+                tm.add(m);
+            }
+            tree[le].put(k, index[le]++, backKey, tm);
+            for (Record r : rs)
+                updateTreeBloom(le + 1, k, index, r, builder);
+        } else {
+            tree[le].put(k, index[le]++, backKey, null);
+        }
+    }
+
+    private void updateTree(int le, KeyofBTree backKey, Integer[] index, Record record) {
+        KeyofBTree k = new KeyofBTree(record, keyFields[le].length);
+        if (le < (level - 1)) {
+            List<Record> rs = (List<Record>) (record.get(keyFields[le].length));
+            List<Record> tm = new ArrayList<Record>();
+            for (Record r : rs) {
+                Record m = new Record(keySchemas[le + 1]);
+                for (int i = 0; i < keyFields[le + 1].length; i++)
+                    m.put(i, r.get(i));
+                tm.add(m);
+            }
+            tree[le].put(k, index[le]++, backKey, tm);
+            for (Record r : rs)
+                updateTree(le + 1, k, index, r);
+        } else {
+            tree[le].put(k, index[le]++, backKey, null);
+        }
     }
 
     /*
@@ -899,13 +761,13 @@ public class NestManager {
         List<Record> nest = (List<Record>) data;
         if (le < (level - 1)) {
             for (Record tm : nest) {
-                CombKey key = new CombKey(tm, keyFields[le].length);
+                KeyofBTree key = new KeyofBTree(tm, keyFields[le].length);
                 keys[le].add(new NestCombKey(upperkey, key));
                 comNestKey(tm.get(keyFields[le].length), le + 1, keys, new NestCombKey(upperkey, key));
             }
         } else {
             for (Record tm : nest) {
-                CombKey key = new CombKey(tm, keyFields[le].length);
+                KeyofBTree key = new KeyofBTree(tm, keyFields[le].length);
                 keys[le].add(new NestCombKey(upperkey, key));
             }
         }
@@ -923,23 +785,23 @@ public class NestManager {
      * if exists return the nest combkey, else use backTree find the up level key until the nest combkey is found.
      * this return is not always the newest nest combkey.
      */
-    private NestCombKey findSortKey(CombKey key, int le) {
+    private NestCombKey findSortKey(KeyofBTree key, int le) {
         if (le == 0)
-            return new NestCombKey(new CombKey[] { key });
-        CombKey[] keys = new CombKey[le + 1];
+            return new NestCombKey(new KeyofBTree[] { key });
+        KeyofBTree[] keys = new KeyofBTree[le + 1];
         keys[le] = key;
-        CombKey fk = backTree[level - le - 1].get(key);
+        KeyofBTree fk = tree[le].findBackKey(key);
         keys[le - 1] = fk;
         for (int i = le - 1; i > 0; i++) {
             NestCombKey fks = cach.findSort(keys[i], i);
             if (fks != null) {
                 int j = 0;
-                for (CombKey kk : fks.keys) {
+                for (KeyofBTree kk : fks.keys) {
                     keys[j++] = kk;
                 }
                 break;
             }
-            keys[i - 1] = backTree[level - i - 1].get(keys[i]);
+            keys[i - 1] = tree[i].findBackKey(keys[i]);
         }
         return new NestCombKey(keys);
     }
@@ -948,13 +810,13 @@ public class NestManager {
      * find the up comkkey with backTree,
      * return the disk nest combkey.
      */
-    private NestCombKey findBackKey(CombKey key, int le) {
+    private NestCombKey findBackKey(KeyofBTree key, int le) {
         if (le == 0)
-            return new NestCombKey(new CombKey[] { key });
-        CombKey[] keys = new CombKey[le + 1];
+            return new NestCombKey(new KeyofBTree[] { key });
+        KeyofBTree[] keys = new KeyofBTree[le + 1];
         keys[le] = key;
         for (int i = le; i > 0; i++) {
-            keys[i - 1] = backTree[level - i - 1].get(keys[i]);
+            keys[i - 1] = tree[i].findBackKey(keys[i]);
         }
         return new NestCombKey(keys);
     }
@@ -965,26 +827,26 @@ public class NestManager {
      * use the newer foreign key,
      * return the newest nest combkey.
      */
-    private NestCombKey findKey(CombKey key, int le) {
+    private NestCombKey findKey(KeyofBTree key, int le) {
         if (le == 0)
-            return new NestCombKey(new CombKey[] { key });
-        CombKey[] keys = new CombKey[le + 1];
+            return new NestCombKey(new KeyofBTree[] { key });
+        KeyofBTree[] keys = new KeyofBTree[le + 1];
         keys[le] = key;
-        CombKey fk = backTree[level - le - 1].get(key);
+        KeyofBTree fk = tree[le].findBackKey(key);
         keys[le - 1] = fk;
         for (int i = le - 1; i > 0; i++) {
             FlagData fd = cach.find(keys[i], i);
             if (fd != null) {
                 byte b = fd.getFlag();
                 if (b == (byte) 1) {
-                    keys[i - 1] = new CombKey(fd.getData(), schemas[i].getOutKeyFields());
+                    keys[i - 1] = new KeyofBTree(fd.getData(), schemas[i].getOutKeyFields());
                 } else if (b == (byte) 4) {
                     fd = cach.extraFind(keys[i], i);
-                    keys[i - 1] = new CombKey(fd.getData(), schemas[i].getOutKeyFields());
+                    keys[i - 1] = new KeyofBTree(fd.getData(), schemas[i].getOutKeyFields());
                 }
                 break;
             }
-            keys[i - 1] = backTree[level - i - 1].get(keys[i]);
+            keys[i - 1] = tree[i].findBackKey(keys[i]);
         }
         return new NestCombKey(keys);
     }
@@ -997,30 +859,30 @@ public class NestManager {
      */
     private NestCombKey findKey(Record data, int le) {
         if (le == 0)
-            return new NestCombKey(new CombKey[] { new CombKey(data, schemas[0].getKeyFields()) });
-        CombKey[] keys = new CombKey[le + 1];
-        keys[le] = new CombKey(data, schemas[le].getKeyFields());
+            return new NestCombKey(new KeyofBTree[] { new KeyofBTree(data, schemas[0].getKeyFields()) });
+        KeyofBTree[] keys = new KeyofBTree[le + 1];
+        keys[le] = new KeyofBTree(data, schemas[le].getKeyFields());
         keys[le - 1] = isNullKey(data, schemas[le].getOutKeyFields())
-                ? findForeignKey(new CombKey(data, schemas[le].getKeyFields()), le)
-                : new CombKey(data, schemas[le].getOutKeyFields());
+                ? findForeignKey(new KeyofBTree(data, schemas[le].getKeyFields()), le)
+                : new KeyofBTree(data, schemas[le].getOutKeyFields());
         for (int i = le - 1; i > 0; i--) {
             FlagData fd = cach.find(keys[i], i);
             if (fd != null) {
                 byte b = fd.getFlag();
                 if (b == (byte) 1) {
-                    keys[i - 1] = new CombKey(fd.getData(), schemas[i].getOutKeyFields());
+                    keys[i - 1] = new KeyofBTree(fd.getData(), schemas[i].getOutKeyFields());
                 } else if (b == (byte) 4) {
                     fd = cach.extraFind(keys[i], i);
-                    keys[i - 1] = new CombKey(fd.getData(), schemas[i].getOutKeyFields());
+                    keys[i - 1] = new KeyofBTree(fd.getData(), schemas[i].getOutKeyFields());
                 }
                 break;
             }
-            keys[i - 1] = backTree[level - i - 1].get(keys[i]);
+            keys[i - 1] = tree[i].findBackKey(keys[i]);
         }
         return new NestCombKey(keys);
     }
 
-    private CombKey findForeignKey(CombKey key, int le) {
+    private KeyofBTree findForeignKey(KeyofBTree key, int le) {
         assert (le > 0);
         FlagData fd = cach.find(key, le);
         if (fd != null) {
@@ -1028,14 +890,14 @@ public class NestManager {
             if (b == (byte) 2)
                 return null;
             if (b == (byte) 1)
-                return new CombKey(fd.getData(), schemas[le].getOutKeyFields());
+                return new KeyofBTree(fd.getData(), schemas[le].getOutKeyFields());
             if (b == (byte) 4)
-                return new CombKey(cach.extraFind(key, le).getData(), schemas[le].getOutKeyFields());
+                return new KeyofBTree(cach.extraFind(key, le).getData(), schemas[le].getOutKeyFields());
             if (b == (byte) 3)
                 if (!isNullKey(fd.getData(), schemas[le].getOutKeyFields()))
-                    return new CombKey(fd.getData(), schemas[le].getOutKeyFields());
+                    return new KeyofBTree(fd.getData(), schemas[le].getOutKeyFields());
         }
-        return backTree[level - le - 1].get(key);
+        return tree[le].findBackKey(key);
     }
 
     public Record search(Record key, Schema valueSchema, boolean isKey) throws IOException {
@@ -1069,7 +931,7 @@ public class NestManager {
         }
         if (filter[le].contains(key, isKey, new long[2])) {
             Object v;
-            if ((v = offsetTree[le].get(key, isKey)) != null) {
+            if ((v = tree[le].findOffset(key, isKey)) != null) {
                 if (reader == null) {
                     reader = new ColumnReader<Record>(new File(resultPath + "result.trv"));
                 }
@@ -1094,7 +956,7 @@ public class NestManager {
             }
             if (filter[le].contains(data, false, new long[2])) {
                 Object v;
-                if ((v = offsetTree[le].get(data, false)) != null) {
+                if ((v = tree[le].findOffset(data, false)) != null) {
                     //                    System.out.println("insert disk exists error: " + data);
                     return;
                 } else {
@@ -1131,7 +993,7 @@ public class NestManager {
             }
             if (filter[le].contains(data, false, new long[2])) {
                 Object v;
-                if ((v = offsetTree[le].get(data, false)) != null) {
+                if ((v = tree[le].findOffset(data, false)) != null) {
                     updateToCach(data, le);
                 } else {
                     if (insertLegal(data, le))
@@ -1166,7 +1028,7 @@ public class NestManager {
             }
             if (filter[le].contains(data, false, new long[2])) {
                 Object v;
-                if ((v = offsetTree[le].get(data, false)) != null) {
+                if ((v = tree[le].findOffset(data, false)) != null) {
                     updateToCach(data, le);
                 } else {
                     //                    System.out.println("update disk not exists error: " + data);
@@ -1197,7 +1059,7 @@ public class NestManager {
                 filter[le].activate();
             }
             if (filter[le].contains(data, false, new long[2])) {
-                if (offsetTree[le].get(data, false) != null) {
+                if (tree[le].findOffset(data, false) != null) {
                     deleteToCach(data, le);
                 } else {
                     //                    System.out.println("delete disk not exists error: " + data);
@@ -1263,20 +1125,20 @@ public class NestManager {
             }
             //            Record former = findForwardInsertCache(data, le, false);
             //            deleteFromForwardInsert(former, le);
-            CombKey uppNew = new CombKey(data, schemas[le].getOutKeyFields());
+            KeyofBTree uppNew = new KeyofBTree(data, schemas[le].getOutKeyFields());
             Record rr = cach.extraFind(data, le, false).getData();
-            CombKey upper = new CombKey(rr, schemas[le].getOutKeyFields());
-            CombKey key = new CombKey(data, keyFields[le]);
+            KeyofBTree upper = new KeyofBTree(rr, schemas[le].getOutKeyFields());
+            KeyofBTree key = new KeyofBTree(data, keyFields[le]);
             Record caR = fd.getData();
-            CombKey uppDisk = new CombKey(caR, schemas[le].getOutKeyFields());
+            KeyofBTree uppDisk = new KeyofBTree(caR, schemas[le].getOutKeyFields());
             //            for (int i = 0; i < le; i++) {
             //                caR = ((List<Record>) caR.get(caR.getSchema().getFields().size() - 1)).get(0);
             //            }
             if (uppNew.equals(uppDisk)) {
                 //                cach.delete(data, le);
                 //                deleteFromForwardInsert(former, le);
-                forwardTree[le - 1].delete(uppDisk, key);
-                forwardTree[le - 1].delete(upper, key);
+                tree[le - 1].deleteForward(uppDisk, key);
+                tree[le - 1].deleteForward(upper, key);
                 cach.extraDelete(data, le, false);
                 cachOperate(data, (byte) 3, le);
                 //                Record dd = new Record(nestKeySchemas[le]);
@@ -1290,8 +1152,8 @@ public class NestManager {
             } else {
                 //                Record rr = cach.extraFind(data, le, false).getData();
                 if (!uppNew.equals(upper)) {
-                    forwardTree[le - 1].delete(upper, key);
-                    forwardTree[le - 1].delete(uppNew, key);
+                    tree[le - 1].deleteForward(upper, key);
+                    tree[le - 1].deleteForward(uppNew, key);
                     //                    deleteFromForwardInsert(former, le);
                     //                    Record dd = new Record(nestKeySchemas[le]);
                     //                    setKey(dd, data, schemas[le].getKeyFields());
@@ -1370,7 +1232,7 @@ public class NestManager {
                 filter[le - 1].activate();
             }
             return (filter[le - 1].contains(data, schemas[le].getOutKeyFields(), new long[2])
-                    && offsetTree[le - 1].get(data, schemas[le].getOutKeyFields()) != null);
+                    && tree[le - 1].findOffset(data, schemas[le].getOutKeyFields()) != null);
         }
         return (fd.getFlag() != (byte) 2);
         //    boolean isKey = false;
@@ -1383,68 +1245,6 @@ public class NestManager {
         //      }
         //    }
     }
-
-    //    private Record upperRecord(Record data, int le) {
-    //        assert (le > 0);
-    //        Record re;
-    //        re = new Record(schemas[le - 1].getNestedSchema());
-    //        setKey(re, schemas[le - 1].getKeyFields(), data, schemas[le].getOutKeyFields());
-    //        for (int i = (le - 1); i > 0; i--) {
-    //            Record key = backTree[level - i - 1].getRecord(re, false);
-    //            assert (key != null);
-    //            Record tm = new Record(schemas[i - 1].getNestedSchema());
-    //            setKey(tm, schemas[i - 1].getKeyFields(), key, re);
-    //            re = tm;
-    //        }
-    //        return re;
-    //    }
-    //
-    //    private Record downRecord(Record data, int le) throws IOException {
-    //        assert (le < level);
-    //        Record upp = data;
-    //        if (le > 0) {
-    //            upp = upperRecord(data, le);
-    //        }
-    //        if (le == (level - 1)) {
-    //            return upp;
-    //        }
-    //        Record fKey = forwardTree.getRecord(upp, false);
-    //        for (int i = 0; i < le; i++) {
-    //            List<Record> fk = (List<Record>) fKey.get(fKey.getSchema().getFields().size() - 1);
-    //            upp = ((List<Record>) upp.get(upp.getSchema().getFields().size() - 1)).get(0);
-    //            int[] fields = schemas[i + 1].getKeyFields();
-    //            CombKey k = new CombKey(upp, fields);
-    //            boolean find = false;
-    //            for (int m = 0; m < fk.size(); m++) {
-    //                if (k.equals(new CombKey(fk.get(m), comFields(fields.length)))) {
-    //                    fKey = fk.get(m);
-    //                    find = true;
-    //                    break;
-    //                }
-    //            }
-    //            if (!find) {
-    //                //System.out.println("No key in disk");
-    //                throw new IOException("No key in disk");
-    //            }
-    //        }
-    //        List<Field> fs = new ArrayList<Field>();
-    //        Schema ps = schemas[le].getSchema();
-    //        for (Field f : ps.getFields()) {
-    //            fs.add(new Schema.Field(f.name(), f.schema(), null, null));
-    //        }
-    //        List<Field> ff = fKey.getSchema().getFields();
-    //        Field f = ff.get(ff.size() - 1);
-    //        fs.add(new Schema.Field(f.name(), f.schema(), null, null));
-    //        Schema vs = setSchema(schemas[le].getSchema(), keySchemas[le + 1]);
-    //        Record re = new Record(vs);
-    //        int len = vs.getFields().size();
-    //        for (int i = 0; i < (len - 1); i++) {
-    //            re.put(i, data.get(i));
-    //        }
-    //        re.put(len - 1, fKey.get(fKey.getSchema().getFields().size() - 1));
-    //        re = upperRecord(re, le);
-    //        return re;
-    //    }
 
     private int[] comFields(int len) {
         int[] res = new int[len];
@@ -1491,38 +1291,12 @@ public class NestManager {
 
     public void addToForward(Record data, int le, boolean isKey) {
         if (le < (level - 1))
-            forwardTree[le].insert(data, isKey);
+            tree[le].insertForward(data, isKey);
         if (le > 0) {
-            CombKey key = isKey ? new CombKey(data, keyFields[le].length) : new CombKey(data, keyFields[le]);
-            CombKey upper = findForeignKey(key, le);
-            forwardTree[le - 1].insert(upper, key);
+            KeyofBTree key = isKey ? new KeyofBTree(data, keyFields[le].length) : new KeyofBTree(data, keyFields[le]);
+            KeyofBTree upper = findForeignKey(key, le);
+            tree[le - 1].insertForward(upper, key);
         }
-        //        if (le > 0) {
-        //            Record[] key = new Record[le + 1];
-        //            List<Field> fs = data.getSchema().getFields();
-        //            key[le] = new Record(nestKeySchemas[le]);
-        //            int[] fields = schemas[le].getKeyFields();
-        //            for (int i = 0; i < fields.length; i++) {
-        //                key[le].put(i, data.get(fields[i]));
-        //            }
-        //            key[le] = data;
-        //            //            key[le - 1] = backTree[level - le - 1].getRecord(key[le], true);
-        //            for (int i = le; i > 0; i--) {
-        //                Record fk = getForeignKey(key[i], i, true);
-        //                key[i - 1] = new Record(nestKeySchemas[i - 1]);
-        //                int len = keyFields[i - 1].length;
-        //                for (int j = 0; j < len; j++)
-        //                    key[i - 1].put(j, fk.get(j));
-        //                key[i - 1].put(len, key[i]);
-        //                key[i - 1] = getForeignKey(key[i], i, true);
-        //            }
-        //            Record former = forwardTree.find(key[0], true);
-        //            int size = former.getSchema().getFields().size();
-        //            former.put(size - 1, addForward((List<Record>) former.get(size - 1), key, le, 1));
-        //            forwardTree.putCache(key, le, true);
-        //        } else {
-        //            forwardTree.putCache(data);
-        //        }
     }
 
     public void deleteFromForward(Record data, int le) {
@@ -1554,133 +1328,6 @@ public class NestManager {
         //        }
     }
 
-    //    public void deleteFromForwardInsert(Record data, int le) {
-    //        if (le > 0) {
-    //            Record[] key = new Record[le + 1];
-    //            key[le] = data;
-    //            for (int i = le; i > 0; i--) {
-    //                Record fk = getForeignKey(key[i], i, true);
-    //                key[i - 1] = new Record(nestKeySchemas[i - 1]);
-    //                int len = keyFields[i - 1].length;
-    //                for (int j = 0; j < len; j++)
-    //                    key[i - 1].put(j, fk.get(j));
-    //                key[i - 1].put(len, key[i]);
-    //            }
-    //            forwardTree.deleteFromInsertCache(key, le, true);
-    //        } else {
-    //            forwardTree.deleteFromCache(data, false);
-    //        }
-    //    }
-
-    //    public void deleteFromForwardDelete(Record data, int le) {
-    //        if (le > 0) {
-    //            Record[] key = new Record[le + 1];
-    //            key[le] = data;
-    //            Record fk = backTree[level - le - 1].getRecord(new CombKey(data, keyFields[le].length));
-    //            key[le - 1] = new Record(nestKeySchemas[le - 1]);
-    //            int len = keyFields[le - 1].length;
-    //            for (int j = 0; j < len; j++)
-    //                key[le - 1].put(j, fk.get(j));
-    //            key[le - 1].put(len, key[le]);
-    //            for (int i = (le - 1); i > 0; i--) {
-    //                fk = getForeignKey(key[i], i, true);
-    //                key[i - 1] = new Record(nestKeySchemas[i - 1]);
-    //                len = keyFields[i - 1].length;
-    //                for (int j = 0; j < len; j++)
-    //                    key[i - 1].put(j, fk.get(j));
-    //                key[i - 1].put(len, key[i]);
-    //            }
-    //            forwardTree.deleteFromDeleteCache(key, le, true);
-    //        } else {
-    //            forwardTree.deleteFromCache(data, false);
-    //        }
-    //    }
-
-    //    public Record findForwardInsertCache(Record data, int le, boolean isKey) {
-    //        if (le > 0) {
-    //            Record[] key = new Record[le + 1];
-    //            key[le] = data;
-    //            for (int i = le; i > 0; i--) {
-    //                key[i - 1] = getForeignKey(key[i], i, isKey);
-    //            }
-    //            Record former = forwardTree.getInsertCache(key[0], isKey);
-    //            for (int i = 0; i < le; i++) {
-    //                List<Record> rs = (List<Record>) former.get(keyFields[i].length);
-    //                for (Record r : rs) {
-    //                    if (new CombKey(r, keyFields[i + 1]).equals(new CombKey(key[i + 1], keyFields[i + 1]))) {
-    //                        former = r;
-    //                        break;
-    //                    }
-    //                }
-    //            }
-    //            return former;
-    //        } else {
-    //            return forwardTree.getInsertCache(data, true);
-    //        }
-    //    }
-
-    //    private List<Record> addForward(List<Record> ff, Record[] key, int le, int recur) {
-    //        MyComparator com = new MyComparator();
-    //        if (recur == le) {
-    //            if (ff == null) {
-    //                ff = new ArrayList<Record>();
-    //            }
-    //            boolean find = false;
-    //            int i = 0;
-    //            for (Record rr : ff) {
-    //                int cc = com.compare(key[recur], rr);
-    //                if (cc <= 0) {
-    //                    if (cc == 0)
-    //                        find = true;
-    //                    break;
-    //                }
-    //                i++;
-    //            }
-    //            if (!find) {
-    //                ff.add(i, key[le]);
-    //                Collections.sort(ff, com);
-    //            }
-    //            return ff;
-    //        } else {
-    //            for (int i = 0; i < ff.size(); i++) {
-    //                Record rr = ff.get(i);
-    //                if (com.compare(key[recur], rr) == 0) {
-    //                    int size = rr.getSchema().getFields().size();
-    //                    rr.put(size - 1, addForward((List<Record>) rr.get(size - 1), key, le, (recur + 1)));
-    //                    ff.set(i, rr);
-    //                    return ff;
-    //                }
-    //            }
-    //            throw new ClassCastException(
-    //                    "forward tree error: there is no match " + key[recur].getSchema().getName() + " key");
-    //        }
-    //    }
-
-    //    private List<Record> deleteForward(List<Record> ff, Record[] key, int le, int recur) {
-    //        MyComparator com = new MyComparator();
-    //        if (recur == le) {
-    //            for (int i = 0; i < ff.size(); i++) {
-    //                Record rr = ff.get(i);
-    //                if (com.compare(key[le], rr) == 0) {
-    //                    ff.remove(i);
-    //                    return (ff.size() == 0) ? null : ff;
-    //                }
-    //            }
-    //        } else {
-    //            for (int i = 0; i < ff.size(); i++) {
-    //                Record rr = ff.get(i);
-    //                if (com.compare(key[recur], rr) == 0) {
-    //                    int size = rr.getSchema().getFields().size();
-    //                    rr.put(size - 1, deleteForward((List<Record>) rr.get(size - 1), key, le, (recur + 1)));
-    //                    ff.set(i, rr);
-    //                    return ff;
-    //                }
-    //            }
-    //        }
-    //        throw new ClassCastException(
-    //                "forward tree error: there is no match " + key[recur].getSchema().getName() + " key");
-    //    }
-
     private void insertToCach(Record data, int le) {
         //        Record re = upperRecord(data, le);
         cachOperate(data, (byte) 1, le);
@@ -1688,28 +1335,28 @@ public class NestManager {
         //        Record rr = new Record(nestKeySchemas[le]);
         //        setKey(rr, data, schemas[le].getKeyFields());
         if (le < (level - 1))
-            forwardTree[le].insert(data, false);
+            tree[le].insertForward(data, false);
         if (le > 0) {
-            CombKey key = new CombKey(data, keyFields[le]);
-            CombKey upper = new CombKey(data, schemas[le].getOutKeyFields());
-            forwardTree[le - 1].insert(upper, key);
+            KeyofBTree key = new KeyofBTree(data, keyFields[le]);
+            KeyofBTree upper = new KeyofBTree(data, schemas[le].getOutKeyFields());
+            tree[le - 1].insertForward(upper, key);
         }
         //        addToForward(data, le, false);
     }
 
     private void updateToCach(Record data, int le) throws IOException {
-        if (le > 0 && backTree[level - le - 1].isbtree()) {
-            CombKey upper = findForeignKey(new CombKey(data, keyFields[le]), le);
+        if (le > 0 && tree[le].hasBackTree) {
+            KeyofBTree upper = findForeignKey(new KeyofBTree(data, keyFields[le]), le);
             int[] fields = schemas[le].getOutKeyFields();
             if (!isNullKey(data, fields)) {
-                if (!upper.equals(new CombKey(data, fields))) {
+                if (!upper.equals(new KeyofBTree(data, fields))) {
                     Record dData = new Record(schemas[le].getSchema());
                     //                    int[] keyF = schemas[le].getKeyFields();
                     //                    for (int i = 0; i < keyFields[le].length; i++) {
                     //                        dData.put(i, data.get(keyFields[le][i]));
                     //                    }
                     for (int i = 0; i < fields.length; i++) {
-                        dData.put(fields[i], upper.get(i));
+                        dData.put(fields[i], upper.values[i]);
                     }
                     //                    Record dd = new Record(nestKeySchemas[le]);
                     //                    setKey(dd, data, keyFields[le]);
@@ -1718,8 +1365,8 @@ public class NestManager {
                     //                    }
                     //                    deleteFromForward(dData, le);
                     //                backTree[level - le - 1].put(data);
-                    forwardTree[le - 1].delete(upper, new CombKey(data, keyFields[le]));
-                    forwardTree[le - 1].insert(new CombKey(data, fields), new CombKey(data, keyFields[le]));
+                    tree[le - 1].deleteForward(upper, new KeyofBTree(data, keyFields[le]));
+                    tree[le - 1].insertForward(new KeyofBTree(data, fields), new KeyofBTree(data, keyFields[le]));
                     updateDelete(dData, le);
                     updateInsert(data, le);
                     //                    addToForward(dd, le);
@@ -1740,74 +1387,10 @@ public class NestManager {
 
     private List<Record> getAllNested(Record data, int le) {
         assert (le < level);
-        return forwardTree[le].find(new CombKey(data, keyFields[le]));
-        //        if (le == 0) {
-        //            return (List<Record>) forwardTree.find(data, false).get(nestKeySchemas[0].getFields().size() - 1);
-        //        }
-        //        assert (le < (level - 1));
-        //        Record[] key = new Record[le + 1];
-        //        key[le] = new Record(keySchemas[le]);
-        //        int[] fields = schemas[le].getKeyFields();
-        //        for (int i = 0; i < fields.length; i++) {
-        //            key[le].put(i, data.get(fields[i]));
-        //        }
-        //        List<Field> fs = data.getSchema().getFields();
-        //        key[le - 1] = backTree[level - le - 1].getRecord(key[le], true);
-        //        for (int i = (le - 1); i > 0; i--) {
-        //            key[i - 1] = getForeignKey(key[i], i, true);
-        //        }
-        //        Record former = forwardTree.find(key[0], true);
-        //        List<Record> res = (List<Record>) former.get(nestKeySchemas[0].getFields().size() - 1);
-        //        MyComparator com = new MyComparator();
-        //        for (int i = 1; i < le; i++) {
-        //            boolean find = false;
-        //            for (Record r : res) {
-        //                int cc = com.compare(key[i], r);
-        //                if (cc <= 0) {
-        //                    if (cc == 0) {
-        //                        res = (List<Record>) r.get(nestKeySchemas[i].getFields().size() - 1);
-        //                        find = true;
-        //                    }
-        //                    break;
-        //                }
-        //            }
-        //            if (!find) {
-        //                throw new ClassCastException(
-        //                        "forward not match error: there is no " + nestKeySchemas[i].getName() + " key");
-        //            }
-        //        }
-        //        boolean find = false;
-        //        for (Record r : res) {
-        //            if (com.compare(key[le], r) == 0) {
-        //                Object v = r.get(nestKeySchemas[le].getFields().size() - 1);
-        //                res = (v == null) ? null : (List<Record>) v;
-        //            }
-        //        }
-        //        if (!find) {
-        //            throw new ClassCastException(
-        //                    "forward not match error: there is no " + nestKeySchemas[le].getName() + " key");
-        //        }
-        //        return res;
+        return tree[le].findForward(new KeyofBTree(data, keyFields[le]));
     }
 
     private void updateInsert(Record data, int le) throws IOException {
-        //        if (le < (level - 1)) {
-        //            List<Field> fs = new ArrayList<Field>();
-        //            fs.add(new Schema.Field(schemas[le + 1].getSchema().getName() + "Arr",
-        //                    Schema.createArray(schemas[le + 1].getSchema()), null, null));
-        //            Schema vs = Schema.createRecord(schemas[le].getSchema().getName(), schemas[le].getSchema().getDoc(),
-        //                    schemas[le].getSchema().getNamespace(), false, fs);
-        //            Record rr = search(data, vs, false);
-        //            Record res = new Record(schemas[le].getNestedSchema());
-        //            int len = schemas[le].getSchema().getFields().size();
-        //            for (int i = 0; i < len; i++) {
-        //                res.put(i, data.get(i));
-        //            }
-        //            res.put(len, rr.get(0));
-        //            extraCachOperate(upperRecord(res, le), (byte) 5, data, le);
-        //        } else {
-        //            extraCachOperate(upperRecord(data, le), (byte) 5, data, le);
-        //        }
         extraCachOperate(data, (byte) 5, le);
     }
 
@@ -1815,15 +1398,15 @@ public class NestManager {
         //Record re = upperRecord(data, le);
         //use forwardTree to find the nested key
         //        Record re = downRecord(data, le);//not finished
-        CombKey key = new CombKey(data, keyFields[le]);
+        KeyofBTree key = new KeyofBTree(data, keyFields[le]);
         if (le < (level - 1)) {
-            List<Record> nest = forwardTree[le].find(key);
+            List<Record> nest = tree[le].findForward(key);
             nestDelete(nest, le + 1, le);
-            forwardTree[le].delete(key);
+            tree[le].deleteForward(key);
         }
         if (le > 0) {
-            CombKey upper = findForeignKey(key, le);
-            forwardTree[le - 1].delete(upper, key);
+            KeyofBTree upper = findForeignKey(key, le);
+            tree[le - 1].deleteForward(upper, key);
         }
         //        Record rr = new Record(nestKeySchemas[le]);
         //        setKey(rr, data, schemas[le].getKeyFields());
@@ -1834,11 +1417,11 @@ public class NestManager {
 
     private void nestDelete(List<Record> nest, int le, int ne) {
         for (Record r : nest) {
-            CombKey key = new CombKey(r);
+            KeyofBTree key = new KeyofBTree(r);
             if (le < (level - 1)) {
-                List<Record> nn = forwardTree[le].find(key);
+                List<Record> nn = tree[le].findForward(key);
                 nestDelete(nn, le + 1, ne);
-                forwardTree[le].delete(key);
+                tree[le].deleteForward(key);
             }
             //            Record rr = new Record(schemas[le].getSchema());
             //            setKey(rr, schemas[le].getKeyFields(), r);
@@ -1857,14 +1440,6 @@ public class NestManager {
     private void extraCachOperate(Record data, byte flag, int le) {
         cach.extraAdd(data, flag, le);
     }
-
-    //  private boolean exists(Record data, int le){
-    //    byte b = cach.find(data, le);
-    //    if(b == -1 || b == 2)
-    //      return false;
-    //    else
-    //      return true;
-    //  }
 
     public void load(NestSchema schema) throws IOException {
         File file = schema.getPrFile();
@@ -1909,6 +1484,8 @@ public class NestManager {
         int[] fields1 = keyJoin(schema1.getOutKeyFields(), schema1.getKeyFields());
         int numElements1 = toSortAvroFile(schema1, fields1);//write file1 according to (outkey+pkey) order
         int numElements2 = toSortAvroFile(schema2, schema2.getKeyFields());//write file2 according to pkey order
+        tree[0].create((int) (numElements2 / 500));
+        tree[1].create((int) (numElements1 / 500));
 
         BloomFilterBuilder builder1 = createBloom(numElements1, 1);
         BloomFilterBuilder builder2 = createBloom(numElements2, 0);
@@ -1925,7 +1502,7 @@ public class NestManager {
 
         Record record1 = reader1.next();
         builder1.add(record1);
-        backTree[0].put(record1);
+        //        backTree[0].put(record1);
         while (reader2.hasNext()) {
             Record record2 = reader2.next();
             builder2.add(record2);
@@ -1938,7 +1515,7 @@ public class NestManager {
                     if (reader1.hasNext()) {
                         record1 = reader1.next();
                         builder1.add(record1);
-                        backTree[0].put(record1);
+                        //                        backTree[0].put(record1);
                         continue;
                     } else {
                         break;
@@ -1952,7 +1529,7 @@ public class NestManager {
         }
         builder1.write();
         builder2.write();
-        backTree[0].write();
+        //        backTree[0].write();
         reader1.close();
         reader2.close();
         reader1 = null;
@@ -1963,9 +1540,22 @@ public class NestManager {
             files[i] = new File(resultPath + "file" + String.valueOf(i) + ".trv");
         }
         if (index == 1) {
-            merge(files);
             new File(resultPath + "file0.head").renameTo(new File(resultPath + "result.head"));
             new File(resultPath + "file0.trv").renameTo(new File(resultPath + "result.trv"));
+            reader = new ColumnReader<Record>(new File(resultPath + "result.trv"));
+            reader.createSchema(nestKeySchemas[0]);
+            //            for (int i = 0; i < level; i++) {
+            //                tree[i].createMerge(reader.getLevelRowCount(i) / 4000);
+            //            }
+            Integer[] in = new Integer[level];
+            for (int m = 0; m < level; m++)
+                in[m] = 0;
+            while (reader.hasNext()) {
+                Record record = reader.next();
+                updateTree(0, null, in, record);
+            }
+            for (int i = 0; i < level; i++)
+                tree[i].write();
         } else {
             merge(files);
             writer.mergeFiles(files, tmpPath);
@@ -1983,16 +1573,6 @@ public class NestManager {
         List<Field> fs = schema.getFields();
         for (int i = 0; i < fs.size() - 1; i++) {
             result.put(i, record.get(i));
-            //      switch(fs.get(i).schema().getType()){
-            //      case STRING:  {result.put(i, record.get(i));  break;}
-            //      case BYTES:  {result.put(i, ByteBuffer.wrap(record.get(i).toString().getBytes()));  break;  }
-            //      case INT:  {result.put(i, Integer.parseInt(record.get(i).toString()));  break;  }
-            //      case LONG:  {result.put(i, Long.parseLong(record.get(i).toString()));  break;  }
-            //      case FLOAT:  {result.put(i, Float.parseFloat(record.get(i).toString()));  break;  }
-            //      case DOUBLE:  {result.put(i, Double.parseDouble(record.get(i).toString()));  break;  }
-            //      case BOOLEAN:  {result.put(i, Boolean.getBoolean(record.get(i).toString()));  break;  }
-            //      default:  {throw new ClassCastException("This type "+fs.get(i).schema().getType()+" is not supported!");  }
-            //      }
         }
         result.put(fs.size() - 1, arr);
         return result;
@@ -2002,11 +1582,11 @@ public class NestManager {
         int[] fields1 = keyJoin(schema1.getOutKeyFields(), schema1.getKeyFields());
         int numElements1 = toSortAvroFile(schema1, fields1);//write file1 according to (outkey+pkey) order
         int numElements2 = toSortAvroFile(schema2, schema2.getKeyFields());//write file2 according to pkey order
+        tree[level - 1].create((int) (numElements1 / 500));
+        tree[level - 2].create((int) (numElements2 / 500));
 
         BloomFilterBuilder builder1 = createBloom(numElements1, (level - 1));
         BloomFilterBuilder builder2 = createBloom(numElements2, (level - 2));
-        //    backTree[0] = new BTreeRecord(schema1.getKeyFields(), schema1.getOutKeyFields(), schema1.getSchema(), schema1.getBTreeFile(),  "btree");
-        //    backTree[1] = new BTreeRecord(schema2.getKeyFields(), schema2.getOutKeyFields(), schema2.getSchema(), schema2.getBTreeFile(),  "btree");
 
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeSchema(), fields1);
@@ -2016,18 +1596,18 @@ public class NestManager {
                 schema2.getEncodeNestedSchema(), free, mul);
         int[] sortFields = keyJoin(schema2.getOutKeyFields(), schema2.getKeyFields());
 
-        offsetTree[level - 1].create((int) (numElements1 / 500));
-        offsetTree[level - 2].create((int) (numElements2 / 500));
-        backTree[0].create((int) (numElements1 / 500));
-        backTree[1].create((int) (numElements2 / 500));
-        forwardTree[level - 2].create((int) (numElements2 / 500));
+        //        offsetTree[level - 1].create((int) (numElements1 / 500));
+        //        offsetTree[level - 2].create((int) (numElements2 / 500));
+        //        backTree[0].create((int) (numElements1 / 500));
+        //        backTree[1].create((int) (numElements2 / 500));
+        //        forwardTree[level - 2].create((int) (numElements2 / 500));
         Record record1 = reader1.next();
         builder1.add(record1);
-        backTree[0].put(record1);
+        //        backTree[0].put(record1);
         while (reader2.hasNext()) {
             Record record2 = reader2.next();
             builder2.add(record2);
-            backTree[1].put(record2);
+            //            backTree[1].put(record2);
             ComparableKey k2 = new ComparableKey(record2, schema2.getKeyFields());
             List<Record> arr = new ArrayList<Record>();
             List<Record> v = new ArrayList<Record>();
@@ -2041,7 +1621,7 @@ public class NestManager {
                     if (reader1.hasNext()) {
                         record1 = reader1.next();
                         builder1.add(record1);
-                        backTree[0].put(record1);
+                        //                        backTree[0].put(record1);
                         continue;
                     } else {
                         break;
@@ -2053,14 +1633,14 @@ public class NestManager {
             Record record = join(schema2.getEncodeNestedSchema(), record2, arr);
             Record k = new Record(keySchemas[level - 2]);
             setKey(k, record2, keyFields[level - 2]);
-            forwardTree[level - 2].put(k, v);
+            //            forwardTree[level - 2].put(k, v);
             writer.append(new ComparableKey(record, sortFields), record);
         }
         builder1.write();
         builder2.write();
-        backTree[0].write();
-        backTree[1].write();
-        forwardTree[level - 2].close();
+        //        backTree[0].write();
+        //        backTree[1].write();
+        //        forwardTree[level - 2].close();
         reader1.close();
         reader2.close();
         reader1 = null;
@@ -2077,7 +1657,8 @@ public class NestManager {
     public void orLoad(NestSchema schema1, NestSchema schema2, int index) throws IOException {
         int numElements2 = toSortAvroFile(schema2, schema2.getKeyFields());//write file2 according to pkey order
         BloomFilterBuilder builder2 = createBloom(numElements2, (index - 1));
-        int bin = level - index - 1;
+        tree[index - 1].create((int) (numElements2 / 500));
+        //        int bin = level - index - 1;
         //    backTree[index] = new BTreeRecord(schema2.getKeyFields(), schema2.getOutKeyFields(), schema2.getSchema(), schema2.getBTreeFile(),  "btree");
         //将file1,file2按照file1的外键排序
         long start = System.currentTimeMillis();
@@ -2090,14 +1671,14 @@ public class NestManager {
         int[] sortFields = keyJoin(schema2.getOutKeyFields(), schema2.getKeyFields());
         //BufferedWriter out = new BufferedWriter(new FileWriter(new File("/home/ly/tmp.avro")));
 
-        offsetTree[index - 1].create((int) (numElements2 / 500));
-        backTree[bin].create((int) (numElements2 / 500));
-        forwardTree[index - 1].create((int) (numElements2 / 500));
+        //        offsetTree[index - 1].create((int) (numElements2 / 500));
+        //        backTree[bin].create((int) (numElements2 / 500));
+        //        forwardTree[index - 1].create((int) (numElements2 / 500));
         Record record1 = reader1.next();
         while (reader2.hasNext()) {
             Record record2 = reader2.next();
             builder2.add(record2);
-            backTree[bin].put(record2);
+            //            backTree[bin].put(record2);
             ComparableKey k2 = new ComparableKey(record2, schema2.getKeyFields());
             List<Record> arr = new ArrayList<Record>();
             List<Record> v = new ArrayList<Record>();
@@ -2121,11 +1702,11 @@ public class NestManager {
             Record record = join(schema2.getEncodeNestedSchema(), record2, arr);
             Record k = new Record(keySchemas[index - 1]);
             setKey(k, record2, keyFields[index - 1]);
-            forwardTree[index - 1].put(k, v);
+            //            forwardTree[index - 1].put(k, v);
             writer.append(new ComparableKey(record, sortFields), record);
         }
-        backTree[bin].write();
-        forwardTree[index - 1].close();
+        //        backTree[bin].write();
+        //        forwardTree[index - 1].close();
         builder2.write();
         reader1.close();
         reader2.close();
@@ -2143,6 +1724,7 @@ public class NestManager {
     public void laLoad(NestSchema schema1, NestSchema schema2) throws IOException {
         int numElements2 = toSortAvroFile(schema2, schema2.getKeyFields());//write file2 according to pkey order
         BloomFilterBuilder builder2 = createBloom(numElements2, 0);
+        tree[0].create((int) (numElements2 / 500));
 
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeNestedSchema(),
@@ -2152,8 +1734,6 @@ public class NestManager {
         InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(
                 schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul);
 
-        offsetTree[0].create((int) (numElements2 / 500));
-        forwardTree[0].create((int) (numElements2 / 500));
         Record record1 = reader1.next();
         while (reader2.hasNext()) {
             Record record2 = reader2.next();
@@ -2181,7 +1761,6 @@ public class NestManager {
             Record record = join(schema2.getEncodeNestedSchema(), record2, arr);
             Record k = new Record(keySchemas[0]);
             setKey(k, record2, keyFields[0]);
-            forwardTree[0].put(k, v);
             writer.append(k2, record);
         }
         builder2.write();
@@ -2189,28 +1768,28 @@ public class NestManager {
         reader2.close();
         reader1 = null;
         reader2 = null;
-        forwardTree[0].close();
         int index = writer.flush();
         File[] files = new File[index];
         for (int i = 0; i < index; i++) {
             files[i] = new File(resultPath + "file" + String.valueOf(i) + ".trv");
         }
         if (index == 1) {
-            //            merge(files);
             new File(resultPath + "file0.head").renameTo(new File(resultPath + "result.head"));
             new File(resultPath + "file0.trv").renameTo(new File(resultPath + "result.trv"));
             reader = new ColumnReader<Record>(new File(resultPath + "result.trv"));
-            for (int j = 0; j < level; j++) {
-                int in = 0;
-                reader.createSchema(keySchemas[j]);
-                while (reader.hasNext()) {
-                    Record r = reader.next();
-                    offsetTree[j].put(new KeyofBTree(r), in++);
-                }
-                offsetTree[j].write();
+            reader.createSchema(nestKeySchemas[0]);
+            //            for (int i = 0; i < level; i++) {
+            //                tree[i].createMerge(reader.getLevelRowCount(i) / 4000);
+            //            }
+            Integer[] in = new Integer[level];
+            for (int m = 0; m < level; m++)
+                in[m] = 0;
+            while (reader.hasNext()) {
+                Record record = reader.next();
+                updateTree(0, null, in, record);
             }
-            reader.close();
-            reader = null;
+            for (int i = 0; i < level; i++)
+                tree[i].write();
         } else {
             merge(files);
             writer.mergeFiles(files, tmpPath);
@@ -2225,9 +1804,9 @@ public class NestManager {
 
     public void merge(File[] files) throws IOException {
         long t1 = System.currentTimeMillis();
-        int level = schemas.length;
-        int[] index = new int[schemas.length];
-        //    Schema s = nestKeySchema;
+        Integer[] index = new Integer[level];
+        for (int i = 0; i < level; i++)
+            index[i] = 0;
         int[] la = new int[level - 1];
         for (int i = 0; i < la.length; i++) {
             la[i] = schemas[i].getKeyFields().length;
@@ -2235,30 +1814,10 @@ public class NestManager {
         SortTrevniReader re = new SortTrevniReader(files, nestKeySchemas[0], tmpPath);
         while (re.hasNext()) {
             Record record = re.next().getRecord();
-            if (level > 1)
-                //                forwardTree.put(record);
-                offsetTree[0].put(record, index[0]++, true);
-            List<Record> rs = (List<Record>) record.get(la[0]);
-            for (int i = 1; i < level - 1; i++) {
-                List<Record> tmp = new ArrayList<Record>();
-                tmp.addAll(rs);
-                rs.clear();
-                for (int k = 0; k < tmp.size(); k++) {
-                    Record r = tmp.get(k);
-                    rs.addAll((List<Record>) r.get(la[i]));
-                    offsetTree[i].put(r, index[i], true);
-                    index[i]++;
-                }
-            }
-            for (int k = 0; k < rs.size(); k++) {
-                offsetTree[level - 1].put(rs.get(k), index[level - 1], true);
-                index[level - 1]++;
-            }
+            updateTree(0, null, index, record);
         }
-        //        if (level > 1)
-        //            forwardTree.close();
-        for (int i = 0; i < offsetTree.length; i++) {
-            offsetTree[i].write();
+        for (int i = 0; i < level; i++) {
+            tree[i].write();
         }
         re.close();
         re = null;

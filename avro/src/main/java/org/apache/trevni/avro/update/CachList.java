@@ -14,10 +14,10 @@ public class CachList {
     private static int[][] keyFields;
     private int level;
     private int size;
-    private HashMap<CombKey, FlagData>[] hash;
-    private HashMap<CombKey, FlagData>[] extraHash;
-    private Iterator<Entry<CombKey, FlagData>>[] mergeIter;
-    private Iterator<Entry<CombKey, FlagData>>[] extraMergeIter;
+    private HashMap<KeyofBTree, FlagData>[] hash;
+    private HashMap<KeyofBTree, FlagData>[] extraHash;
+    private Iterator<Entry<KeyofBTree, FlagData>>[] mergeIter;
+    private Iterator<Entry<KeyofBTree, FlagData>>[] extraMergeIter;
     private List<Entry<Integer, FlagData>>[] mergeList;
     //    private HashMap<NestCombKey, FlagData>[] sortMap;
     private List<Entry<NestCombKey, FlagData>>[] sortList;
@@ -32,10 +32,10 @@ public class CachList {
         hash = new HashMap[level];
         extraHash = new HashMap[level - 1];
         for (int i = 0; i < (level - 1); i++) {
-            hash[i] = new HashMap<CombKey, FlagData>();
-            extraHash[i] = new HashMap<CombKey, FlagData>();
+            hash[i] = new HashMap<KeyofBTree, FlagData>();
+            extraHash[i] = new HashMap<KeyofBTree, FlagData>();
         }
-        hash[level - 1] = new HashMap<CombKey, FlagData>();
+        hash[level - 1] = new HashMap<KeyofBTree, FlagData>();
         max = -1;
     }
 
@@ -77,19 +77,19 @@ public class CachList {
     }
 
     public void extraAdd(FlagData fd) {
-        extraHash[fd.getLevel() - 1].put(new CombKey(fd.getData(), keyFields[fd.getLevel()]), fd);
+        extraHash[fd.getLevel() - 1].put(new KeyofBTree(fd.getData(), keyFields[fd.getLevel()]), fd);
         //        cach.add(fd);
         size++;
     }
 
     public void add(int le, FlagData fd) {
-        CombKey key = new CombKey(fd.getData(), keyFields[le].length);
+        KeyofBTree key = new KeyofBTree(fd.getData(), keyFields[le].length);
         fd.setData(null);
         hash[le].put(key, fd);
         size++;
     }
 
-    public void add(int le, CombKey key, FlagData fd) {
+    public void add(int le, KeyofBTree key, FlagData fd) {
         hash[le].put(key, fd);
         size++;
     }
@@ -99,11 +99,11 @@ public class CachList {
         //            deleteHash(fd.getData(), fd.getLevel());
         //        } else {
         if (fd.flag == (byte) 2) {
-            CombKey key = new CombKey(fd.getData(), keyFields[fd.getLevel()]);
+            KeyofBTree key = new KeyofBTree(fd.getData(), keyFields[fd.getLevel()]);
             fd.setData(null);
             hash[fd.getLevel()].put(key, fd);
         } else
-            hash[fd.getLevel()].put(new CombKey(fd.getData(), keyFields[fd.getLevel()]), fd);
+            hash[fd.getLevel()].put(new KeyofBTree(fd.getData(), keyFields[fd.getLevel()]), fd);
 
         //        }
         //        cach.add(fd);
@@ -124,49 +124,49 @@ public class CachList {
 
     public void delete(Record data, int le, boolean isKey) {
         if (isKey)
-            delete(new CombKey(data), le);
+            delete(new KeyofBTree(data), le);
         else
-            delete(new CombKey(data, keyFields[le]), le);
+            delete(new KeyofBTree(data, keyFields[le]), le);
     }
 
-    public void delete(CombKey key, int le) {
+    public void delete(KeyofBTree key, int le) {
         hash[le].remove(key);
         size--;
     }
 
     public void extraDelete(Record data, int le, boolean isKey) {
         if (isKey)
-            extraDelete(new CombKey(data), le);
+            extraDelete(new KeyofBTree(data), le);
         else
-            extraDelete(new CombKey(data, keyFields[le]), le);
+            extraDelete(new KeyofBTree(data, keyFields[le]), le);
     }
 
-    public void extraDelete(CombKey key, int le) {
+    public void extraDelete(KeyofBTree key, int le) {
         extraHash[le - 1].remove(key);
         size--;
     }
 
     public FlagData find(Record data, int[] fields, int le) {
-        return find(new CombKey(data, fields), le);
+        return find(new KeyofBTree(data, fields), le);
     }
 
     public FlagData find(Record data, int le, boolean isKey) {
-        return isKey ? find(new CombKey(data), le) : find(new CombKey(data, keyFields[le]), le);
+        return isKey ? find(new KeyofBTree(data), le) : find(new KeyofBTree(data, keyFields[le]), le);
     }
 
-    public FlagData find(CombKey key, int le) {
+    public FlagData find(KeyofBTree key, int le) {
         return hash[le].get(key);
     }
 
     public FlagData extraFind(Record data, int[] fields, int le) {
-        return extraFind(new CombKey(data, fields), le);
+        return extraFind(new KeyofBTree(data, fields), le);
     }
 
     public FlagData extraFind(Record data, int le, boolean isKey) {
-        return isKey ? extraFind(new CombKey(data), le) : extraFind(new CombKey(data, keyFields[le]), le);
+        return isKey ? extraFind(new KeyofBTree(data), le) : extraFind(new KeyofBTree(data, keyFields[le]), le);
     }
 
-    public FlagData extraFind(CombKey key, int le) {
+    public FlagData extraFind(KeyofBTree key, int le) {
         return extraHash[le - 1].get(key);
     }
 
@@ -238,9 +238,9 @@ public class CachList {
     }
 
     public void hashClear() {
-        for (HashMap<CombKey, FlagData> hh : hash)
+        for (HashMap<KeyofBTree, FlagData> hh : hash)
             hh.clear();
-        for (HashMap<CombKey, FlagData> hh : extraHash)
+        for (HashMap<KeyofBTree, FlagData> hh : extraHash)
             hh.clear();
         mergeIter = null;
         extraMergeIter = null;
@@ -260,11 +260,11 @@ public class CachList {
         return extraMergeIter[le - 1].hasNext();
     }
 
-    public Entry<CombKey, FlagData> next(int le) {
+    public Entry<KeyofBTree, FlagData> next(int le) {
         return mergeIter[le].next();
     }
 
-    public Entry<CombKey, FlagData> extraNext(int le) {
+    public Entry<KeyofBTree, FlagData> extraNext(int le) {
         return extraMergeIter[le - 1].next();
     }
 
@@ -288,7 +288,7 @@ public class CachList {
      * find the nest foreign key in the up level sortList, assure the sortList is sorted by nest key
      * if not find, return null
      */
-    public NestCombKey findSort(CombKey key, int le) {
+    public NestCombKey findSort(KeyofBTree key, int le) {
         int i = 0;
         int j = sortList[le].size() - 1;
         while (i != j) {

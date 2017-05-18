@@ -16,6 +16,7 @@
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/NestSchema.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/InsertAvroColumnReader.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/CachList.java
+/home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/MidColumnReader.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/AvroColumnWriter.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/SortedAvroReader.java
 /home/ly/neci/avro/src/main/java/btree/Utils.java
@@ -27,6 +28,7 @@
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/BloomCount.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/EncodeSchema.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/StringSeri.java
+/home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/LevelTree.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/MyMap.java
 /home/ly/neci/avro/src/main/java/btree/Btree.java
 /home/ly/neci/avro/src/main/java/org/apache/trevni/avro/update/NestManager.java

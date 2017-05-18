@@ -7,10 +7,14 @@ org/apache/trevni/update/PageBuffer.class
 org/apache/trevni/update/Codec.class
 org/apache/trevni/update/MetaData.class
 org/apache/trevni/update/InputBuffer.class
+org/apache/trevni/update/MidColumnValues.class
 org/apache/trevni/update/InputBytes.class
 org/apache/trevni/update/DeflateCodec.class
+org/apache/trevni/update/MidOutputBuffer$1.class
 org/apache/trevni/update/OutputBuffer$1.class
+org/apache/trevni/update/MidInputBuffer$1.class
 org/apache/trevni/update/FileColumnMetaData.class
+org/apache/trevni/update/MidOutputBuffer.class
 org/apache/trevni/update/InsertColumnFileReader.class
 org/apache/trevni/update/NullCodec.class
 org/apache/trevni/update/Crc32Checksum.class
@@ -19,6 +23,7 @@ org/apache/trevni/update/InsertColumnFileWriter$Blocks.class
 org/apache/trevni/update/InsertColumnFileWriter.class
 org/apache/trevni/update/InsertColumnFileWriter$ListArr.class
 org/apache/trevni/update/ColumnDescriptor.class
+org/apache/trevni/update/MidInputBuffer.class
 org/apache/trevni/update/FileMetaData.class
 org/apache/trevni/update/ColumnValues.class
 org/apache/trevni/update/InputBuffer$1.class

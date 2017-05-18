@@ -20,6 +20,7 @@ org/apache/trevni/avro/update/OffsetTree$SortedBTreeReader.class
 btree/BtreeCluster$LeafNode.class
 org/apache/trevni/avro/update/SortedAvroWriter.class
 org/apache/trevni/avro/update/CombKey$1.class
+org/apache/trevni/avro/update/LevelTree.class
 btree/Btree$InternalNode.class
 org/apache/trevni/avro/update/NestCombKey.class
 org/apache/trevni/avro/update/KeyToBytes$1.class
@@ -50,6 +51,7 @@ org/apache/trevni/avro/update/HashTo128Bit.class
 org/apache/trevni/avro/update/CachList.class
 org/apache/trevni/avro/update/ForwardTree.class
 org/apache/trevni/avro/update/InsertAvroColumnWriter$1.class
+org/apache/trevni/avro/update/MidColumnReader.class
 btree/Btree$TreeCache.class
 org/apache/trevni/avro/update/BloomFilter.class
 btree/BtreeCluster$NodeCache$Pair.class
@@ -59,6 +61,7 @@ org/apache/trevni/avro/update/NestManager.class
 org/apache/trevni/avro/update/MyComparator$1.class
 org/apache/trevni/avro/update/AvroColumnWriter.class
 org/apache/trevni/avro/update/SortedArray$Element.class
+org/apache/trevni/avro/update/LevelTree$SortedBTreeReader.class
 btree/BtreeCluster$TreeCache.class
 btree/Btree$TreeCache$Pair.class
 org/apache/trevni/avro/update/BTreeRecord.class
@@ -77,6 +80,7 @@ org/apache/trevni/avro/update/SortedAvroReader$AvroReader.class
 btree/Btree.class
 org/apache/trevni/avro/update/CombKey.class
 org/apache/trevni/avro/update/InsertAvroColumnReader$Params.class
+org/apache/trevni/avro/update/LevelTree$FlagKey.class
 org/apache/trevni/avro/update/ComparableKey$1.class
 org/apache/trevni/avro/update/BackTree$SortedBTreeReader.class
 btree/BtreeClusterTest.class

@@ -40,10 +40,10 @@ public class InputBuffer {
 
     private CharsetDecoder utf8 = Charset.forName("UTF-8").newDecoder();
 
-    private int bitCount; // position in booleans
+    protected int bitCount; // position in booleans
 
-    private int runLength; // length of run
-    private int runValue; // value of run
+    protected int runLength; // length of run
+    protected int runValue; // value of run
 
     public InputBuffer(Input in) throws IOException {
         this(in, 0);
@@ -344,7 +344,7 @@ public class InputBuffer {
         skip(readInt());
     }
 
-    private void skip(long length) throws IOException {
+    public void skip(long length) throws IOException {
         seek(tell() + length);
     }
 

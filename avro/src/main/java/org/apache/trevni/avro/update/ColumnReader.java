@@ -21,11 +21,11 @@ import org.apache.trevni.update.InsertColumnFileReader;
 public class ColumnReader<D> implements Closeable {
     InsertColumnFileReader reader;
     private GenericData model;
-    private ColumnValues[] values;
-    private int[] readNO;
-    private int[] arrayWidths;
-    private int column;
-    private int[] arrayValues;
+    protected ColumnValues[] values;
+    protected int[] readNO;
+    protected int[] arrayWidths;
+    protected int column;
+    protected int[] arrayValues;
     private Schema readSchema;
 
     public ColumnReader(File file) throws IOException {
@@ -85,9 +85,13 @@ public class ColumnReader<D> implements Closeable {
         }
     }
 
-    public Object next(int c) throws IOException {
-        values[readNO[c]].startRow();
-        return values[readNO[c]].nextValue();
+    public int[] nextKey() throws IOException {
+        int[] res = new int[readNO.length];
+        for (int i = 0; i < res.length; i++) {
+            values[readNO[i]].startRow();
+            res[i] = values[readNO[i]].nextKey();
+        }
+        return res;
     }
 
     public boolean hasNext() {
@@ -282,6 +286,15 @@ public class ColumnReader<D> implements Closeable {
         for (ColumnValues v : values) {
             v.create();
         }
+    }
+
+    public int getLevelRowCount(int level) {
+        int column;
+        if (level == 0)
+            column = 0;
+        else
+            column = arrayValues[level - 1] + 1;
+        return getRowCount(column);
     }
 
     public int getRowCount(int columnNo) {

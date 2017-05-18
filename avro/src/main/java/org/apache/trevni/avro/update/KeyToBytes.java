@@ -26,9 +26,9 @@ public class KeyToBytes {
         create();
     }
 
-    public KeyToBytes(CombKey key) {
+    public KeyToBytes(KeyofBTree key) {
         //        boolean[] types = key.getTypes();
-        int[] keys = key.get();
+        int[] keys = key.getKey();
         bytes = new byte[keys.length][];
         for (int i = 0; i < key.getLength(); i++) {
             //            if (types[i])

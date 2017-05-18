@@ -1,23 +1,23 @@
 package org.apache.trevni.avro.update;
 
 public class NestCombKey implements Comparable<NestCombKey> {
-    CombKey[] keys;
+    KeyofBTree[] keys;
     int le;
 
-    public NestCombKey(CombKey[] keys) {
+    public NestCombKey(KeyofBTree[] keys) {
         this.keys = keys;
         le = keys.length;
     }
 
-    public NestCombKey(CombKey key) {
-        this.keys = new CombKey[] { key };
+    public NestCombKey(KeyofBTree key) {
+        this.keys = new KeyofBTree[] { key };
         le = 1;
     }
 
-    public NestCombKey(NestCombKey key1, CombKey key2) {
-        keys = new CombKey[key1.le + 1];
+    public NestCombKey(NestCombKey key1, KeyofBTree key2) {
+        keys = new KeyofBTree[key1.le + 1];
         int i = 0;
-        for (CombKey kk : key1.keys) {
+        for (KeyofBTree kk : key1.keys) {
             keys[i++] = kk;
         }
         keys[i] = key2;
@@ -25,12 +25,12 @@ public class NestCombKey implements Comparable<NestCombKey> {
     }
 
     public NestCombKey(NestCombKey key1, NestCombKey key2) {
-        keys = new CombKey[key1.le + key2.le];
+        keys = new KeyofBTree[key1.le + key2.le];
         int i = 0;
-        for (CombKey kk : key1.keys) {
+        for (KeyofBTree kk : key1.keys) {
             keys[i++] = kk;
         }
-        for (CombKey kk : key2.keys) {
+        for (KeyofBTree kk : key2.keys) {
             keys[i++] = kk;
         }
         le = keys.length;
@@ -49,7 +49,7 @@ public class NestCombKey implements Comparable<NestCombKey> {
         return 0;
     }
 
-    public int compareTo(CombKey o, int l) {
+    public int compareTo(KeyofBTree o, int l) {
         return keys[l].compareTo(o);
     }
 
@@ -65,7 +65,7 @@ public class NestCombKey implements Comparable<NestCombKey> {
         return 0;
     }
 
-    public CombKey getKey(int i) {
+    public KeyofBTree getKey(int i) {
         assert (i < le);
         return keys[i];
     }

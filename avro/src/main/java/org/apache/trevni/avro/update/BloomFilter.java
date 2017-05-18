@@ -45,8 +45,10 @@ public class BloomFilter {
     }
 
     public void close() throws IOException {
-        cache.close();
-        isActivated = false;
+        if (isActivated) {
+            cache.close();
+            isActivated = false;
+        }
     }
 
     public void cover() throws IOException {
@@ -126,11 +128,11 @@ public class BloomFilter {
         }
 
         public void add(Record record, boolean isKey) throws IOException {
-            CombKey k = isKey ? new CombKey(record, keyFields.length) : new CombKey(record, keyFields);
+            KeyofBTree k = isKey ? new KeyofBTree(record, keyFields.length) : new KeyofBTree(record, keyFields);
             add(k);
         }
 
-        public void add(CombKey key) throws IOException {
+        public void add(KeyofBTree key) throws IOException {
             add(new KeyToBytes(key));
         }
 

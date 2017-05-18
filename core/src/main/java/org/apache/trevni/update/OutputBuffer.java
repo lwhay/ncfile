@@ -30,7 +30,7 @@ import org.apache.trevni.ValueType;
 public class OutputBuffer extends ByteArrayOutputStream {
     static final int BLOCK_SIZE = 64 * 1024;
 
-    private int bitCount; // position in booleans
+    protected int bitCount; // position in booleans
 
     public OutputBuffer() {
         super(BLOCK_SIZE + BLOCK_SIZE >> 2);

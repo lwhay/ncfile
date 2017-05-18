@@ -28,10 +28,18 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         }
     }
 
+    public KeyofBTree(String k) {
+        this(k.split("\\|"));
+    }
+
     public KeyofBTree(String[] keys) {
         values = new int[keys.length];
         for (int i = 0; i < keys.length; i++)
             values[i] = Integer.parseInt(keys[i]);
+    }
+
+    public KeyofBTree(int[] keys) {
+        values = keys;
     }
 
     public KeyofBTree(String[] keys, int len) {
@@ -55,6 +63,14 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         for (int i = 0; i < len; i++) {
             values[i] = Integer.parseInt(record.get(keyFields[i]).toString());
         }
+    }
+
+    public KeyofBTree get(int[] fields) {
+        int[] k = new int[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            k[i] = values[fields[i]];
+        }
+        return new KeyofBTree(k);
     }
 
     public KeyofBTree(byte[] data) {
@@ -96,15 +112,8 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         List<Byte> res = new ArrayList<Byte>();
         int i = 0;
         for (int v : values) {
-            //            if (types[i]) {
-            //                res.add((byte) 0);
             for (byte b : getBytes4(v))
                 res.add(b);
-            //            } else {
-            //                res.add((byte) 1);
-            //                for (byte b : getBytes8(Long.parseLong(v.toString())))
-            //                    res.add(b);
-            //            }
         }
         byte[] ee = new byte[res.size()];
         for (i = 0; i < ee.length; i++) {
@@ -118,30 +127,21 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         int index = 0;
         int len = data.length / 4;
         values = new int[len];
-        //        List<Object> vs = new ArrayList<Object>();
         int in = 0;
         while (in < len) {
-            //            byte t = data[index++];
-            //            tt += t;
-            //            if (t == (byte) 0) {
-            //            vs.add(Utils.getInt(data, index));
             values[in] = Utils.getInt(data, index);
             in++;
             index += 4;
-            //            } else {
-            //                vs.add(Utils.getLong(data, index));
-            //                index += 8;
-            //            }
         }
-        //        i = 0;
-        //        for (byte x : tt.getBytes()) {
-        //            if (x == (byte) '0') {
-        //                types[i++] = true;
-        //            } else {
-        //                types[i++] = false;
-        //            }
-        //        }
-        //        values = vs.toArray();
+    }
+
+    @Override
+    public String toString() {
+        String res = "";
+        for (int i = 0; i < values.length - 1; i++)
+            res += values[i] + "|";
+        res += values[values.length - 1];
+        return res;
     }
 
     @Override

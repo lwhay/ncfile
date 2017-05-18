@@ -27,21 +27,21 @@ import org.apache.trevni.ValueType;
  */
 public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable<T> {
 
-    private final ColumnDescriptor column;
-    private final ValueType type;
-    private final Codec codec;
-    private final Checksum checksum;
-    private final InputBuffer in;
+    protected final ColumnDescriptor column;
+    protected final ValueType type;
+    protected final Codec codec;
+    protected final Checksum checksum;
+    protected final InputBuffer in;
 
-    private InputBuffer values;
-    private int block = -1;
-    private int row = 0;
-    private T previous;
-    private int offset = 0;
+    protected InputBuffer values;
+    protected int block = -1;
+    protected int row = 0;
+    protected T previous;
+    protected int offset = 0;
 
-    private int arrayLength;
+    protected int arrayLength;
 
-    ColumnValues(ColumnDescriptor column) throws IOException {
+    protected ColumnValues(ColumnDescriptor column) throws IOException {
         this.column = column;
         this.type = column.metaData.getType();
         this.codec = Codec.get(column.metaData);
@@ -164,7 +164,8 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
         if (!column.metaData.isArray())
             throw new TrevniRuntimeException("Column is not array: " + column.metaData.getName());
         assert arrayLength == 0;
-        return arrayLength = values.readLength();
+        offset = arrayLength = values.readLength();
+        return arrayLength;
     }
 
     /*
@@ -187,6 +188,11 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
     public T nextValue() throws IOException {
         arrayLength--;
         return previous = values.<T> readValue(type);
+    }
+
+    public int nextKey() throws IOException {
+        arrayLength--;
+        return values.readFixed32();
     }
 
     @Override

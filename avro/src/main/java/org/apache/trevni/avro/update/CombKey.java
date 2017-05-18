@@ -22,6 +22,16 @@ public class CombKey implements Comparable<CombKey> {
         }
     }
 
+    public CombKey(String k) {
+        this(k.split("\\|"));
+    }
+
+    public CombKey(String[] k) {
+        keys = new int[k.length];
+        for (int i = 0; i < k.length; i++)
+            keys[i] = Integer.parseInt(k[i]);
+    }
+
     public CombKey(Record record, int len) {
         this.keys = new int[len];
         List<Field> fs = record.getSchema().getFields();
@@ -90,6 +100,15 @@ public class CombKey implements Comparable<CombKey> {
                 return -1;
         }
         return 0;
+    }
+
+    @Override
+    public String toString() {
+        String res = "";
+        for (int i = 0; i < keys.length - 1; i++)
+            res += keys[i] + "|";
+        res += keys[keys.length - 1];
+        return res;
     }
 
     @Override
