@@ -11,6 +11,8 @@ import org.apache.avro.Schema.Type;
 public class NestSchema {
     private Schema schema;
     private Schema nestedSchema;
+    private Schema midSchema;
+
     private Schema encodeSchema;
     private Schema encodeNestedSchema;
     private int[] keyFields;
@@ -29,6 +31,16 @@ public class NestSchema {
         this.keyFields = keyFields;
         this.outKeyFields = outKeyFields;
         encodeSchema = encode('a', schema);
+        List<Field> fs = new ArrayList<Field>();
+        List<Field> ff = schema.getFields();
+        //        fs.add(new Schema.Field(schema.getName() + "D", Schema.create(Type.BOOLEAN), null, null));
+        for (int i = 0; i < ff.size(); i++) {
+            Field f = ff.get(i);
+            fs.add(new Schema.Field(f.name(), f.schema(), f.doc(), f.defaultVal()));
+        }
+        for (int i : keyFields)
+            fs.remove(i);
+        midSchema = Schema.createRecord(fs);
     }
 
     public Schema encode(char s, Schema schema) {
@@ -87,6 +99,14 @@ public class NestSchema {
     public void setNestedSchema(Schema nestedSchema) {
         this.nestedSchema = nestedSchema;
         encodeNestedSchema = encode('a', nestedSchema);
+    }
+
+    public Schema getMidSchema() {
+        return midSchema;
+    }
+
+    public void setMidSchema(Schema midSchema) {
+        this.midSchema = midSchema;
     }
 
     public void setKeyFields(int[] keyFields) {

@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 import org.apache.trevni.TrevniRuntimeException;
-import org.apache.trevni.ValueType;
 
 /**
  * An iterator over column values.
@@ -188,6 +187,10 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
     public T nextValue() throws IOException {
         arrayLength--;
         return previous = values.<T> readValue(type);
+    }
+
+    public void skipValue() throws IOException {
+        values.skipValue(type);
     }
 
     public int nextKey() throws IOException {

@@ -7,21 +7,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.trevni.Input;
 import org.apache.trevni.InputFile;
 import org.apache.trevni.TrevniRuntimeException;
 
 public class InsertColumnFileReader implements Closeable {
-    private Input headFile;
-    private Input dataFile;
+    protected Input headFile;
+    protected Input dataFile;
 
-    private int rowCount;
-    private int columnCount;
-    private FileMetaData metaData;
-    private ColumnDescriptor[] columns;
-    private Map<String, Integer> columnsByName;
+    protected int rowCount;
+    protected int columnCount;
+    protected FileMetaData metaData;
+    protected ColumnDescriptor[] columns;
+    protected HashMap<String, Integer> columnsByName;
+
+    public InsertColumnFileReader() {
+
+    }
 
     public InsertColumnFileReader(File file) throws IOException {
         this.dataFile = new InputFile(file);
@@ -94,7 +97,11 @@ public class InsertColumnFileReader implements Closeable {
         readColumnStarts(in);
     }
 
-    private void readMagic(InputBuffer in) throws IOException {
+    public HashMap<String, Integer> getColumnsByName() {
+        return columnsByName;
+    }
+
+    protected void readMagic(InputBuffer in) throws IOException {
         byte[] magic = new byte[InsertColumnFileWriter.MAGIC.length];
         try {
             in.readFully(magic);
@@ -105,7 +112,7 @@ public class InsertColumnFileReader implements Closeable {
             throw new IOException("Not a neci file.");
     }
 
-    private void readFileColumnMetaData(InputBuffer in) throws IOException {
+    protected void readFileColumnMetaData(InputBuffer in) throws IOException {
         for (int i = 0; i < columnCount; i++) {
             FileColumnMetaData meta = FileColumnMetaData.read(in, this);
             meta.setDefaults(this.metaData);
@@ -124,7 +131,7 @@ public class InsertColumnFileReader implements Closeable {
         }
     }
 
-    private void readColumnStarts(InputBuffer in) throws IOException {
+    protected void readColumnStarts(InputBuffer in) throws IOException {
         for (int i = 0; i < columnCount; i++)
             columns[i].start = in.readFixed64();
     }

@@ -16,11 +16,10 @@
 package org.apache.trevni.update;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.trevni.TrevniRuntimeException;
-import org.apache.trevni.ValueType;
 
 /**
  * Metadata for a column.
@@ -43,7 +42,7 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     private transient int number = -1;
 
     private FileColumnMetaData() {
-    }                     // non-public ctor
+    } // non-public ctor
 
     /**
      * Construct given a name and type.
@@ -102,7 +101,7 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     }
 
     /**
-     * Set whether this column has an index of blocks by value.  This only makes
+     * Set whether this column has an index of blocks by value. This only makes
      * sense for sorted columns and permits one to seek into a column by value.
      */
     public FileColumnMetaData hasIndexValues(boolean values) {
@@ -113,7 +112,7 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     }
 
     /**
-     * Set this column's parent.  A parent must be a preceding array column.
+     * Set this column's parent. A parent must be a preceding array column.
      */
     public FileColumnMetaData setParent(FileColumnMetaData parent) {
         if (!parent.isArray())

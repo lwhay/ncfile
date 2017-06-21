@@ -7,26 +7,32 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.generic.GenericData;
 import org.apache.trevni.TrevniRuntimeException;
-import org.apache.trevni.ValueType;
 import org.apache.trevni.update.ColumnValues;
 import org.apache.trevni.update.FileColumnMetaData;
 import org.apache.trevni.update.InsertColumnFileReader;
+import org.apache.trevni.update.ValueType;
 
 public class ColumnReader<D> implements Closeable {
     InsertColumnFileReader reader;
-    private GenericData model;
+    protected GenericData model;
     protected ColumnValues[] values;
     protected int[] readNO;
     protected int[] arrayWidths;
     protected int column;
     protected int[] arrayValues;
-    private Schema readSchema;
+    protected HashMap<String, Integer> columnsByName;
+    protected Schema readSchema;
+
+    public ColumnReader() {
+
+    }
 
     public ColumnReader(File file) throws IOException {
         this(file, GenericData.get());
@@ -34,6 +40,7 @@ public class ColumnReader<D> implements Closeable {
 
     public ColumnReader(File file, GenericData model) throws IOException {
         this.reader = new InsertColumnFileReader(file);
+        columnsByName = reader.getColumnsByName();
         this.model = model;
         this.values = new ColumnValues[reader.getColumnCount()];
         int le = 0;
@@ -51,6 +58,12 @@ public class ColumnReader<D> implements Closeable {
             arrayValues[i] = j;
             j++;
         }
+    }
+
+    public int getColumnNO(String name) {
+        if ((columnsByName.get(name)) == null)
+            throw new TrevniRuntimeException("No column named: " + name);
+        return columnsByName.get(name);
     }
 
     public ValueType getType(int columnNo) {
@@ -98,6 +111,10 @@ public class ColumnReader<D> implements Closeable {
         return values[readNO[0]].hasNext();
     }
 
+    public boolean hasNext(int no) {
+        return values[no].hasNext();
+    }
+
     public D[] search(Schema readSchema, int row, int no) {
         AvroColumnator readColumnator = new AvroColumnator(readSchema);
         FileColumnMetaData[] readColumns = readColumnator.getColumns();
@@ -106,6 +123,20 @@ public class ColumnReader<D> implements Closeable {
         for (int i = 0; i < readColumns.length; i++) {
             readNO[i] = reader.getColumnNumber(readColumns[i].getName());
         }
+        try {
+            column = 0;
+            List<D> res = new ArrayList<D>();
+            res.add((D) read(readSchema, row));
+            for (int i = 1; i < no; i++) {
+                res.add((D) read(readSchema));
+            }
+            return (D[]) res.toArray();
+        } catch (IOException e) {
+            throw new TrevniRuntimeException(e);
+        }
+    }
+
+    public D[] search(int row, int no) {
         try {
             column = 0;
             List<D> res = new ArrayList<D>();
@@ -135,6 +166,15 @@ public class ColumnReader<D> implements Closeable {
         }
     }
 
+    public D search(int row) {
+        try {
+            column = 0;
+            return (D) read(readSchema, row);
+        } catch (IOException e) {
+            throw new TrevniRuntimeException(e);
+        }
+    }
+
     public int searchArray(int row, int le) throws IOException {
         values[arrayValues[le]].seek(row);
         return nextArray(le);
@@ -154,9 +194,9 @@ public class ColumnReader<D> implements Closeable {
         return values[arrayValues[le]].nextLength();
     }
 
-    private Object read(Schema s, int row) throws IOException {
+    public Object read(Schema s, int row) throws IOException {
         if (isSimple(s)) {
-            return readValue(s, column++, row);
+            return readValue(s, readNO[column++], row);
         }
         final int startColumn = column;
 
@@ -187,7 +227,7 @@ public class ColumnReader<D> implements Closeable {
                     this.column = startColumn;
                     Object value;
                     if (isSimple(s.getElementType()))
-                        value = readValue(s, ++column, (offset + i));
+                        value = readValue(s, readNO[++column], (offset + i));
                     else {
                         column++;
                         value = read(s.getElementType(), (offset + i));
@@ -224,7 +264,7 @@ public class ColumnReader<D> implements Closeable {
 
     public Object read(Schema s) throws IOException {
         if (isSimple(s)) {
-            return readValue(s, column++);
+            return readValue(s, readNO[column++]);
         }
         final int startColumn = column;
 
@@ -249,7 +289,7 @@ public class ColumnReader<D> implements Closeable {
                     this.column = startColumn;
                     Object value;
                     if (isSimple(s.getElementType()))
-                        value = readValue(s, ++column);
+                        value = readValue(s, readNO[++column]);
                     else {
                         column++;
                         value = read(s.getElementType());
@@ -263,14 +303,24 @@ public class ColumnReader<D> implements Closeable {
         }
     }
 
-    private Object readValue(Schema s, int column, int row) throws IOException {
-        values[readNO[column]].seek(row);
+    public Object readValue(Schema s, int column, int row) throws IOException {
+        values[column].seek(row);
         return readValue(s, column);
     }
 
-    private Object readValue(Schema s, int column) throws IOException {
-        values[readNO[column]].startRow();
-        Object v = values[readNO[column]].nextValue();
+    public Object readValue(int column, int row) throws IOException {
+        values[column].seek(row);
+        return readValue(column);
+    }
+
+    public void skipValue(int column, int row) throws IOException {
+        values[column].seek(row);
+        skipValue(column);
+    }
+
+    public Object readValue(Schema s, int column) throws IOException {
+        values[column].startRow();
+        Object v = values[column].nextValue();
 
         switch (s.getType()) {
             case ENUM:
@@ -282,10 +332,19 @@ public class ColumnReader<D> implements Closeable {
         return v;
     }
 
+    public Object readValue(int column) throws IOException {
+        values[column].startRow();
+        return values[column].nextValue();
+    }
+
     public void create() throws IOException {
         for (ColumnValues v : values) {
             v.create();
         }
+    }
+
+    public void create(int no) throws IOException {
+        values[no].create();
     }
 
     public int getLevelRowCount(int level) {
@@ -304,6 +363,11 @@ public class ColumnReader<D> implements Closeable {
     public Object nextValue(int columnNo) throws IOException {
         values[columnNo].startRow();
         return values[columnNo].nextValue();
+    }
+
+    public void skipValue(int columnNo) throws IOException {
+        values[columnNo].startRow();
+        values[columnNo].skipValue();
     }
 
     @Override

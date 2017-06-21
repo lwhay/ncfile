@@ -15,14 +15,14 @@ import org.apache.trevni.update.InsertColumnFileWriter;
 import org.apache.trevni.update.OutputBuffer;
 
 public class AvroColumnWriter {
-    private FileColumnMetaData[] meta;
-    private FileMetaData filemeta;
-    private OutputStream data;
-    private OutputStream head;
-    private int rowcount;
-    private int columncount;
-    private long[] columnStart;
-    private Blocks[] blocks;
+    protected FileColumnMetaData[] meta;
+    protected FileMetaData filemeta;
+    protected OutputStream data;
+    protected OutputStream head;
+    protected int rowcount;
+    protected int columncount;
+    protected long[] columnStart;
+    protected Blocks[] blocks;
     OutputBuffer buf;
     int index;
 
@@ -33,6 +33,10 @@ public class AvroColumnWriter {
 
         Blocks() {
             blocks = new ArrayList<BlockDescriptor>();
+        }
+
+        List<BlockDescriptor> get() {
+            return blocks;
         }
 
         void add(BlockDescriptor b) {
@@ -138,7 +142,7 @@ public class AvroColumnWriter {
         writeHeader();
     }
 
-    private void writeHeader() throws IOException {
+    public void writeHeader() throws IOException {
         buf.write(InsertColumnFileWriter.MAGIC);
         buf.writeFixed32(rowcount);
         buf.writeFixed32(columncount);

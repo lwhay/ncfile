@@ -23,7 +23,6 @@ import java.nio.charset.CharsetDecoder;
 
 import org.apache.trevni.Input;
 import org.apache.trevni.TrevniRuntimeException;
-import org.apache.trevni.ValueType;
 
 /**
  * Used to read values.
@@ -34,9 +33,9 @@ public class InputBuffer {
     private long inLength;
     private long offset; // pos of next read from in
 
-    private byte[] buf; // data from input
-    private int pos; // position within buffer
-    private int limit; // end of valid buffer data
+    protected byte[] buf; // data from input
+    protected int pos; // position within buffer
+    protected int limit; // end of valid buffer data
 
     private CharsetDecoder utf8 = Charset.forName("UTF-8").newDecoder();
 
@@ -118,10 +117,10 @@ public class InputBuffer {
                 readBoolean();
                 break;
             case INT:
-                readFixed32();
+                skip(4);
                 break;
             case LONG:
-                readFixed64();
+                skip(8);
                 break;
             case FIXED32:
             case FLOAT:

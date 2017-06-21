@@ -22,7 +22,6 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 
 import org.apache.trevni.TrevniRuntimeException;
-import org.apache.trevni.ValueType;
 
 /**
  * Used to write values.
@@ -220,7 +219,7 @@ public class OutputBuffer extends ByteArrayOutputStream {
         buf[count++] = (byte) n;
     }
 
-    private void ensure(int n) {
+    protected void ensure(int n) {
         if (count + n > buf.length)
             buf = Arrays.copyOf(buf, Math.max(buf.length << 1, count + n));
     }
@@ -230,12 +229,10 @@ public class OutputBuffer extends ByteArrayOutputStream {
             case NULL:
                 return 0;
             case INT:
-                return size((Integer) value);
-            case LONG:
-                return size((Long) value);
             case FIXED32:
             case FLOAT:
                 return 4;
+            case LONG:
             case FIXED64:
             case DOUBLE:
                 return 8;

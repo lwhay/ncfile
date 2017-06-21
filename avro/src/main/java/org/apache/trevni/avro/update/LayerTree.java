@@ -19,7 +19,7 @@ import org.apache.avro.generic.GenericData.Record;
 
 import btree.Btree;
 
-public class LevelTree {
+public class LayerTree {
     private int[] keyFields;
     private String path;
     //    private Schema schema;
@@ -46,7 +46,7 @@ public class LevelTree {
     private static final int MAX = 500000;
     private HashMap<KeyofBTree, List<FlagKey>> forwardCache;
 
-    public LevelTree(String path, int[] keyFields, boolean isHighest, boolean isLowest, int[] forwardValueFields,
+    public LayerTree(String path, int[] keyFields, boolean isHighest, boolean isLowest, int[] forwardValueFields,
             Schema forwardValueSchema, int[] backValueFields) {
         this.path = path;
         this.keyFields = keyFields;
@@ -343,6 +343,15 @@ public class LevelTree {
         List<FlagKey> pr = new ArrayList<FlagKey>();
         pr.add(new FlagKey());
         forwardCache.put(key, pr);
+    }
+
+    public String find(Record record, boolean isKey) {
+        KeyofBTree key = isKey ? new KeyofBTree(record, keyFields.length) : new KeyofBTree(record, keyFields);
+        return find(key);
+    }
+
+    public String find(KeyofBTree key) {
+        return btree.find(key);
     }
 
     public List<Record> findForward(KeyofBTree key) {

@@ -24,24 +24,26 @@ public class BloomFilter {
 
     private boolean isActivated = false;
 
-    public BloomFilter(File bloomFile, Schema schema) throws IOException {
-        this(bloomFile, schema, null);
+    public BloomFilter(String filePath, Schema schema) throws IOException {
+        this(filePath, schema, null);
     }
 
-    public BloomFilter(File bloomFile, Schema schema, int[] keyFields) throws IOException {
-        this.bloomFile = bloomFile;
+    public BloomFilter(String filePath, Schema schema, int[] keyFields) throws IOException {
+        this.bloomFile = new File(filePath);
         this.schema = schema;
         this.keyFields = keyFields;
         this.numBitsPerPage = CacheBuffer.getPageSize() * 8;
     }
 
     public void activate() throws IOException {
-        this.cache = new CacheBuffer(bloomFile);
-        this.numHashes = cache.getNumHashes();
-        this.numElements = cache.getNumElements();
-        this.numPages = cache.getNumPages();
-        this.numBits = cache.getNumBits();
-        isActivated = true;
+        if (bloomFile.exists()) {
+            this.cache = new CacheBuffer(bloomFile);
+            this.numHashes = cache.getNumHashes();
+            this.numElements = cache.getNumElements();
+            this.numPages = cache.getNumPages();
+            this.numBits = cache.getNumBits();
+            isActivated = true;
+        }
     }
 
     public void close() throws IOException {

@@ -85,6 +85,10 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         return values.length;
     }
 
+    public long getBytesSize() {
+        return 4 * getLength();
+    }
+
     public byte[] getBytes4(int data) {
         byte[] res = new byte[4];
         res[0] = (byte) (data & 0xff);

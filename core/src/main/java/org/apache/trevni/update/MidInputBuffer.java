@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.apache.trevni.Input;
 import org.apache.trevni.TrevniRuntimeException;
-import org.apache.trevni.ValueType;
 
 public class MidInputBuffer extends InputBuffer {
 
@@ -27,42 +26,42 @@ public class MidInputBuffer extends InputBuffer {
                 else
                     return null;
             case INT:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) Integer.valueOf(readFixed32());
                 else
                     return null;
             case LONG:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) Long.valueOf(readFixed64());
                 else
                     return null;
             case FIXED32:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) Integer.valueOf(readFixed32());
                 else
                     return null;
             case FIXED64:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) Long.valueOf(readFixed64());
                 else
                     return null;
             case FLOAT:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) Float.valueOf(readFloat());
                 else
                     return null;
             case DOUBLE:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) Double.valueOf(readDouble());
                 else
                     return null;
             case STRING:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) readString();
                 else
                     return null;
             case BYTES:
-                if (readBoolean())
+                if (readByte() == 1)
                     return (T) readBytes(null);
                 else
                     return null;
@@ -107,6 +106,18 @@ public class MidInputBuffer extends InputBuffer {
             default:
                 throw new TrevniRuntimeException("Unknown value type: " + type);
         }
+    }
+
+    public int readByte() throws IOException {
+        return read();
+    }
+
+    public KeyGroup readKeyGroup(int len) throws IOException {
+        byte flag = (byte) readByte();
+        int[] res = new int[len];
+        for (int i = 0; i < len; i++)
+            res[i] = readFixed32();
+        return new KeyGroup(flag, res);
     }
 
     @Override

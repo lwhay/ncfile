@@ -12,7 +12,7 @@ import org.apache.avro.generic.GenericData.Record;
 public class CachList {
     //    private List<FlagData> cach;
     private static int[][] keyFields;
-    private int level;
+    private int layer;
     private int size;
     private HashMap<KeyofBTree, FlagData>[] hash;
     private HashMap<KeyofBTree, FlagData>[] extraHash;
@@ -28,14 +28,14 @@ public class CachList {
     public CachList(int[][] keyFields) {
         //        cach = new ArrayList<FlagData>();
         this.keyFields = keyFields;
-        level = keyFields.length;
-        hash = new HashMap[level];
-        extraHash = new HashMap[level - 1];
-        for (int i = 0; i < (level - 1); i++) {
+        layer = keyFields.length;
+        hash = new HashMap[layer];
+        extraHash = new HashMap[layer - 1];
+        for (int i = 0; i < (layer - 1); i++) {
             hash[i] = new HashMap<KeyofBTree, FlagData>();
             extraHash[i] = new HashMap<KeyofBTree, FlagData>();
         }
-        hash[level - 1] = new HashMap<KeyofBTree, FlagData>();
+        hash[layer - 1] = new HashMap<KeyofBTree, FlagData>();
         max = -1;
     }
 
@@ -51,6 +51,26 @@ public class CachList {
         if (max == -1)
             return false;
         return size >= max;
+    }
+
+    public long getBytesSize() {
+        long res = 0;
+        Iterator<Entry<KeyofBTree, FlagData>> iter;
+        for (int i = 0; i < layer; i++) {
+            iter = hash[i].entrySet().iterator();
+            while (iter.hasNext()) {
+                Entry<KeyofBTree, FlagData> next = iter.next();
+                res += next.getKey().getBytesSize();
+                res += next.getValue().getBytesSize();
+            }
+            iter = extraHash[i].entrySet().iterator();
+            while (iter.hasNext()) {
+                Entry<KeyofBTree, FlagData> next = iter.next();
+                res += next.getKey().getBytesSize();
+                res += next.getValue().getBytesSize();
+            }
+        }
+        return res;
     }
 
     public int size() {
@@ -179,17 +199,17 @@ public class CachList {
     }
 
     public void mergeCreate() {
-        mergeIter = new Iterator[level];
-        extraMergeIter = new Iterator[level - 1];
-        mergeList = new List[level];
+        mergeIter = new Iterator[layer];
+        extraMergeIter = new Iterator[layer - 1];
+        mergeList = new List[layer];
         //        sortMap = new HashMap[level];
-        sortList = new List[level];
+        sortList = new List[layer];
         mergeIter[0] = hash[0].entrySet().iterator();
         mergeList[0] = new ArrayList<Entry<Integer, FlagData>>();
         //        sortMap[0] = new HashMap<NestCombKey, FlagData>();
         sortList[0] = new ArrayList<Entry<NestCombKey, FlagData>>();
 
-        for (int i = 1; i < level; i++) {
+        for (int i = 1; i < layer; i++) {
             mergeIter[i] = hash[i].entrySet().iterator();
             extraMergeIter[i - 1] = extraHash[i - 1].entrySet().iterator();
             mergeList[i] = new ArrayList<Entry<Integer, FlagData>>();
@@ -219,8 +239,8 @@ public class CachList {
     }
 
     public void createSortIterator() {
-        sortIter = new Iterator[level];
-        for (int i = 0; i < level; i++) {
+        sortIter = new Iterator[layer];
+        for (int i = 0; i < layer; i++) {
             sortIter[i] = sortList[i].iterator();
         }
     }
@@ -319,6 +339,13 @@ public class CachList {
             this.flag = flag;
             this.data = data;
             this.level = level;
+        }
+
+        public long getBytesSize() {
+            long res = 5;
+            if (data != null)
+                res += data.toString().length();
+            return res;
         }
 
         public int compareTo(FlagData o) {
