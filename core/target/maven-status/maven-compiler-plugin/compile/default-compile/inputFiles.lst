@@ -9,6 +9,7 @@
 /home/ly/neci/core/src/main/java/neci/core/MidColumnValues.java
 /home/ly/neci/core/src/main/java/neci/core/InsertColumnFileReader.java
 /home/ly/neci/core/src/main/java/neci/core/ColumnValues.java
+/home/ly/neci/core/src/main/java/neci/core/UnionOutputBuffer.java
 /home/ly/neci/core/src/main/java/neci/core/NullChecksum.java
 /home/ly/neci/core/src/main/java/neci/core/BlockOutputBuffer.java
 /home/ly/neci/core/src/main/java/neci/core/ColumnDescriptor.java
@@ -21,6 +22,7 @@
 /home/ly/neci/core/src/main/java/neci/core/MidInsertColumnFileReader.java
 /home/ly/neci/core/src/main/java/neci/core/CacheBuffer.java
 /home/ly/neci/core/src/main/java/neci/core/BlockDescriptor.java
+/home/ly/neci/core/src/main/java/neci/core/UnionInputBuffer.java
 /home/ly/neci/core/src/main/java/neci/core/InputBytes.java
 /home/ly/neci/core/src/main/java/neci/core/FileColumnMetaData.java
 /home/ly/neci/core/src/main/java/neci/core/ValueType.java

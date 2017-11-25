@@ -1,6 +1,7 @@
 neci/core/OutputBuffer$1.class
 neci/core/BZip2Codec.class
 neci/core/MidInputBuffer$1.class
+neci/core/UnionOutputBuffer.class
 neci/core/MidOutputBuffer.class
 neci/core/InsertColumnFileWriter.class
 neci/core/NullChecksum.class

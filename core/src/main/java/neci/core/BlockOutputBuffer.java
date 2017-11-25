@@ -9,7 +9,7 @@ import java.util.Arrays;
 import org.apache.trevni.TrevniRuntimeException;
 
 public class BlockOutputBuffer {
-    static final int BLOCK_SIZE = 32 * 1024;
+    static final int BLOCK_SIZE = 48 * 1024;
     static final int COUNT = 32 * 1024;
 
     protected int bitCount; // position in booleans
@@ -20,7 +20,7 @@ public class BlockOutputBuffer {
     protected int count2;
 
     public BlockOutputBuffer() {
-        buf1 = new byte[BLOCK_SIZE];
+        buf1 = new byte[BLOCK_SIZE + BLOCK_SIZE >> 2];
         buf2 = new byte[BLOCK_SIZE];
     }
 

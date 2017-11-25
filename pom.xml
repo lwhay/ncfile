@@ -77,7 +77,7 @@
 
   <modules>
     <module>core</module>
-    <module>avro</module>
+    <module>ncfile</module>
     <module>doc</module>
   </modules>
 

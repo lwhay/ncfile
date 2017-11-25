@@ -178,7 +178,7 @@ public class InsertColumnFileWriter {
         //            nest[i] = 1;
         //        }
         for (int i = 0; i < columncount; i++) {
-            if (meta[i].getType() == ValueType.NULL) {
+            if (meta[i].getType() == ValueType.ARRAY) {
                 mergeArrayColumn(data, i);
             } else {
                 mergeColumn(data, i);
@@ -303,7 +303,7 @@ public class InsertColumnFileWriter {
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
-            if (type == ValueType.NULL) {
+            if (type == ValueType.ARRAY) {
                 for (Object x : insert[i].toArray()) {
                     if (buf.isFull()) {
                         BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
@@ -350,7 +350,7 @@ public class InsertColumnFileWriter {
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
-            if (type == ValueType.NULL) {
+            if (type == ValueType.ARRAY) {
                 int tmp = 0;
                 for (Object x : insert[i].toArray()) {
                     if (buf.isFull()) {

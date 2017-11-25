@@ -31,6 +31,8 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     static final String PARENT_KEY = RESERVED_KEY_PREFIX + "parent";
     static final String ARRAY_KEY = RESERVED_KEY_PREFIX + "array";
     static final String LAYER_KEY = RESERVED_KEY_PREFIX + "layer";
+    static final String UNION_KEY = RESERVED_KEY_PREFIX + "union";
+    static final String UNION_ARRAY = RESERVED_KEY_PREFIX + "unionArray";
 
     // cache these values for better performance
     private String name;
@@ -39,6 +41,8 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     private FileColumnMetaData parent;
     private boolean isArray;
     private int layer;
+    private int union;
+    private String unionArray;
 
     private transient List<FileColumnMetaData> children = new ArrayList<FileColumnMetaData>();
     private transient int number = -1;
@@ -56,6 +60,19 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
         setReserved(TYPE_KEY, type.getName());
         this.layer = 0;
         setReserved(LAYER_KEY, new String() + layer);
+    }
+
+    public FileColumnMetaData(String name, ValueType type, int union, String unionArray) {
+        this.name = name;
+        setReserved(NAME_KEY, name);
+        this.type = type;
+        setReserved(TYPE_KEY, type.getName());
+        this.layer = 0;
+        setReserved(LAYER_KEY, new String() + layer);
+        this.union = union;
+        setReserved(UNION_KEY, new String() + union);
+        this.unionArray = unionArray;
+        setReserved(UNION_ARRAY, unionArray);
     }
 
     /**
@@ -84,6 +101,14 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
      */
     public List<FileColumnMetaData> getChildren() {
         return children;
+    }
+
+    public int getUnion() {
+        return union;
+    }
+
+    public String getUnionArray() {
+        return unionArray;
     }
 
     /**
@@ -162,6 +187,8 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
         result.values = result.getBoolean(VALUES_KEY);
         result.isArray = result.getBoolean(ARRAY_KEY);
         result.layer = result.getInteger(LAYER_KEY);
+        result.union = result.getInteger(UNION_KEY);
+        result.unionArray = result.getString(UNION_ARRAY);
 
         String parentName = result.getString(PARENT_KEY);
         if (parentName != null)

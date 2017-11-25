@@ -39,7 +39,13 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     protected int offset = 0;
 
     protected int arrayLength;
-    protected long time;
+    //    protected long time;
+    //    protected int readBlockSize;
+    //    protected int seekedBlock;
+    //    protected List<Long> blockTime;
+    //    protected List<Long> blockStart;
+    //    protected List<Long> blockEnd;
+    //    protected List<Long> blockOffset;
 
     protected BlockColumnValues(ColumnDescriptor column) throws IOException {
         this.column = column;
@@ -90,12 +96,45 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         seek(0);
     }
 
-    public void createTime() {
-        time = 0;
-    }
+    //    public void createTime() {
+    //        time = 0;
+    //        blockTime = new ArrayList<Long>();
+    //        blockStart = new ArrayList<Long>();
+    //        blockEnd = new ArrayList<Long>();
+    //        blockOffset = new ArrayList<Long>();
+    //    }
+    //
+    //    public long getTime() {
+    //        return time;
+    //    }
 
-    public long getTime() {
-        return time;
+    //    public List<Long> getBlockTime() {
+    //        return blockTime;
+    //    }
+    //
+    //    public List<Long> getBlockStart() {
+    //        return blockStart;
+    //    }
+    //
+    //    public List<Long> getBlockEnd() {
+    //        return blockEnd;
+    //    }
+    //
+    //    public List<Long> getBlockOffset() {
+    //        return blockOffset;
+    //    }
+
+    //    public void createSeekBlock() {
+    //        readBlockSize = 0;
+    //        seekedBlock = 0;
+    //    }
+    //
+    //    public int[] getSeekBlock() {
+    //        return new int[] { readBlockSize, seekedBlock };
+    //    }
+
+    public int getBlockCount() {
+        return column.blockCount();
     }
 
     /**
@@ -104,6 +143,19 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     public void seek(int r) throws IOException {
         if (r < row || r >= column.lastRow(block)) // not in current block
             startBlock(column.findBlock(r)); // seek to block start
+        if (r > row) { // skip within block
+            if (column.metaData.isArray())
+                values.skipLength(r - row);
+            else
+                values.skipValue(type, r - row);
+            row = r;
+        }
+        previous = null;
+    }
+
+    public void turnTo(int r) throws IOException {
+        if (r < row || r >= column.lastRow(block)) // not in current block
+            seekBlock(column.findBlock(r)); // seek to block start
         if (r > row) { // skip within block
             if (column.metaData.isArray())
                 values.skipLength(r - row);
@@ -125,7 +177,16 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     }
 
     public void startBlock(int block) throws IOException {
-        long s = System.currentTimeMillis();
+        long s = System.nanoTime();
+        //        readBlockSize++;
+        //        seekedBlock += Math.abs(block - this.block - 1);
+        //                if (skipLength != null) {
+        //        if (this.block == -1)
+        //            skipLength.add(column.blockStarts[block] - column.start);
+        //        else
+        //            skipLength.add(column.blockStarts[block] - column.blockStarts[this.block]
+        //                    - column.blocks[this.block].compressedSize - checksum.size());
+        //                }
         this.block = block;
         this.row = column.firstRows[block];
 
@@ -137,8 +198,12 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         if (!checksum.compute(data).equals(ByteBuffer.wrap(raw, end, checksum.size())))
             throw new IOException("Checksums mismatch.");
         values = new BlockInputBuffer(data, column.blocks[block].rowCount);
-        long e = System.currentTimeMillis();
-        time += e - s;
+        long e = System.nanoTime();
+        //        blockTime.add((e - s));
+        //        blockStart.add(s);
+        //        blockEnd.add(e);
+        //        blockOffset.add(column.blockStarts[block]);
+        //        time += e - s;
     }
 
     @Override

@@ -11,6 +11,8 @@ public enum ValueType {
     DOUBLE,
     STRING,
     BYTES,
+    ARRAY,
+    UNION,
     KEYGROUP;
     private String name;
 
