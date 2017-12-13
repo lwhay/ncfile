@@ -42,8 +42,8 @@ import org.codehaus.jackson.JsonNode;
 
 import com.google.common.collect.MapMaker;
 
-import neci.ncfile.base.AvroRuntimeException;
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciRuntimeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Conversion;
 import neci.ncfile.base.Conversions;
 import neci.ncfile.base.JsonProperties;
@@ -194,7 +194,7 @@ public class GenericData {
 
         public Record(Schema schema) {
             if (schema == null || !Type.RECORD.equals(schema.getType()))
-                throw new AvroRuntimeException("Not a record schema: " + schema);
+                throw new NeciRuntimeException("Not a record schema: " + schema);
             this.schema = schema;
             this.values = new Object[schema.getFields().size()];
         }
@@ -220,7 +220,7 @@ public class GenericData {
         public void put(String key, Object value) {
             Schema.Field field = schema.getField(key);
             if (field == null)
-                throw new AvroRuntimeException("Not a valid schema field: " + key);
+                throw new NeciRuntimeException("Not a valid schema field: " + key);
 
             values[field.pos()] = value;
         }
@@ -271,6 +271,89 @@ public class GenericData {
         }
     }
 
+    public static class Group implements GenericRecord, Comparable<Group> {
+        private final Schema schema;
+        private final Object[] values;
+
+        public Group(Schema schema) {
+            if (schema == null || !Type.GROUP.equals(schema.getType()))
+                throw new NeciRuntimeException("Not a group schema: " + schema);
+            this.schema = schema;
+            this.values = new Object[schema.getFields().size()];
+        }
+
+        public Group(Group other, boolean deepCopy) {
+            schema = other.schema;
+            values = new Object[schema.getFields().size()];
+            if (deepCopy) {
+                for (int ii = 0; ii < values.length; ii++) {
+                    values[ii] = INSTANCE.deepCopy(schema.getFields().get(ii).schema(), other.values[ii]);
+                }
+            } else {
+                System.arraycopy(other.values, 0, values, 0, other.values.length);
+            }
+        }
+
+        @Override
+        public Schema getSchema() {
+            return schema;
+        }
+
+        @Override
+        public void put(String key, Object value) {
+            Schema.Field field = schema.getField(key);
+            if (field == null)
+                throw new NeciRuntimeException("Not a valid schema field: " + key);
+
+            values[field.pos()] = value;
+        }
+
+        @Override
+        public void put(int i, Object v) {
+            values[i] = v;
+        }
+
+        @Override
+        public Object get(String key) {
+            Field field = schema.getField(key);
+            if (field == null)
+                return null;
+            return values[field.pos()];
+        }
+
+        @Override
+        public Object get(int i) {
+            return values[i];
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true; // identical object
+            if (!(o instanceof Group))
+                return false; // not a group
+            Group that = (Group) o;
+            if (!this.schema.equals(that.schema))
+                return false; // not the same schema
+            return GenericData.get().compare(this, that, schema, true) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return GenericData.get().hashCode(this, schema);
+        }
+
+        @Override
+        public int compareTo(Group that) {
+            return GenericData.get().compare(this, that, schema);
+        }
+
+        @Override
+        public String toString() {
+            return GenericData.get().toString(this);
+        }
+    }
+
     /** Default implementation of an array. */
     @SuppressWarnings(value = "unchecked")
     public static class Array<T> extends AbstractList<T> implements GenericArray<T>, Comparable<GenericArray<T>> {
@@ -281,7 +364,7 @@ public class GenericData {
 
         public Array(int capacity, Schema schema) {
             if (schema == null || !Type.ARRAY.equals(schema.getType()))
-                throw new AvroRuntimeException("Not an array schema: " + schema);
+                throw new NeciRuntimeException("Not an array schema: " + schema);
             this.schema = schema;
             if (capacity != 0)
                 elements = new Object[capacity];
@@ -289,7 +372,7 @@ public class GenericData {
 
         public Array(Schema schema, Collection<T> c) {
             if (schema == null || !Type.ARRAY.equals(schema.getType()))
-                throw new AvroRuntimeException("Not an array schema: " + schema);
+                throw new NeciRuntimeException("Not an array schema: " + schema);
             this.schema = schema;
             if (c != null) {
                 elements = new Object[c.size()];
@@ -535,6 +618,14 @@ public class GenericData {
                         return false;
                 }
                 return true;
+            case GROUP:
+                if (!isGroup(datum))
+                    return false;
+                for (Field f : schema.getFields()) {
+                    if (!validate(f.schema(), getField(datum, f.name(), f.pos())))
+                        return false;
+                }
+                return true;
             case ENUM:
                 if (!isEnum(datum))
                     return false;
@@ -596,7 +687,7 @@ public class GenericData {
 
     /** Renders a Java datum as <a href="http://www.json.org/">JSON</a>. */
     protected void toString(Object datum, StringBuilder buffer, IdentityHashMap<Object, Object> seenObjects) {
-        if (isRecord(datum)) {
+        if (isGenericRecord(datum)) {
             if (seenObjects.containsKey(datum)) {
                 buffer.append(TOSTRING_CIRCULAR_REFERENCE_ERROR_TEXT);
                 return;
@@ -722,7 +813,7 @@ public class GenericData {
 
     /** Create a schema given an example datum. */
     public Schema induce(Object datum) {
-        if (isRecord(datum)) {
+        if (isGenericRecord(datum)) {
             return getRecordSchema(datum);
         } else if (isArray(datum)) {
             Schema elementType = null;
@@ -730,11 +821,11 @@ public class GenericData {
                 if (elementType == null) {
                     elementType = induce(element);
                 } else if (!elementType.equals(induce(element))) {
-                    throw new AvroTypeException("No mixed type arrays.");
+                    throw new NeciTypeException("No mixed type arrays.");
                 }
             }
             if (elementType == null) {
-                throw new AvroTypeException("Empty array: " + datum);
+                throw new NeciTypeException("Empty array: " + datum);
             }
             return Schema.createArray(elementType);
 
@@ -746,11 +837,11 @@ public class GenericData {
                 if (value == null) {
                     value = induce(entry.getValue());
                 } else if (!value.equals(induce(entry.getValue()))) {
-                    throw new AvroTypeException("No mixed type map values.");
+                    throw new NeciTypeException("No mixed type map values.");
                 }
             }
             if (value == null) {
-                throw new AvroTypeException("Empty map: " + datum);
+                throw new NeciTypeException("Empty map: " + datum);
             }
             return Schema.createMap(value);
         } else if (datum instanceof GenericFixed) {
@@ -773,7 +864,7 @@ public class GenericData {
             return Schema.create(Type.NULL);
 
         else
-            throw new AvroTypeException("Can't create schema for: " + datum);
+            throw new NeciTypeException("Can't create schema for: " + datum);
     }
 
     /**
@@ -850,7 +941,7 @@ public class GenericData {
     protected String getSchemaName(Object datum) {
         if (datum == null || datum == JsonProperties.NULL_VALUE)
             return Type.NULL.getName();
-        if (isRecord(datum))
+        if (isGenericRecord(datum))
             return getRecordSchema(datum).getFullName();
         if (isEnum(datum))
             return getEnumSchema(datum).getFullName();
@@ -874,7 +965,7 @@ public class GenericData {
             return Type.DOUBLE.getName();
         if (isBoolean(datum))
             return Type.BOOLEAN.getName();
-        throw new AvroRuntimeException(String.format("Unknown datum type %s: %s", datum.getClass().getName(), datum));
+        throw new NeciRuntimeException(String.format("Unknown datum type %s: %s", datum.getClass().getName(), datum));
     }
 
     /**
@@ -885,6 +976,11 @@ public class GenericData {
         switch (schema.getType()) {
             case RECORD:
                 if (!isRecord(datum))
+                    return false;
+                return (schema.getFullName() == null) ? getRecordSchema(datum).getFullName() == null
+                        : schema.getFullName().equals(getRecordSchema(datum).getFullName());
+            case GROUP:
+                if (!isGroup(datum))
                     return false;
                 return (schema.getFullName() == null) ? getRecordSchema(datum).getFullName() == null
                         : schema.getFullName().equals(getRecordSchema(datum).getFullName());
@@ -917,7 +1013,7 @@ public class GenericData {
             case NULL:
                 return datum == null;
             default:
-                throw new AvroRuntimeException("Unexpected type: " + schema);
+                throw new NeciRuntimeException("Unexpected type: " + schema);
         }
     }
 
@@ -933,6 +1029,14 @@ public class GenericData {
 
     /** Called by the default implementation of {@link #instanceOf}. */
     protected boolean isRecord(Object datum) {
+        return datum instanceof Record;
+    }
+
+    protected boolean isGroup(Object datum) {
+        return datum instanceof Group;
+    }
+
+    protected boolean isGenericRecord(Object datum) {
         return datum instanceof IndexedRecord;
     }
 
@@ -1033,6 +1137,7 @@ public class GenericData {
         int hashCode = 1;
         switch (s.getType()) {
             case RECORD:
+            case GROUP:
                 for (Field f : s.getFields()) {
                     if (f.order() == Field.Order.IGNORE)
                         continue;
@@ -1082,6 +1187,7 @@ public class GenericData {
             return 0;
         switch (s.getType()) {
             case RECORD:
+            case GROUP:
                 for (Field f : s.getFields()) {
                     if (f.order() == Field.Order.IGNORE)
                         continue; // ignore this field
@@ -1109,7 +1215,7 @@ public class GenericData {
             case MAP:
                 if (equals)
                     return ((Map) o1).equals(o2) ? 0 : 1;
-                throw new AvroRuntimeException("Can't compare maps!");
+                throw new NeciRuntimeException("Can't compare maps!");
             case UNION:
                 int i1 = resolveUnion(s, o1);
                 int i2 = resolveUnion(s, o2);
@@ -1139,7 +1245,7 @@ public class GenericData {
     public Object getDefaultValue(Field field) {
         JsonNode json = field.defaultValue();
         if (json == null)
-            throw new AvroRuntimeException("Field " + field + " not set and has no default value");
+            throw new NeciRuntimeException("Field " + field + " not set and has no default value");
         if (json.isNull() && (field.schema().getType() == Type.NULL || (field.schema().getType() == Type.UNION
                 && field.schema().getTypes().get(0).getType() == Type.NULL))) {
             return null;
@@ -1161,7 +1267,7 @@ public class GenericData {
 
                 defaultValueCache.put(field, defaultValue);
             } catch (IOException e) {
-                throw new AvroRuntimeException(e);
+                throw new NeciRuntimeException(e);
             }
 
         return defaultValue;
@@ -1252,6 +1358,17 @@ public class GenericData {
                     setField(newRecord, name, pos, newValue, newState);
                 }
                 return newRecord;
+            case GROUP:
+                Object oldS = getRecordState(value, schema);
+                Object newGroup = newGroup(null, schema);
+                Object newS = getRecordState(newGroup, schema);
+                for (Field f : schema.getFields()) {
+                    int pos = f.pos();
+                    String name = f.name();
+                    Object newValue = deepCopy(f.schema(), getField(value, name, pos, oldS));
+                    setField(newGroup, name, pos, newValue, newS);
+                }
+                return newGroup;
             case STRING:
                 // Strings are immutable
                 if (value instanceof String) {
@@ -1269,7 +1386,7 @@ public class GenericData {
             case UNION:
                 return deepCopy(schema.getTypes().get(resolveUnion(schema, value)), value);
             default:
-                throw new AvroRuntimeException(
+                throw new NeciRuntimeException(
                         "Deep copy failed for schema \"" + schema + "\" and value \"" + value + "\"");
         }
     }
@@ -1311,12 +1428,21 @@ public class GenericData {
      * a {@link GenericData.Record}.
      */
     public Object newRecord(Object old, Schema schema) {
-        if (old instanceof IndexedRecord) {
+        if (old instanceof Record) {
             IndexedRecord record = (IndexedRecord) old;
             if (record.getSchema() == schema)
                 return record;
         }
         return new GenericData.Record(schema);
+    }
+
+    public Object newGroup(Object old, Schema schema) {
+        if (old instanceof Group) {
+            IndexedRecord record = (IndexedRecord) old;
+            if (record.getSchema() == schema)
+                return record;
+        }
+        return new GenericData.Group(schema);
     }
 
 }

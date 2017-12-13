@@ -6,11 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.ncfile.ComparableKey;
 import neci.ncfile.SortedAvroWriter;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class SortedAvroTest {
     public static void main(String[] args) throws IOException {

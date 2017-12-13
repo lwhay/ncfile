@@ -29,7 +29,7 @@ import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 import org.codehaus.jackson.JsonNode;
 
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 
@@ -120,7 +120,7 @@ public class ResolvingGrammarGenerator extends ValidatingGrammarGenerator {
                 case UNION:
                     return resolveUnion(writer, reader, seen);
                 default:
-                    throw new AvroTypeException("Unkown type for schema: " + writerType);
+                    throw new NeciTypeException("Unkown type for schema: " + writerType);
             }
         } else { // writer and reader are of different types
             if (writerType == Schema.Type.UNION) {
@@ -331,7 +331,7 @@ public class ResolvingGrammarGenerator extends ValidatingGrammarGenerator {
                         v = f.defaultValue();
                     }
                     if (v == null) {
-                        throw new AvroTypeException("No default value for: " + name);
+                        throw new NeciTypeException("No default value for: " + name);
                     }
                     encode(e, f.schema(), v);
                 }
@@ -367,7 +367,7 @@ public class ResolvingGrammarGenerator extends ValidatingGrammarGenerator {
                 break;
             case FIXED:
                 if (!n.isTextual())
-                    throw new AvroTypeException("Non-string default value for fixed: " + n);
+                    throw new NeciTypeException("Non-string default value for fixed: " + n);
                 byte[] bb = n.getTextValue().getBytes("ISO-8859-1");
                 if (bb.length != s.getFixedSize()) {
                     bb = Arrays.copyOf(bb, s.getFixedSize());
@@ -376,42 +376,42 @@ public class ResolvingGrammarGenerator extends ValidatingGrammarGenerator {
                 break;
             case STRING:
                 if (!n.isTextual())
-                    throw new AvroTypeException("Non-string default value for string: " + n);
+                    throw new NeciTypeException("Non-string default value for string: " + n);
                 e.writeString(n.getTextValue());
                 break;
             case BYTES:
                 if (!n.isTextual())
-                    throw new AvroTypeException("Non-string default value for bytes: " + n);
+                    throw new NeciTypeException("Non-string default value for bytes: " + n);
                 e.writeBytes(n.getTextValue().getBytes("ISO-8859-1"));
                 break;
             case INT:
                 if (!n.isNumber())
-                    throw new AvroTypeException("Non-numeric default value for int: " + n);
+                    throw new NeciTypeException("Non-numeric default value for int: " + n);
                 e.writeInt(n.getIntValue());
                 break;
             case LONG:
                 if (!n.isNumber())
-                    throw new AvroTypeException("Non-numeric default value for long: " + n);
+                    throw new NeciTypeException("Non-numeric default value for long: " + n);
                 e.writeLong(n.getLongValue());
                 break;
             case FLOAT:
                 if (!n.isNumber())
-                    throw new AvroTypeException("Non-numeric default value for float: " + n);
+                    throw new NeciTypeException("Non-numeric default value for float: " + n);
                 e.writeFloat((float) n.getDoubleValue());
                 break;
             case DOUBLE:
                 if (!n.isNumber())
-                    throw new AvroTypeException("Non-numeric default value for double: " + n);
+                    throw new NeciTypeException("Non-numeric default value for double: " + n);
                 e.writeDouble(n.getDoubleValue());
                 break;
             case BOOLEAN:
                 if (!n.isBoolean())
-                    throw new AvroTypeException("Non-boolean default for boolean: " + n);
+                    throw new NeciTypeException("Non-boolean default for boolean: " + n);
                 e.writeBoolean(n.getBooleanValue());
                 break;
             case NULL:
                 if (!n.isNull())
-                    throw new AvroTypeException("Non-null default value for null type: " + n);
+                    throw new NeciTypeException("Non-null default value for null type: " + n);
                 e.writeNull();
                 break;
         }

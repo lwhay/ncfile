@@ -4,10 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.ncfile.InsertAvroColumnReader.Params;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class SortTrevniReader {
     private TrevniReader[] readers;

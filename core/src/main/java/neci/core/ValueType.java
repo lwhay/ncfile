@@ -11,6 +11,7 @@ public enum ValueType {
     DOUBLE,
     STRING,
     BYTES,
+    GROUP,
     ARRAY,
     UNION,
     KEYGROUP;

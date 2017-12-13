@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.util.Utf8;
 
-import neci.ncfile.base.AvroRuntimeException;
+import neci.ncfile.base.NeciRuntimeException;
 
 /**
  * An {@link Decoder} for binary-format data.
@@ -282,7 +282,7 @@ public class BinaryDecoder extends Decoder {
             throw new UnsupportedOperationException("Cannot read strings longer than " + MAX_ARRAY_SIZE + " bytes");
         }
         if (length < 0L) {
-            throw new AvroRuntimeException("Malformed data. Length is negative: " + length);
+            throw new NeciRuntimeException("Malformed data. Length is negative: " + length);
         }
         Utf8 result = (old != null ? old : new Utf8());
         result.setByteLength((int) length);
@@ -359,7 +359,7 @@ public class BinaryDecoder extends Decoder {
      */
     protected void doReadBytes(byte[] bytes, int start, int length) throws IOException {
         if (length < 0)
-            throw new AvroRuntimeException("Malformed data. Length is negative: " + length);
+            throw new NeciRuntimeException("Malformed data. Length is negative: " + length);
         int remaining = limit - pos;
         if (length <= remaining) {
             System.arraycopy(buf, pos, bytes, start, length);

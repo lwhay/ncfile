@@ -1,6 +1,6 @@
 package neci.ncfile;
 
-import org.apache.avro.generic.GenericData.Record;
+import neci.ncfile.generic.GenericData.Record;
 
 public class HashTo128Bit {
 

@@ -3,10 +3,9 @@ package neci.avro;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.ncfile.NestManager;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class TmpTest {
     public static void main(String[] args) {

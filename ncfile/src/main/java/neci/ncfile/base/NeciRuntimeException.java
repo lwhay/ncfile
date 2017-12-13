@@ -18,29 +18,17 @@
 
 package neci.ncfile.base;
 
-import java.io.IOException;
+/** Base Neci exception. */
+public class NeciRuntimeException extends RuntimeException {
+    public NeciRuntimeException(Throwable cause) {
+        super(cause);
+    }
 
-/** Base class for exceptions thrown to client by server. */
-public class AvroRemoteException extends IOException {
-  private Object value;
+    public NeciRuntimeException(String message) {
+        super(message);
+    }
 
-  protected AvroRemoteException() {}
-
-  public AvroRemoteException(Throwable value) {
-    this(value.toString());
-    initCause(value);
-  }
-
-  public AvroRemoteException(Object value) {
-    super(value != null ? value.toString() : null);
-    this.value = value;
-  }
-
-  public AvroRemoteException(Object value, Throwable cause) {
-    super(value != null ? value.toString() : null, cause);
-    this.value = value;
-  }
-
-  public Object getValue() { return value; }
+    public NeciRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
-

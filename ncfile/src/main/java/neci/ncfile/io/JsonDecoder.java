@@ -38,7 +38,7 @@ import org.codehaus.jackson.JsonStreamContext;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.ObjectCodec;
 
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 
 /**
@@ -283,7 +283,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
         advance(Symbol.FIXED);
         Symbol.IntCheckAction top = (Symbol.IntCheckAction) parser.popSymbol();
         if (size != top.size) {
-            throw new AvroTypeException(
+            throw new NeciTypeException(
                     "Incorrect length for fixed binary: expected " + top.size + " but received " + size + " bytes.");
         }
     }
@@ -295,7 +295,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
             byte[] result = readByteArray();
             in.nextToken();
             if (result.length != len) {
-                throw new AvroTypeException("Expected fixed length " + len + ", but got" + result.length);
+                throw new NeciTypeException("Expected fixed length " + len + ", but got" + result.length);
             }
             System.arraycopy(result, 0, bytes, start, len);
         } else {
@@ -314,7 +314,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
             byte[] result = readByteArray();
             in.nextToken();
             if (result.length != length) {
-                throw new AvroTypeException("Expected fixed length " + length + ", but got" + result.length);
+                throw new NeciTypeException("Expected fixed length " + length + ", but got" + result.length);
             }
         } else {
             throw error("fixed");
@@ -339,7 +339,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
                 in.nextToken();
                 return n;
             }
-            throw new AvroTypeException("Unknown symbol in enum " + in.getText());
+            throw new NeciTypeException("Unknown symbol in enum " + in.getText());
         } else {
             throw error("fixed");
         }
@@ -442,7 +442,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
         }
         int n = a.findLabel(label);
         if (n < 0)
-            throw new AvroTypeException("Unknown union branch " + label);
+            throw new NeciTypeException("Unknown union branch " + label);
         parser.pushSymbol(a.getSymbol(n));
         return n;
     }
@@ -474,7 +474,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
                         currentReorderBuffer.savedFields.put(fn, getVaueAsTree(in));
                     }
                 } while (in.getCurrentToken() == JsonToken.FIELD_NAME);
-                throw new AvroTypeException("Expected field name not found: " + fa.fname);
+                throw new NeciTypeException("Expected field name not found: " + fa.fname);
             }
         } else if (top == Symbol.FIELD_END) {
             if (currentReorderBuffer != null && currentReorderBuffer.origParser != null) {
@@ -502,7 +502,7 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
                 throw error(top == Symbol.RECORD_END ? "record-end" : "union-end");
             }
         } else {
-            throw new AvroTypeException("Unknown action symbol " + top);
+            throw new NeciTypeException("Unknown action symbol " + top);
         }
         return null;
     }
@@ -694,8 +694,8 @@ public class JsonDecoder extends ParsingDecoder implements Parser.ActionHandler 
         };
     }
 
-    private AvroTypeException error(String type) {
-        return new AvroTypeException("Expected " + type + ". Got " + in.getCurrentToken());
+    private NeciTypeException error(String type) {
+        return new NeciTypeException("Expected " + type + ". Got " + in.getCurrentToken());
     }
 
 }

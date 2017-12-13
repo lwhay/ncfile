@@ -10,15 +10,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData;
 import org.apache.trevni.TrevniRuntimeException;
 
 import neci.core.ColumnValues;
 import neci.core.FileColumnMetaData;
 import neci.core.InsertColumnFileReader;
 import neci.core.ValueType;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData;
 
 public class ColumnReader<D> implements Closeable {
     InsertColumnFileReader reader;

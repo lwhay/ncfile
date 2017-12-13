@@ -24,7 +24,7 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.util.Utf8;
 
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 
 /**
@@ -135,7 +135,7 @@ public class ValidatingDecoder extends ParsingDecoder implements Parser.ActionHa
         parser.advance(Symbol.FIXED);
         Symbol.IntCheckAction top = (Symbol.IntCheckAction) parser.popSymbol();
         if (size != top.size) {
-            throw new AvroTypeException(
+            throw new NeciTypeException(
                     "Incorrect length for fixed binary: expected " + top.size + " but received " + size + " bytes.");
         }
     }
@@ -165,7 +165,7 @@ public class ValidatingDecoder extends ParsingDecoder implements Parser.ActionHa
         Symbol.IntCheckAction top = (Symbol.IntCheckAction) parser.popSymbol();
         int result = in.readEnum();
         if (result < 0 || result >= top.size) {
-            throw new AvroTypeException("Enumeration out of range: max is " + top.size + " but received " + result);
+            throw new NeciTypeException("Enumeration out of range: max is " + top.size + " but received " + result);
         }
         return result;
     }

@@ -104,6 +104,12 @@ public class BlockOutputBuffer {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
+    public void writeNull() throws IOException {
+        buf1[count1] = (byte) ((count2) & 0xFF);
+        buf1[count1 + 1] = (byte) ((count2 >>> 8) & 0xFF);
+        count1 += 2;
+    }
+
     public void writeString(String string) throws IOException {
         byte[] bytes = string.getBytes(UTF8);
         write(bytes, 0, bytes.length);

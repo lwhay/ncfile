@@ -18,11 +18,11 @@
 
 package neci.ncfile.base;
 
-/** Base Avro exception. */
-public class AvroRuntimeException extends RuntimeException {
-  public AvroRuntimeException(Throwable cause) { super(cause); }
-  public AvroRuntimeException(String message) { super(message); }
-  public AvroRuntimeException(String message, Throwable cause) {
+
+/** Thrown when an illegal type is used. */
+public class NeciTypeException extends NeciRuntimeException {
+  public NeciTypeException(String message) { super(message); }
+  public NeciTypeException(String message, Throwable cause) {
     super(message, cause);
   }
 }

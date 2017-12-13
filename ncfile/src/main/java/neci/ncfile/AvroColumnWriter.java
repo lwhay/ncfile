@@ -7,13 +7,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.avro.Schema;
-
 import neci.core.BlockDescriptor;
 import neci.core.FileColumnMetaData;
 import neci.core.FileMetaData;
 import neci.core.InsertColumnFileWriter;
 import neci.core.OutputBuffer;
+import neci.ncfile.base.Schema;
 
 public class AvroColumnWriter {
     protected FileColumnMetaData[] meta;

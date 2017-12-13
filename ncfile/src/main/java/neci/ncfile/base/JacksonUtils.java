@@ -46,7 +46,7 @@ public class JacksonUtils {
             toJson(datum, generator);
             return new ObjectMapper().readTree(generator.asParser());
         } catch (IOException e) {
-            throw new AvroRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -82,7 +82,7 @@ public class JacksonUtils {
         } else if (datum instanceof Boolean) { // boolean
             generator.writeBoolean((Boolean) datum);
         } else {
-            throw new AvroRuntimeException("Unknown datum class: " + datum.getClass());
+            throw new NeciRuntimeException("Unknown datum class: " + datum.getClass());
         }
     }
 
@@ -122,7 +122,7 @@ public class JacksonUtils {
                 try {
                     return jsonNode.getTextValue().getBytes(BYTES_CHARSET);
                 } catch (UnsupportedEncodingException e) {
-                    throw new AvroRuntimeException(e);
+                    throw new NeciRuntimeException(e);
                 }
             }
         } else if (jsonNode.isArray()) {

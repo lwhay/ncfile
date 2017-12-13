@@ -3,11 +3,10 @@ package neci.avro;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.ncfile.InsertAvroColumnReader;
 import neci.ncfile.InsertAvroColumnReader.Params;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class ReadTest {
     public static void main(String[] args) throws IOException {

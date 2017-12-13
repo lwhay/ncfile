@@ -19,7 +19,7 @@
 package neci.ncfile.base;
 
 /** Thrown when the expected contents of a union cannot be resolved. */
-public class UnresolvedUnionException extends AvroRuntimeException {
+public class UnresolvedUnionException extends NeciRuntimeException {
   private Object unresolvedDatum;
   private Schema unionSchema;
 

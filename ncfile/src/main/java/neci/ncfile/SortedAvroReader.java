@@ -3,11 +3,11 @@ package neci.ncfile;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileReader;
-import org.apache.avro.generic.GenericData.Record;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.io.DatumReader;
+import neci.ncfile.base.Schema;
+import neci.ncfile.file.DataFileReader;
+import neci.ncfile.generic.GenericData.Record;
+import neci.ncfile.generic.GenericDatumReader;
+import neci.ncfile.io.DatumReader;
 
 public class SortedAvroReader {
     private File[] files;

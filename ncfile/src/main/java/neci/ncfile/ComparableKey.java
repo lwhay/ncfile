@@ -2,8 +2,8 @@ package neci.ncfile;
 
 import java.util.List;
 
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData.Record;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData.Record;
 
 public class ComparableKey implements Comparable<ComparableKey> {
     private Record record;

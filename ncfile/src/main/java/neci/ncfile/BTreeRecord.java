@@ -4,10 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.Schema.Type;
-import org.apache.avro.generic.GenericData.Record;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeKeySerializer.BasicKeySerializer;
 import org.mapdb.BTreeKeySerializer.Tuple2KeySerializer;
@@ -20,6 +16,11 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Fun;
 import org.mapdb.Serializer;
+
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.base.Schema.Type;
+import neci.ncfile.generic.GenericData.Record;
 
 public class BTreeRecord {
     private int[] keyFields;

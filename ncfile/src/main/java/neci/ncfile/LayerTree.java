@@ -14,10 +14,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
-
 import btree.Btree;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class LayerTree {
     private int[] keyFields;

@@ -2,9 +2,10 @@ package neci.ncfile;
 
 import java.util.List;
 
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData.Record;
 import org.apache.trevni.ValueType;
+
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData.Record;
 
 public class CombKey implements Comparable<CombKey> {
     private int[] keys;

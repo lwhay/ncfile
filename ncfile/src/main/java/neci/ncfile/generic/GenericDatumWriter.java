@@ -26,8 +26,8 @@ import java.util.Map;
 
 import org.apache.avro.io.Encoder;
 
-import neci.ncfile.base.AvroRuntimeException;
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciRuntimeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Conversion;
 import neci.ncfile.base.Conversions;
 import neci.ncfile.base.LogicalType;
@@ -101,7 +101,7 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
             } else {
                 return Conversions.convertToRawType(datum, schema, logicalType, conversion);
             }
-        } catch (AvroRuntimeException e) {
+        } catch (NeciRuntimeException e) {
             Throwable cause = e.getCause();
             if (cause != null && cause.getClass() == ClassCastException.class) {
                 // This is to keep backwards compatibility. The convert function here used to
@@ -122,6 +122,7 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
         try {
             switch (schema.getType()) {
                 case RECORD:
+                case GROUP:
                     writeRecord(schema, datum, out);
                     break;
                 case ENUM:
@@ -210,7 +211,7 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
      */
     protected void writeEnum(Schema schema, Object datum, Encoder out) throws IOException {
         if (!data.isEnum(datum))
-            throw new AvroTypeException("Not an enum: " + datum);
+            throw new NeciTypeException("Not an enum: " + datum);
         out.writeEnum(schema.getEnumOrdinal(datum.toString()));
     }
 
@@ -336,7 +337,7 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
     }
 
     private void error(Schema schema, Object datum) {
-        throw new AvroTypeException("Not a " + schema + ": " + datum);
+        throw new NeciTypeException("Not a " + schema + ": " + datum);
     }
 
 }

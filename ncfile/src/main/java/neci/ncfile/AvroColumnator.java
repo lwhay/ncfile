@@ -22,12 +22,13 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
 import org.apache.trevni.TrevniRuntimeException;
 
 import neci.core.FileColumnMetaData;
 import neci.core.ValueType;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.base.Schema.Type;
 
 /** Utility that computes the column layout of a schema. */
 class AvroColumnator {
@@ -65,7 +66,9 @@ class AvroColumnator {
         if (isSimple(s)) {
             if (path == null)
                 path = s.getFullName();
-            addColumn(path, simpleValueType(s), parent, isArray);
+            FileColumnMetaData p = addColumn(path, simpleValueType(s), parent, isArray);
+            if (s.getType() == Type.GROUP)
+                p.setGroup_S(s.toString());
             return;
         }
 
@@ -171,6 +174,7 @@ class AvroColumnator {
             case STRING:
             case ENUM:
             case FIXED:
+            case GROUP:
                 return true;
             default:
                 return false;
@@ -199,6 +203,8 @@ class AvroColumnator {
                 return ValueType.INT;
             case FIXED:
                 return ValueType.BYTES;
+            case GROUP:
+                return ValueType.GROUP;
             default:
                 throw new TrevniRuntimeException("Unknown schema: " + s);
         }

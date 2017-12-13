@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class BatchSortTrevniReader {
     private BatchTrevniReader[] readers;

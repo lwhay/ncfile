@@ -18,12 +18,29 @@
 
 package neci.ncfile.base;
 
+import java.io.IOException;
 
-/** Thrown when an illegal type is used. */
-public class AvroTypeException extends AvroRuntimeException {
-  public AvroTypeException(String message) { super(message); }
-  public AvroTypeException(String message, Throwable cause) {
-    super(message, cause);
+/** Base class for exceptions thrown to client by server. */
+public class NeciRemoteException extends IOException {
+  private Object value;
+
+  protected NeciRemoteException() {}
+
+  public NeciRemoteException(Throwable value) {
+    this(value.toString());
+    initCause(value);
   }
+
+  public NeciRemoteException(Object value) {
+    super(value != null ? value.toString() : null);
+    this.value = value;
+  }
+
+  public NeciRemoteException(Object value, Throwable cause) {
+    super(value != null ? value.toString() : null, cause);
+    this.value = value;
+  }
+
+  public Object getValue() { return value; }
 }
 

@@ -11,14 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.Schema.Type;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.core.ValueType;
 import neci.ncfile.BloomFilter.BloomFilterBuilder;
 import neci.ncfile.CachList.FlagData;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.base.Schema.Type;
+import neci.ncfile.generic.GenericData.Record;
 
 public class NestManager {
     private NestSchema[] schemas;

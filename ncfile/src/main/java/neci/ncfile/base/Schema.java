@@ -147,7 +147,7 @@ public abstract class Schema extends JsonProperties {
             case NULL:
                 return new NullSchema();
             default:
-                throw new AvroRuntimeException("Can't create a: " + type);
+                throw new NeciRuntimeException("Can't create a: " + type);
         }
     }
 
@@ -254,7 +254,7 @@ public abstract class Schema extends JsonProperties {
      * <tt>null</tt> is returned.
      */
     public Field getField(String fieldname) {
-        throw new AvroRuntimeException("Not a record: " + this);
+        throw new NeciRuntimeException("Not a record: " + this);
     }
 
     /**
@@ -262,7 +262,7 @@ public abstract class Schema extends JsonProperties {
      * list is in the order of their positions.
      */
     public List<Field> getFields() {
-        throw new AvroRuntimeException("Not a record: " + this);
+        throw new NeciRuntimeException("Not a record: " + this);
     }
 
     /**
@@ -270,22 +270,22 @@ public abstract class Schema extends JsonProperties {
      * only once in a schema.
      */
     public void setFields(List<Field> fields) {
-        throw new AvroRuntimeException("Not a record: " + this);
+        throw new NeciRuntimeException("Not a record: " + this);
     }
 
     /** If this is an enum, return its symbols. */
     public List<String> getEnumSymbols() {
-        throw new AvroRuntimeException("Not an enum: " + this);
+        throw new NeciRuntimeException("Not an enum: " + this);
     }
 
     /** If this is an enum, return a symbol's ordinal value. */
     public int getEnumOrdinal(String symbol) {
-        throw new AvroRuntimeException("Not an enum: " + this);
+        throw new NeciRuntimeException("Not an enum: " + this);
     }
 
     /** If this is an enum, returns true if it contains given symbol. */
     public boolean hasEnumSymbol(String symbol) {
-        throw new AvroRuntimeException("Not an enum: " + this);
+        throw new NeciRuntimeException("Not an enum: " + this);
     }
 
     /**
@@ -306,7 +306,7 @@ public abstract class Schema extends JsonProperties {
 
     /** If this is a record, enum or fixed, returns its namespace, if any. */
     public String getNamespace() {
-        throw new AvroRuntimeException("Not a named type: " + this);
+        throw new NeciRuntimeException("Not a named type: " + this);
     }
 
     /**
@@ -319,47 +319,47 @@ public abstract class Schema extends JsonProperties {
 
     /** If this is a record, enum or fixed, add an alias. */
     public void addAlias(String alias) {
-        throw new AvroRuntimeException("Not a named type: " + this);
+        throw new NeciRuntimeException("Not a named type: " + this);
     }
 
     /** If this is a record, enum or fixed, add an alias. */
     public void addAlias(String alias, String space) {
-        throw new AvroRuntimeException("Not a named type: " + this);
+        throw new NeciRuntimeException("Not a named type: " + this);
     }
 
     /** If this is a record, enum or fixed, return its aliases, if any. */
     public Set<String> getAliases() {
-        throw new AvroRuntimeException("Not a named type: " + this);
+        throw new NeciRuntimeException("Not a named type: " + this);
     }
 
     /** Returns true if this record is an error type. */
     public boolean isError() {
-        throw new AvroRuntimeException("Not a record: " + this);
+        throw new NeciRuntimeException("Not a record: " + this);
     }
 
     /** If this is an array, returns its element type. */
     public Schema getElementType() {
-        throw new AvroRuntimeException("Not an array: " + this);
+        throw new NeciRuntimeException("Not an array: " + this);
     }
 
     /** If this is a map, returns its value type. */
     public Schema getValueType() {
-        throw new AvroRuntimeException("Not a map: " + this);
+        throw new NeciRuntimeException("Not a map: " + this);
     }
 
     /** If this is a union, returns its types. */
     public List<Schema> getTypes() {
-        throw new AvroRuntimeException("Not a union: " + this);
+        throw new NeciRuntimeException("Not a union: " + this);
     }
 
     /** If this is a union, return the branch with the provided full name. */
     public Integer getIndexNamed(String name) {
-        throw new AvroRuntimeException("Not a union: " + this);
+        throw new NeciRuntimeException("Not a union: " + this);
     }
 
     /** If this is fixed, returns its size. */
     public int getFixedSize() {
-        throw new AvroRuntimeException("Not fixed: " + this);
+        throw new NeciRuntimeException("Not fixed: " + this);
     }
 
     /** Render this as <a href="http://json.org/">JSON</a>. */
@@ -384,7 +384,7 @@ public abstract class Schema extends JsonProperties {
             gen.flush();
             return writer.toString();
         } catch (IOException e) {
-            throw new AvroRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -400,7 +400,7 @@ public abstract class Schema extends JsonProperties {
     }
 
     void fieldsToJson(Names names, JsonGenerator gen) throws IOException {
-        throw new AvroRuntimeException("Not a record: " + this);
+        throw new NeciRuntimeException("Not a record: " + this);
     }
 
     public boolean equals(Object o) {
@@ -642,7 +642,7 @@ public abstract class Schema extends JsonProperties {
             this.name = name;
             this.doc = doc;
             if (PRIMITIVES.containsKey(name.full)) {
-                throw new AvroTypeException("Schemas may not be named after primitives: " + name.full);
+                throw new NeciTypeException("Schemas may not be named after primitives: " + name.full);
             }
         }
 
@@ -772,32 +772,32 @@ public abstract class Schema extends JsonProperties {
         @Override
         public Field getField(String fieldname) {
             if (fieldMap == null)
-                throw new AvroRuntimeException("Schema fields not set yet");
+                throw new NeciRuntimeException("Schema fields not set yet");
             return fieldMap.get(fieldname);
         }
 
         @Override
         public List<Field> getFields() {
             if (fields == null)
-                throw new AvroRuntimeException("Schema fields not set yet");
+                throw new NeciRuntimeException("Schema fields not set yet");
             return fields;
         }
 
         @Override
         public void setFields(List<Field> fields) {
             if (this.fields != null) {
-                throw new AvroRuntimeException("Fields are already set");
+                throw new NeciRuntimeException("Fields are already set");
             }
             int i = 0;
             fieldMap = new HashMap<String, Field>();
             LockableArrayList ff = new LockableArrayList();
             for (Field f : fields) {
                 if (f.position != -1)
-                    throw new AvroRuntimeException("Field already used: " + f);
+                    throw new NeciRuntimeException("Field already used: " + f);
                 f.position = i++;
                 final Field existingField = fieldMap.put(f.name(), f);
                 if (existingField != null) {
-                    throw new AvroRuntimeException(String.format("Duplicate field %s in record %s: %s and %s.",
+                    throw new NeciRuntimeException(String.format("Duplicate field %s in record %s: %s and %s.",
                             f.name(), name, f, existingField));
                 }
                 ff.add(f);
@@ -922,32 +922,32 @@ public abstract class Schema extends JsonProperties {
         @Override
         public Field getField(String fieldname) {
             if (fieldMap == null)
-                throw new AvroRuntimeException("Schema fields not set yet");
+                throw new NeciRuntimeException("Schema fields not set yet");
             return fieldMap.get(fieldname);
         }
 
         @Override
         public List<Field> getFields() {
             if (fields == null)
-                throw new AvroRuntimeException("Schema fields not set yet");
+                throw new NeciRuntimeException("Schema fields not set yet");
             return fields;
         }
 
         @Override
         public void setFields(List<Field> fields) {
             if (this.fields != null) {
-                throw new AvroRuntimeException("Fields are already set");
+                throw new NeciRuntimeException("Fields are already set");
             }
             int i = 0;
             fieldMap = new HashMap<String, Field>();
             LockableArrayList ff = new LockableArrayList();
             for (Field f : fields) {
                 if (f.position != -1)
-                    throw new AvroRuntimeException("Field already used: " + f);
+                    throw new NeciRuntimeException("Field already used: " + f);
                 f.position = i++;
                 final Field existingField = fieldMap.put(f.name(), f);
                 if (existingField != null) {
-                    throw new AvroRuntimeException(String.format("Duplicate field %s in group %s: %s and %s.", f.name(),
+                    throw new NeciRuntimeException(String.format("Duplicate field %s in group %s: %s and %s.", f.name(),
                             name, f, existingField));
                 }
                 ff.add(f);
@@ -1189,12 +1189,12 @@ public abstract class Schema extends JsonProperties {
             int index = 0;
             for (Schema type : types) {
                 if (type.getType() == Type.UNION)
-                    throw new AvroRuntimeException("Nested union: " + this);
+                    throw new NeciRuntimeException("Nested union: " + this);
                 String name = type.getFullName();
                 if (name == null)
-                    throw new AvroRuntimeException("Nameless in union:" + this);
+                    throw new NeciRuntimeException("Nameless in union:" + this);
                 if (indexByName.put(name, index++) != null)
-                    throw new AvroRuntimeException("Duplicate in union:" + name);
+                    throw new NeciRuntimeException("Duplicate in union:" + name);
             }
         }
 
@@ -1225,7 +1225,7 @@ public abstract class Schema extends JsonProperties {
 
         @Override
         public void addProp(String name, String value) {
-            throw new AvroRuntimeException("Can't set properties on a union: " + this);
+            throw new NeciRuntimeException("Can't set properties on a union: " + this);
         }
 
         void toJson(Names names, JsonGenerator gen) throws IOException {
@@ -1581,7 +1581,7 @@ public abstract class Schema extends JsonProperties {
     private static JsonNode validateDefault(String fieldName, Schema schema, JsonNode defaultValue) {
         if (VALIDATE_DEFAULTS.get() && (defaultValue != null) && !isValidDefault(schema, defaultValue)) { // invalid default
             String message = "Invalid default for field " + fieldName + ": " + defaultValue + " not a " + schema;
-            throw new AvroTypeException(message); // throw exception
+            throw new NeciTypeException(message); // throw exception
         }
         return defaultValue;
     }

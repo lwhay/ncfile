@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.avro.generic.GenericData.Record;
+import neci.ncfile.generic.GenericData.Record;
 
 public class CachList {
     //    private List<FlagData> cach;

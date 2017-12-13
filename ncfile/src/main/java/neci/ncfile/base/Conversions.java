@@ -89,7 +89,7 @@ public class Conversions {
         public ByteBuffer toBytes(BigDecimal value, Schema schema, LogicalType type) {
             int scale = ((LogicalTypes.Decimal) type).getScale();
             if (scale != value.scale()) {
-                throw new AvroTypeException("Cannot encode decimal with scale " + value.scale() + " as scale " + scale);
+                throw new NeciTypeException("Cannot encode decimal with scale " + value.scale() + " as scale " + scale);
             }
             return ByteBuffer.wrap(value.unscaledValue().toByteArray());
         }
@@ -104,7 +104,7 @@ public class Conversions {
         public GenericFixed toFixed(BigDecimal value, Schema schema, LogicalType type) {
             int scale = ((LogicalTypes.Decimal) type).getScale();
             if (scale != value.scale()) {
-                throw new AvroTypeException("Cannot encode decimal with scale " + value.scale() + " as scale " + scale);
+                throw new NeciTypeException("Cannot encode decimal with scale " + value.scale() + " as scale " + scale);
             }
 
             byte fillByte = (byte) (value.signum() < 0 ? 0xFF : 0x00);
@@ -183,7 +183,7 @@ public class Conversions {
             }
             return datum;
         } catch (ClassCastException e) {
-            throw new AvroRuntimeException(
+            throw new NeciRuntimeException(
                     "Cannot convert " + datum + ":" + datum.getClass().getSimpleName() + ": expected generic type", e);
         }
     }
@@ -249,7 +249,7 @@ public class Conversions {
             }
             return datum;
         } catch (ClassCastException e) {
-            throw new AvroRuntimeException(
+            throw new NeciRuntimeException(
                     "Cannot convert " + datum + ":" + datum.getClass().getSimpleName() + ": expected logical type", e);
         }
     }

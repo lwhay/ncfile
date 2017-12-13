@@ -3,13 +3,12 @@ package neci.ncfile;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.apache.avro.Schema;
-
 import neci.core.BlockDescriptor;
 import neci.core.FileColumnMetaData;
 import neci.core.InsertColumnFileWriter;
 import neci.core.MidOutputBuffer;
 import neci.core.ValueType;
+import neci.ncfile.base.Schema;
 
 public class MidAvroColumnWriter extends AvroColumnWriter {
     private HashMap<Integer, Integer> columnNoMatch;

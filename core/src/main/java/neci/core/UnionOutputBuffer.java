@@ -53,6 +53,24 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
         else {
             writeUnion(i);
             super.writeValue(value, type);
+            if (isFixed(type))
+                writeNull();
+        }
+    }
+
+    public static boolean isFixed(ValueType type) {
+        switch (type) {
+            case NULL:
+            case BOOLEAN:
+            case INT:
+            case LONG:
+            case FIXED32:
+            case FIXED64:
+            case FLOAT:
+            case DOUBLE:
+                return true;
+            default:
+                return false;
         }
     }
 

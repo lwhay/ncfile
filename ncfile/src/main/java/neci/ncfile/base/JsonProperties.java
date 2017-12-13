@@ -175,16 +175,16 @@ public abstract class JsonProperties {
   @Deprecated
   public synchronized void addProp(String name, JsonNode value) {
     if (reserved.contains(name))
-      throw new AvroRuntimeException("Can't set reserved property: " + name);
+      throw new NeciRuntimeException("Can't set reserved property: " + name);
 
     if (value == null)
-      throw new AvroRuntimeException("Can't set a property to null: " + name);
+      throw new NeciRuntimeException("Can't set a property to null: " + name);
 
     JsonNode old = props.get(name);
     if (old == null)
       props.put(name, value);
     else if (!old.equals(value))
-      throw new AvroRuntimeException("Can't overwrite property: " + name);
+      throw new NeciRuntimeException("Can't overwrite property: " + name);
   }
 
   public synchronized void addProp(String name, Object value) {

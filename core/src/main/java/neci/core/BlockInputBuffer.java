@@ -20,9 +20,8 @@ public class BlockInputBuffer {
 
     private static final CharsetDecoder UTF8 = Charset.forName("UTF-8").newDecoder();
 
-    //    public BlockInputBuffer(ByteBuffer data) {
-    //        buf = data.array();
-    //    }
+    public BlockInputBuffer() {
+    }
 
     public BlockInputBuffer(ByteBuffer data, int count) {
         buf = data.array();
@@ -85,6 +84,10 @@ public class BlockInputBuffer {
 
     public void skip(long length) throws IOException {
         pos += length;
+    }
+
+    public void skipNull() throws IOException {
+        offset = readFixed16();
     }
 
     public void skipBytes(int r) throws IOException {

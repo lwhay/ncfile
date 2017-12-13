@@ -20,7 +20,7 @@ package neci.ncfile.io;
 import java.io.IOException;
 import java.util.Arrays;
 
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciTypeException;
 
 /**
  * Parser is the class that maintains the stack for parsing. This class
@@ -94,7 +94,7 @@ public class Parser {
                     return result;
                 }
             } else if (k == Symbol.Kind.TERMINAL) {
-                throw new AvroTypeException("Attempt to process a " + input + " when a " + top + " was expected.");
+                throw new NeciTypeException("Attempt to process a " + input + " when a " + top + " was expected.");
             } else if (k == Symbol.Kind.REPEATER && input == ((Symbol.Repeater) top).end) {
                 return input;
             } else {

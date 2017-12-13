@@ -25,7 +25,7 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.util.Utf8;
 
-import neci.ncfile.base.AvroTypeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 
 /**
@@ -127,7 +127,7 @@ public class ResolvingDecoder extends ValidatingDecoder {
      * need to call this method but rather can just start reading the
      * field values.)
      *
-     * @throws AvroTypeException
+     * @throws NeciTypeException
      *             If we're not starting a new record
      */
     public final Schema.Field[] readFieldOrder() throws IOException {
@@ -261,7 +261,7 @@ public class ResolvingDecoder extends ValidatingDecoder {
         if (o instanceof Integer) {
             return ((Integer) o).intValue();
         } else {
-            throw new AvroTypeException((String) o);
+            throw new NeciTypeException((String) o);
         }
     }
 
@@ -281,7 +281,7 @@ public class ResolvingDecoder extends ValidatingDecoder {
         if (top instanceof Symbol.ResolvingAction) {
             Symbol.ResolvingAction t = (Symbol.ResolvingAction) top;
             if (t.reader != input) {
-                throw new AvroTypeException("Found " + t.reader + " while looking for " + input);
+                throw new NeciTypeException("Found " + t.reader + " while looking for " + input);
             } else {
                 return t.writer;
             }
@@ -292,7 +292,7 @@ public class ResolvingDecoder extends ValidatingDecoder {
             Symbol.Alternative branches = (Symbol.Alternative) parser.popSymbol();
             parser.pushSymbol(branches.getSymbol(in.readIndex()));
         } else if (top instanceof Symbol.ErrorAction) {
-            throw new AvroTypeException(((Symbol.ErrorAction) top).msg);
+            throw new NeciTypeException(((Symbol.ErrorAction) top).msg);
         } else if (top instanceof Symbol.DefaultStartAction) {
             Symbol.DefaultStartAction dsa = (Symbol.DefaultStartAction) top;
             backup = in;
@@ -300,7 +300,7 @@ public class ResolvingDecoder extends ValidatingDecoder {
         } else if (top == Symbol.DEFAULT_END_ACTION) {
             in = backup;
         } else {
-            throw new AvroTypeException("Unknown action: " + top);
+            throw new NeciTypeException("Unknown action: " + top);
         }
         return null;
     }
@@ -316,7 +316,7 @@ public class ResolvingDecoder extends ValidatingDecoder {
             Symbol.Alternative branches = (Symbol.Alternative) parser.popSymbol();
             parser.pushSymbol(branches.getSymbol(in.readIndex()));
         } else if (top instanceof Symbol.ErrorAction) {
-            throw new AvroTypeException(((Symbol.ErrorAction) top).msg);
+            throw new NeciTypeException(((Symbol.ErrorAction) top).msg);
         } else if (top instanceof Symbol.DefaultStartAction) {
             Symbol.DefaultStartAction dsa = (Symbol.DefaultStartAction) top;
             backup = in;

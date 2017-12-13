@@ -11,14 +11,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData;
 import org.apache.trevni.TrevniRuntimeException;
 
 import neci.core.ColumnValues;
 import neci.core.FileColumnMetaData;
 import neci.core.InsertColumnFileReader;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData;
 
 public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Closeable {
     private InsertColumnFileReader reader;

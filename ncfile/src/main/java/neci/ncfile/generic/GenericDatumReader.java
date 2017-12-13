@@ -30,7 +30,7 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.util.Utf8;
 import org.apache.avro.util.WeakIdentityHashMap;
 
-import neci.ncfile.base.AvroRuntimeException;
+import neci.ncfile.base.NeciRuntimeException;
 import neci.ncfile.base.Conversion;
 import neci.ncfile.base.Conversions;
 import neci.ncfile.base.LogicalType;
@@ -173,6 +173,8 @@ public class GenericDatumReader<D> implements DatumReader<D> {
         switch (expected.getType()) {
             case RECORD:
                 return readRecord(old, expected, in);
+            case GROUP:
+                return readGroup(old, expected, in);
             case ENUM:
                 return readEnum(expected, in);
             case ARRAY:
@@ -201,7 +203,7 @@ public class GenericDatumReader<D> implements DatumReader<D> {
                 in.readNull();
                 return null;
             default:
-                throw new AvroRuntimeException("Unknown type: " + expected);
+                throw new NeciRuntimeException("Unknown type: " + expected);
         }
     }
 
@@ -227,6 +229,23 @@ public class GenericDatumReader<D> implements DatumReader<D> {
      */
     protected Object readRecord(Object old, Schema expected, ResolvingDecoder in) throws IOException {
         Object r = data.newRecord(old, expected);
+        Object state = data.getRecordState(r, expected);
+
+        for (Field f : in.readFieldOrder()) {
+            int pos = f.pos();
+            String name = f.name();
+            Object oldDatum = null;
+            if (old != null) {
+                oldDatum = data.getField(r, name, pos, state);
+            }
+            readField(r, f, oldDatum, in, state);
+        }
+
+        return r;
+    }
+
+    protected Object readGroup(Object old, Schema expected, ResolvingDecoder in) throws IOException {
+        Object r = data.newGroup(old, expected);
         Object state = data.getRecordState(r, expected);
 
         for (Field f : in.readFieldOrder()) {
@@ -411,6 +430,11 @@ public class GenericDatumReader<D> implements DatumReader<D> {
         return data.newRecord(old, schema);
     }
 
+    @Deprecated
+    protected Object newGroup(Object old, Schema schema) {
+        return data.newGroup(old, schema);
+    }
+
     /**
      * Called to create new array instances. Subclasses may override to use a
      * different array implementation. By default, this returns a {@link
@@ -514,13 +538,13 @@ public class GenericDatumReader<D> implements DatumReader<D> {
             }
             return ctor.newInstance(s);
         } catch (NoSuchMethodException e) {
-            throw new AvroRuntimeException(e);
+            throw new NeciRuntimeException(e);
         } catch (InstantiationException e) {
-            throw new AvroRuntimeException(e);
+            throw new NeciRuntimeException(e);
         } catch (IllegalAccessException e) {
-            throw new AvroRuntimeException(e);
+            throw new NeciRuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new AvroRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -564,6 +588,7 @@ public class GenericDatumReader<D> implements DatumReader<D> {
     public static void skip(Schema schema, Decoder in) throws IOException {
         switch (schema.getType()) {
             case RECORD:
+            case GROUP:
                 for (Field field : schema.getFields())
                     skip(field.schema(), in);
                 break;

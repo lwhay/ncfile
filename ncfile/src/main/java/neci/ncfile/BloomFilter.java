@@ -5,11 +5,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.core.CacheBuffer;
 import neci.core.PageBuffer;
+import neci.ncfile.base.Schema;
+import neci.ncfile.generic.GenericData.Record;
 
 public class BloomFilter {
     private int numHashes;

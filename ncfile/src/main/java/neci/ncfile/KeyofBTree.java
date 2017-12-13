@@ -3,11 +3,10 @@ package neci.ncfile;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData.Record;
-
 import btree.Serializable;
 import btree.Utils;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData.Record;
 
 public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     int[] values;

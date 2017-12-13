@@ -11,9 +11,6 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData;
 import org.apache.trevni.Input;
 import org.apache.trevni.TrevniRuntimeException;
 
@@ -21,6 +18,9 @@ import neci.core.BatchColumnFileReader;
 import neci.core.BlockColumnValues;
 import neci.core.FileColumnMetaData;
 import neci.core.ValueType;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData;
 
 public class FilterBatchColumnReader<D> implements Closeable {
     BatchColumnFileReader reader;

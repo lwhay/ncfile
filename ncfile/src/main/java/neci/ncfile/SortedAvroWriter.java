@@ -3,10 +3,10 @@ package neci.ncfile;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.generic.GenericDatumWriter;
-import org.apache.avro.io.DatumWriter;
+import neci.ncfile.base.Schema;
+import neci.ncfile.file.DataFileWriter;
+import neci.ncfile.generic.GenericDatumWriter;
+import neci.ncfile.io.DatumWriter;
 
 public class SortedAvroWriter<K, V> {
     private String path;

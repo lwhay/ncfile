@@ -6,10 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericFixed;
 import org.apache.avro.util.Utf8;
 import org.apache.trevni.TrevniRuntimeException;
 
@@ -17,6 +13,10 @@ import neci.core.FileColumnMetaData;
 import neci.core.FileMetaData;
 import neci.core.InsertColumnFileWriter;
 import neci.core.InsertColumnFileWriter.ListArr;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData;
+import neci.ncfile.generic.GenericFixed;
 
 public class InsertAvroColumnWriter<K, V> {
     private Schema schema;

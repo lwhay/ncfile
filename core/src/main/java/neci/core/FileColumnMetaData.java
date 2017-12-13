@@ -33,6 +33,7 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     static final String LAYER_KEY = RESERVED_KEY_PREFIX + "layer";
     static final String UNION_KEY = RESERVED_KEY_PREFIX + "union";
     static final String UNION_ARRAY = RESERVED_KEY_PREFIX + "unionArray";
+    static final String GROUP_S = RESERVED_KEY_PREFIX + "schema";
 
     // cache these values for better performance
     private String name;
@@ -43,6 +44,7 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     private int layer;
     private int union;
     private String unionArray;
+    private String schema;
 
     private transient List<FileColumnMetaData> children = new ArrayList<FileColumnMetaData>();
     private transient int number = -1;
@@ -73,6 +75,19 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
         setReserved(UNION_KEY, new String() + union);
         this.unionArray = unionArray;
         setReserved(UNION_ARRAY, unionArray);
+    }
+
+    public String getGroup_S() {
+        if (type != ValueType.GROUP)
+            throw new TrevniRuntimeException("This is not a group column!");
+        return schema;
+    }
+
+    public void setGroup_S(String str) {
+        if (type != ValueType.GROUP)
+            throw new TrevniRuntimeException("This is not a group column!");
+        this.schema = str;
+        setReserved(GROUP_S, str);
     }
 
     /**

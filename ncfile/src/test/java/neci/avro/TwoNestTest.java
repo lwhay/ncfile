@@ -6,12 +6,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData.Record;
-
 import neci.ncfile.NestManager;
 import neci.ncfile.NestSchema;
+import neci.ncfile.base.Schema;
+import neci.ncfile.base.Schema.Field;
+import neci.ncfile.generic.GenericData.Record;
 
 public class TwoNestTest {
     public static void main(String[] args) throws IOException {
