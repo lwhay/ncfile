@@ -12,18 +12,20 @@ import java.util.List;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.ColumnValues;
+import neci.core.BlockColumnValues;
 import neci.core.FileColumnMetaData;
+import neci.core.GroupCore;
 import neci.core.InsertColumnFileReader;
 import neci.core.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
+import neci.ncfile.generic.GenericGroupReader;
 
 public class ColumnReader<D> implements Closeable {
     InsertColumnFileReader reader;
     protected GenericData model;
-    protected ColumnValues[] values;
+    protected BlockColumnValues[] values;
     protected int[] readNO;
     protected int[] arrayWidths;
     protected int column;
@@ -43,7 +45,7 @@ public class ColumnReader<D> implements Closeable {
         this.reader = new InsertColumnFileReader(file);
         columnsByName = reader.getColumnsByName();
         this.model = model;
-        this.values = new ColumnValues[reader.getColumnCount()];
+        this.values = new BlockColumnValues[reader.getColumnCount()];
         int le = 0;
         for (int i = 0; i < values.length; i++) {
             values[i] = reader.getValues(i);
@@ -324,6 +326,11 @@ public class ColumnReader<D> implements Closeable {
         Object v = values[column].nextValue();
 
         switch (s.getType()) {
+            case GROUP:
+                return GenericGroupReader.readGroup((GroupCore) v, s);
+            case UNION:
+                if (v instanceof GroupCore)
+                    return GenericGroupReader.readGroup((GroupCore) v, s);
             case ENUM:
                 return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
             case FIXED:
@@ -339,7 +346,7 @@ public class ColumnReader<D> implements Closeable {
     }
 
     public void create() throws IOException {
-        for (ColumnValues v : values) {
+        for (BlockColumnValues v : values) {
             v.create();
         }
     }
@@ -368,7 +375,7 @@ public class ColumnReader<D> implements Closeable {
 
     public void skipValue(int columnNo) throws IOException {
         values[columnNo].startRow();
-        values[columnNo].skipValue();
+        values[columnNo].skipValue(1);
     }
 
     @Override

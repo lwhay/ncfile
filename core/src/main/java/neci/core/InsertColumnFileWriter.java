@@ -8,6 +8,8 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.trevni.TrevniRuntimeException;
+
 public class InsertColumnFileWriter {
     private FileColumnMetaData[] meta;
     private FileMetaData filemeta;
@@ -200,7 +202,7 @@ public class InsertColumnFileWriter {
         gapFile.seek(4);
         nestFile.seek(0);
         int row = 0;
-        ColumnValues[] values = new ColumnValues[readers.length];
+        BlockColumnValues[] values = new BlockColumnValues[readers.length];
         for (int i = 0; i < readers.length; i++) {
             values[i] = readers[i].getValues(column);
         }
@@ -238,7 +240,7 @@ public class InsertColumnFileWriter {
         gapFile.seek(4);
         nestFile.seek(0);
         int row = 0;
-        ColumnValues[] values = new ColumnValues[readers.length];
+        BlockColumnValues[] values = new BlockColumnValues[readers.length];
         for (int i = 0; i < readers.length; i++) {
             values[i] = readers[i].getValues(column);
         }
@@ -299,7 +301,7 @@ public class InsertColumnFileWriter {
     //  }
 
     private void writeSourceColumns(OutputStream out) throws IOException {
-        OutputBuffer buf = new OutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer();
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
@@ -315,6 +317,30 @@ public class InsertColumnFileWriter {
                     buf.writeLength((Integer) x);
                     row++;
                 }
+            } else if (type.equals(ValueType.UNION)) {
+                UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits());
+                for (Object x : insert[i].toArray()) {
+                    if (ubuf.isFull()) {
+                        BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
+                        blocks[i].add(b);
+                        row = 0;
+                        ubuf.writeTo(out);
+                        ubuf.reset();
+                    }
+                    ValueType tt = TranToValueType.tran(x);
+                    Integer index = meta[i].getUnionIndex(tt);
+                    if (index == null)
+                        throw new TrevniRuntimeException("Illegal value type: " + tt);
+                    ubuf.writeValue(x, index);
+                    row++;
+                }
+                if (ubuf.size() != 0) {
+                    BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
+                    blocks[i].add(b);
+                    ubuf.writeTo(out);
+                    ubuf.reset();
+                }
+                ubuf.close();
             } else {
                 for (Object x : insert[i].toArray()) {
                     if (buf.isFull()) {
@@ -346,7 +372,7 @@ public class InsertColumnFileWriter {
      * write array column incremently
      */
     private void flushSourceColumns(OutputStream out) throws IOException {
-        OutputBuffer buf = new OutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer();
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
@@ -364,6 +390,30 @@ public class InsertColumnFileWriter {
                     buf.writeLength((Integer) tmp);
                     row++;
                 }
+            } else if (type.equals(ValueType.UNION)) {
+                UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits());
+                for (Object x : insert[i].toArray()) {
+                    if (ubuf.isFull()) {
+                        BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
+                        blocks[i].add(b);
+                        row = 0;
+                        ubuf.writeTo(out);
+                        ubuf.reset();
+                    }
+                    ValueType tt = TranToValueType.tran(x);
+                    Integer index = meta[i].getUnionIndex(tt);
+                    if (index == null)
+                        throw new TrevniRuntimeException("Illegal value type: " + tt);
+                    ubuf.writeValue(x, index);
+                    row++;
+                }
+                if (ubuf.size() != 0) {
+                    BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
+                    blocks[i].add(b);
+                    ubuf.writeTo(out);
+                    ubuf.reset();
+                }
+                ubuf.close();
             } else {
                 for (Object x : insert[i].toArray()) {
                     if (buf.isFull()) {

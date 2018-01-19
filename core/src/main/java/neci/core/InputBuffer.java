@@ -102,6 +102,7 @@ public class InputBuffer {
                 return (T) Double.valueOf(readDouble());
             case STRING:
                 return (T) readString();
+            case GROUP:
             case BYTES:
                 return (T) readBytes(null);
             default:
@@ -131,6 +132,7 @@ public class InputBuffer {
                 skip(8);
                 break;
             case STRING:
+            case GROUP:
             case BYTES:
                 skipBytes();
                 break;

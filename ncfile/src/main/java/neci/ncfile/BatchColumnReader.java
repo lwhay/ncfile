@@ -15,10 +15,12 @@ import org.apache.trevni.TrevniRuntimeException;
 import neci.core.BatchColumnFileReader;
 import neci.core.BlockColumnValues;
 import neci.core.FileColumnMetaData;
+import neci.core.GroupCore;
 import neci.core.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
+import neci.ncfile.generic.GenericGroupReader;
 
 public class BatchColumnReader<D> implements Closeable {
     BatchColumnFileReader reader;
@@ -324,6 +326,11 @@ public class BatchColumnReader<D> implements Closeable {
         Object v = values[column].nextValue();
 
         switch (s.getType()) {
+            case GROUP:
+                return GenericGroupReader.readGroup((GroupCore) v, s);
+            case UNION:
+                if (v instanceof GroupCore)
+                    return GenericGroupReader.readGroup((GroupCore) v, s);
             case ENUM:
                 return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
             case FIXED:

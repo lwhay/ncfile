@@ -158,6 +158,8 @@ public class Conversions {
             switch (schema.getType()) {
                 case RECORD:
                     return conversion.fromRecord((IndexedRecord) datum, schema, type);
+                case GROUP:
+                    return conversion.fromRecord((IndexedRecord) datum, schema, type);
                 case ENUM:
                     return conversion.fromEnumSymbol((GenericEnumSymbol) datum, schema, type);
                 case ARRAY:

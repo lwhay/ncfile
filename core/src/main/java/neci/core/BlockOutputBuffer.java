@@ -65,6 +65,8 @@ public class BlockOutputBuffer {
             case STRING:
                 writeString((String) value);
                 break;
+            case GROUP:
+                writeGroup((GroupCore) value);
             case BYTES:
                 if (value instanceof ByteBuffer)
                     writeBytes((ByteBuffer) value);
@@ -127,6 +129,10 @@ public class BlockOutputBuffer {
 
     public void writeBytes(byte[] bytes) throws IOException {
         writeBytes(bytes, 0, bytes.length);
+    }
+
+    public void writeGroup(GroupCore group) throws IOException {
+        writeBytes(group.array());
     }
 
     public void writeBytes(byte[] bytes, int start, int len) throws IOException {

@@ -136,12 +136,12 @@ public class InsertColumnFileReader implements Closeable {
             columns[i].start = in.readFixed64();
     }
 
-    public <T extends Comparable> ColumnValues<T> getValues(String columnName) throws IOException {
-        return new ColumnValues<T>(getColumn(columnName));
+    public <T extends Comparable> BlockColumnValues<T> getValues(String columnName) throws IOException {
+        return new BlockColumnValues<T>(getColumn(columnName));
     }
 
-    public <T extends Comparable> ColumnValues<T> getValues(int column) throws IOException {
-        return new ColumnValues<T>(columns[column]);
+    public <T extends Comparable> BlockColumnValues<T> getValues(int column) throws IOException {
+        return new BlockColumnValues<T>(columns[column]);
     }
 
     @Override

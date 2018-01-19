@@ -71,6 +71,7 @@ public class OutputBuffer extends ByteArrayOutputStream {
             case STRING:
                 writeString((String) value);
                 break;
+            case GROUP:
             case BYTES:
                 if (value instanceof ByteBuffer)
                     writeBytes((ByteBuffer) value);

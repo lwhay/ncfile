@@ -17,6 +17,7 @@ import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericFixed;
+import neci.ncfile.generic.GenericGroupWriter;
 
 public class InsertAvroColumnWriter<K, V> {
     private Schema schema;
@@ -153,6 +154,8 @@ public class InsertAvroColumnWriter<K, V> {
 
     private void appendValue(Object o, Schema s, int column) throws IOException {
         switch (s.getType()) {
+            case GROUP:
+                o = GenericGroupWriter.writeGroup(s, o);
             case STRING:
                 if (o instanceof Utf8)
                     o = o.toString();

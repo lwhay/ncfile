@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.ColumnValues;
+import neci.core.BlockColumnValues;
 import neci.core.FileColumnMetaData;
 import neci.core.MidInsertColumnFileReader;
 import neci.core.ValueType;
@@ -32,7 +32,7 @@ public class MidColumnReader<D> extends ColumnReader<D> {
         this.reader = new MidInsertColumnFileReader(file);
         columnsByName = reader.getColumnsByName();
         super.model = model;
-        this.values = new ColumnValues[reader.getColumnCount()];
+        this.values = new BlockColumnValues[reader.getColumnCount()];
         int le = 0;
         for (int i = 0; i < values.length; i++) {
             values[i] = reader.getValues(i);

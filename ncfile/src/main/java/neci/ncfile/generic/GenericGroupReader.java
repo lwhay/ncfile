@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
+import neci.core.GroupCore;
 import neci.ncfile.base.NeciRuntimeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
@@ -17,7 +18,7 @@ public class GenericGroupReader {
     static int pos;
     static int limit;
 
-    public static Group readGroup(ByteBuffer buffer, Schema schema) {
+    public static Group readGroup(GroupCore buffer, Schema schema) {
         Group res = new Group(schema);
         buf = buffer.array();
         pos = 0;

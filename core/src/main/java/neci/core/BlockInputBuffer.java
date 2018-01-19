@@ -29,6 +29,12 @@ public class BlockInputBuffer {
         //        offset = count * 2;
     }
 
+    public BlockInputBuffer(byte[] data, int count) {
+        buf = data;
+        this.count = count * 2;
+        //        offset = count * 2;
+    }
+
     public <T extends Comparable> T readValue(ValueType type) throws IOException {
         switch (type) {
             case NULL:
@@ -49,6 +55,8 @@ public class BlockInputBuffer {
                 return (T) Double.valueOf(readDouble());
             case STRING:
                 return (T) readString();
+            case GROUP:
+                return (T) readGroup();
             case BYTES:
                 return (T) readBytes(null);
             default:
@@ -74,6 +82,7 @@ public class BlockInputBuffer {
                 skip(8 * r);
                 break;
             case STRING:
+            case GROUP:
             case BYTES:
                 skipBytes(r);
                 break;
@@ -84,10 +93,6 @@ public class BlockInputBuffer {
 
     public void skip(long length) throws IOException {
         pos += length;
-    }
-
-    public void skipNull() throws IOException {
-        offset = readFixed16();
     }
 
     public void skipBytes(int r) throws IOException {
@@ -172,6 +177,17 @@ public class BlockInputBuffer {
         return (readFixed32() & 0xFFFFFFFFL) | (((long) readFixed32()) << 32);
     }
 
+    public void skipNull() throws IOException {
+        offset = readFixed16();
+    }
+
+    public byte[] readUnionFixed(int len) throws IOException {
+        byte[] res = new byte[len];
+        System.arraycopy(buf, offset + count, res, 0, len);
+        offset = readFixed16();
+        return res;
+    }
+
     public String readString() throws IOException {
         int length = readFixed16();
         int len = length - offset;
@@ -204,5 +220,11 @@ public class BlockInputBuffer {
         result.limit(len);
         offset = length;
         return result;
+    }
+
+    public GroupCore readGroup() throws IOException {
+        ByteBuffer buf = readBytes(null);
+        GroupCore res = new GroupCore(buf);
+        return res;
     }
 }

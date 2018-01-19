@@ -13,12 +13,14 @@ import java.util.Map;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.ColumnValues;
+import neci.core.BlockColumnValues;
 import neci.core.FileColumnMetaData;
+import neci.core.GroupCore;
 import neci.core.InsertColumnFileReader;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
+import neci.ncfile.generic.GenericGroupReader;
 
 public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Closeable {
     private InsertColumnFileReader reader;
@@ -28,7 +30,7 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
 
     //private List<Integer> columns;
     private int column;
-    private ColumnValues[] values;
+    private BlockColumnValues[] values;
     private int[] arrayWidths;
 
     //private Map<String,Map<String,Object>> defaults =
@@ -73,7 +75,7 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         AvroColumnator readColumnator = new AvroColumnator(readSchema);
         this.arrayWidths = readColumnator.getArrayWidths();
         FileColumnMetaData[] readColumns = readColumnator.getColumns();
-        this.values = new ColumnValues[readColumns.length];
+        this.values = new BlockColumnValues[readColumns.length];
         int j = 0;
         for (FileColumnMetaData c : readColumns) {
             Integer n = fileColumnNumbers.get(c.getName());
@@ -179,20 +181,6 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         final int startColumn = column;
 
         switch (s.getType()) {
-            case MAP:
-                values[column].startRow();
-                int size = values[column].nextLength();
-                Map map = (Map) new HashMap(size);
-                for (int i = 0; i < size; i++) {
-                    this.column = startColumn;
-                    values[column].startRow();
-                    values[column++].nextValue();
-                    values[column].startRow();
-                    String key = (String) values[column++].nextValue();
-                    map.put(key, read(s.getValueType()));
-                }
-                column = startColumn + arrayWidths[startColumn];
-                return map;
             case RECORD:
                 Object record = model.newRecord(null, s);
                 for (Field f : s.getFields()) {
@@ -217,22 +205,22 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
                 }
                 column = startColumn + arrayWidths[startColumn];
                 return elements;
-            case UNION:
-                Object value = null;
-                for (Schema branch : s.getTypes()) {
-                    if (branch.getType() == Schema.Type.NULL)
-                        continue;
-                    values[column].startRow();
-                    if (values[column].nextLength() == 1) {
-                        value = nextValue(branch, column);
-                        column++;
-                        if (!isSimple(branch))
-                            value = read(branch);
-                    } else {
-                        column += arrayWidths[column];
-                    }
-                }
-                return value;
+            //            case UNION:
+            //                Object value = null;
+            //                for (Schema branch : s.getTypes()) {
+            //                    if (branch.getType() == Schema.Type.NULL)
+            //                        continue;
+            //                    values[column].startRow();
+            //                    if (values[column].nextLength() == 1) {
+            //                        value = nextValue(branch, column);
+            //                        column++;
+            //                        if (!isSimple(branch))
+            //                            value = read(branch);
+            //                    } else {
+            //                        column += arrayWidths[column];
+            //                    }
+            //                }
+            //                return value;
             default:
                 throw new TrevniRuntimeException("Unknown schema: " + s);
         }
@@ -243,6 +231,11 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         Object v = values[column].nextValue();
 
         switch (s.getType()) {
+            case GROUP:
+                return GenericGroupReader.readGroup((GroupCore) v, s);
+            case UNION:
+                if (v instanceof GroupCore)
+                    return GenericGroupReader.readGroup((GroupCore) v, s);
             case ENUM:
                 return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
             case FIXED:

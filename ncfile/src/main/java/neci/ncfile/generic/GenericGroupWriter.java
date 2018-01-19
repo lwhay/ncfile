@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
+import neci.core.GroupCore;
 import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
@@ -12,8 +13,9 @@ import neci.ncfile.base.Schema.Field;
 public class GenericGroupWriter {
     static GenericData data = GenericData.get();
 
-    public static ByteBuffer writeGroup(Schema schema, Object datum) {
-        ByteBuffer buf = ByteBuffer.allocate(1024);
+    public static GroupCore writeGroup(Schema schema, Object datum) {
+        GroupCore buf = new GroupCore();
+        buf.allocate(1024);
         Object state = data.getRecordState(datum, schema);
         for (Field f : schema.getFields()) {
             writeField(datum, f, buf, state);
@@ -21,19 +23,19 @@ public class GenericGroupWriter {
         return buf;
     }
 
-    static void writeRecord(Schema schema, Object datum, ByteBuffer buf) {
+    static void writeRecord(Schema schema, Object datum, GroupCore buf) {
         Object state = data.getRecordState(datum, schema);
         for (Field f : schema.getFields()) {
             writeField(datum, f, buf, state);
         }
     }
 
-    static void writeField(Object datum, Field f, ByteBuffer buf, Object state) {
+    static void writeField(Object datum, Field f, GroupCore buf, Object state) {
         Object value = data.getField(datum, f.name(), f.pos(), state);
         write(f.schema(), value, buf);
     }
 
-    static void write(Schema schema, Object datum, ByteBuffer buf) {
+    static void write(Schema schema, Object datum, GroupCore buf) {
         switch (schema.getType()) {
             case RECORD:
                 writeRecord(schema, datum, buf);
@@ -85,7 +87,7 @@ public class GenericGroupWriter {
         }
     }
 
-    static void writeArray(Schema schema, Object datum, ByteBuffer buf) {
+    static void writeArray(Schema schema, Object datum, GroupCore buf) {
         Schema element = schema.getElementType();
         Collection<? extends Object> array = (Collection<? extends Object>) datum;
         int size = array.size();
@@ -101,24 +103,24 @@ public class GenericGroupWriter {
         }
     }
 
-    static void writeUnion(Schema schema, Object datum, ByteBuffer buf) {
+    static void writeUnion(Schema schema, Object datum, GroupCore buf) {
         int index = data.resolveUnion(schema, datum);
         writeByte((byte) index, buf);
         write(schema.getTypes().get(index), datum, buf);
     }
 
-    static void writeString(String datum, ByteBuffer buf) {
+    static void writeString(String datum, GroupCore buf) {
         writeInt(datum.length(), buf);
         ensureBounds(datum.length(), buf);
         buf.put(datum.getBytes());
     }
 
-    static void writeBytes(ByteBuffer datum, ByteBuffer buf) {
+    static void writeBytes(ByteBuffer datum, GroupCore buf) {
         ensureBounds(datum.limit(), buf);
         buf.put(datum);
     }
 
-    static void writeInt(int n, ByteBuffer buf) {
+    static void writeInt(int n, GroupCore buf) {
         ensureBounds(4, buf);
         byte[] r = new byte[4];
         r[0] = (byte) ((n) & 0xFF);
@@ -128,7 +130,7 @@ public class GenericGroupWriter {
         buf.put(r);
     }
 
-    static void writeLong(long n, ByteBuffer buf) {
+    static void writeLong(long n, GroupCore buf) {
         ensureBounds(8, buf);
         int first = (int) (n & 0xFFFFFFFF);
         int second = (int) ((n >>> 32) & 0xFFFFFFFF);
@@ -144,24 +146,24 @@ public class GenericGroupWriter {
         buf.put(r);
     }
 
-    static void writeFloat(float datum, ByteBuffer buf) {
+    static void writeFloat(float datum, GroupCore buf) {
         int bits = Float.floatToRawIntBits(datum);
         writeInt(bits, buf);
     }
 
-    static void writeDouble(double datum, ByteBuffer buf) {
+    static void writeDouble(double datum, GroupCore buf) {
         long bits = Double.doubleToRawLongBits(datum);
         writeLong(bits, buf);
     }
 
-    static void writeBoolean(boolean datum, ByteBuffer buf) {
+    static void writeBoolean(boolean datum, GroupCore buf) {
         if (datum)
             writeByte((byte) 1, buf);
         else
             writeByte((byte) 0, buf);
     }
 
-    static void writeByte(byte datum, ByteBuffer buf) {
+    static void writeByte(byte datum, GroupCore buf) {
         ensureBounds(1, buf);
         buf.put(datum);
     }
@@ -169,14 +171,15 @@ public class GenericGroupWriter {
     static void writeNull() {
     }
 
-    static void ensureBounds(int num, ByteBuffer buf) {
+    static void ensureBounds(int num, GroupCore buf) {
         if (buf.remaining() < num) {
             int x = num - buf.remaining();
             int exLen = 512;
             while (x > exLen) {
                 exLen += 512;
             }
-            ByteBuffer newBuf = ByteBuffer.allocate(buf.limit() + exLen);
+            GroupCore newBuf = new GroupCore();
+            newBuf.allocate(buf.limit() + exLen);
             newBuf.put(buf.array());
             buf = newBuf;
         }

@@ -4,29 +4,20 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import org.apache.trevni.TrevniRuntimeException;
-
 public class UnionOutputBuffer extends BlockOutputBuffer {
     private byte[] buf3;
     private int union;
     private ValueType[] unionTypes;
     private int count3;
     private int bitCount3;
-    private int oneUnion;
+    private int unionBits;
 
-    public UnionOutputBuffer(ValueType[] types) {
+    public UnionOutputBuffer(ValueType[] types, int unionBits) {
         super();
         this.union = types.length;
         buf3 = new byte[COUNT];
         unionTypes = types;
-        if (union <= 2)
-            oneUnion = 1;
-        else if (union <= 4)
-            oneUnion = 2;
-        else if (union <= 16)
-            oneUnion = 4;
-        else if (union <= 32)
-            oneUnion = 8;
+        this.unionBits = unionBits;
     }
 
     public boolean isFull() {
@@ -42,20 +33,12 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
         buf3 = null;
     }
 
-    public void writeValue(Object value, ValueType type) throws IOException {
-        int i = 0;
-        for (; i < unionTypes.length; i++) {
-            if (type.equals(unionTypes[i]))
-                break;
-        }
-        if (i >= unionTypes.length)
-            throw new TrevniRuntimeException("Illegal value type: " + type);
-        else {
-            writeUnion(i);
-            super.writeValue(value, type);
-            if (isFixed(type))
-                writeNull();
-        }
+    public void writeValue(Object value, int index) throws IOException {
+        ValueType type = unionTypes[index];
+        writeUnion(index);
+        super.writeValue(value, type);
+        if (isFixed(type))
+            writeNull();
     }
 
     public static boolean isFixed(ValueType type) {
@@ -79,8 +62,8 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
             ensureUnion(1);
             count3++;
         }
-        buf3[count3 - 1] |= ((byte) (i & 0xff)) << (bitCount3 + 8 - oneUnion);
-        bitCount3 += oneUnion;
+        buf3[count3 - 1] |= ((byte) (i & 0xff)) << bitCount3;
+        bitCount3 += unionBits;
         if (bitCount3 == 8)
             bitCount3 = 0;
     }

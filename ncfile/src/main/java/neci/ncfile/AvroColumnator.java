@@ -94,13 +94,12 @@ class AvroColumnator {
                 addArrayColumn(path, s.getElementType(), parent);
                 break;
             case UNION:
-                StringBuilder unionArray = new StringBuilder();
                 List<Schema> brs = s.getTypes();
-                unionArray.append(brs.get(0).getType().toString());
+                ValueType[] unionArray = new ValueType[brs.size()];
                 for (int i = 0; i < brs.size(); i++) {
-                    unionArray.append("|" + brs.get(i).getType().toString());
+                    unionArray[i] = simpleValueType(brs.get(i));
                 }
-                addUnionColumn(path, unionArray.toString(), brs.size(), parent);
+                addUnionColumn(path, unionArray, brs.size(), parent);
                 //                if (branch.getType() != Schema.Type.NULL)
                 //                    addArrayColumn(p(path, branch, "/"), branch, parent);
                 break;
@@ -132,7 +131,8 @@ class AvroColumnator {
         return column;
     }
 
-    private FileColumnMetaData addUnionColumn(String path, String unionArray, int union, FileColumnMetaData parent) {
+    private FileColumnMetaData addUnionColumn(String path, ValueType[] unionArray, int union,
+            FileColumnMetaData parent) {
         FileColumnMetaData column = new FileColumnMetaData(path, ValueType.UNION, union, unionArray);
         if (parent != null) {
             column.setParent(parent);
@@ -175,6 +175,7 @@ class AvroColumnator {
             case ENUM:
             case FIXED:
             case GROUP:
+            case UNION:
                 return true;
             default:
                 return false;
@@ -205,6 +206,8 @@ class AvroColumnator {
                 return ValueType.BYTES;
             case GROUP:
                 return ValueType.GROUP;
+            case UNION:
+                return ValueType.UNION;
             default:
                 throw new TrevniRuntimeException("Unknown schema: " + s);
         }

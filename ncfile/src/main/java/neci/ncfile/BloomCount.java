@@ -83,4 +83,11 @@ public class BloomCount {
         return Math.min(BloomCount.RATES.length - 1, (int) v);
     }
 
+    public static void main(String[] args) {
+        int numElements = 1000000000;
+        BloomFilterModel model = BloomCount.computeBloomModel(BloomCount.maxBucketPerElement(numElements), 0.02);
+        System.out.println(model.getNumHashes());
+        System.out.println(model.getNumBucketsPerElement());
+    }
+
 }
