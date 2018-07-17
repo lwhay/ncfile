@@ -1,0 +1,7 @@
+{"name": "group", "type": "group",
+      "fields": [
+         {"name": "l_quantity", "type": "float"},
+         {"name": "l_extendedprice", "type": "float"},
+         {"name": "l_discount", "type": "float"},
+         {"name": "l_shipdate", "type": "string"}
+]}
