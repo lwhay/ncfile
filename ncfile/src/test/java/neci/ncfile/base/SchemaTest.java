@@ -9,7 +9,7 @@ import neci.ncfile.generic.GenericData.Record;
 
 public class SchemaTest {
     public static void main(String[] args) throws IOException {
-        File f = new File("/home/ly/avroppsl/lay1/schema.avsc");
+        File f = new File("./src/resources/group/schema.avsc");
         Schema s = new Schema.Parser().parse(f);
         System.out.println(s.toString());
         Record r = new Record(s);
