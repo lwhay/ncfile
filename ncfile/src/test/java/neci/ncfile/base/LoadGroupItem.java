@@ -22,6 +22,7 @@ import neci.ncfile.generic.GenericData.Record;
  * ./src/resources/tpch/lineitem.tbl
  * ./src/resources/group/group.avsc
  * ./src/resources/group/groupread.avsc
+ * build
  */
 public class LoadGroupItem {
     public static void build(String[] args) throws IOException {
@@ -74,6 +75,7 @@ public class LoadGroupItem {
         }
         writer.mergeFiles(toBeMerged);
         writer.flush();
+        br.close();
     }
 
     public static void scan(String[] args) throws IOException {
@@ -101,12 +103,20 @@ public class LoadGroupItem {
     }
 
     public static void main(String[] args) throws IOException {
-        build(args);
-        long begin = System.currentTimeMillis();
-        scan(args);
-        System.out.println("batch load: " + (System.currentTimeMillis() - begin));
-        begin = System.currentTimeMillis();
-        filterScan(args);
-        System.out.println("fitlerbatch load: " + (System.currentTimeMillis() - begin));
+        if (args.length != 8) {
+            System.out.println("Command: dataSchema stroage batchSize multation source inlienSchema querySecheam type");
+            System.exit(0);
+        }
+        if (args[7].equals("build")) {
+            build(args);
+        } else if (args[7].equals("scan")) {
+            long begin = System.currentTimeMillis();
+            scan(args);
+            System.out.println("batch load: " + (System.currentTimeMillis() - begin));
+        } else {
+            long begin = System.currentTimeMillis();
+            filterScan(args);
+            System.out.println("fitlerbatch load: " + (System.currentTimeMillis() - begin));
+        }
     }
 }

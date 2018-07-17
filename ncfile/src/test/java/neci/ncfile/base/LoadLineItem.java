@@ -15,7 +15,7 @@ import neci.ncfile.generic.GenericData.Record;
 /**
  * Created by michael on 2018/7/16.
  * Default parameters:
- * ./src/resources/group/lineitem.avsc ./src/resources/group/storage/ 1000 1000 ./src/resources/tpch/lineitem.tbl
+ * ./src/resources/group/lineitem.avsc ./src/resources/group/storage/ 1000 1000 ./src/resources/tpch/lineitem.tbl ./src/resources/group/lineread.avsc build
  */
 public class LoadLineItem {
     public static void build(String[] args) throws IOException {
@@ -69,10 +69,11 @@ public class LoadLineItem {
         }
         writer.mergeFiles(toBeMerged);
         writer.flush();
+        br.close();
     }
 
     public static void scan(String[] args) throws IOException {
-        Schema schema = (new Schema.Parser()).parse(new File(args[0]));
+        Schema schema = (new Schema.Parser()).parse(new File(args[5]));
         BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/result.neci"));
         fr.createSchema(schema);
         fr.create();
@@ -84,7 +85,7 @@ public class LoadLineItem {
     }
 
     public static void filterScan(String[] args) throws IOException {
-        Schema schema = (new Schema.Parser()).parse(new File(args[0]));
+        Schema schema = (new Schema.Parser()).parse(new File(args[5]));
         FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"));
         fr.createSchema(schema);
         fr.createRead(1000);
@@ -96,12 +97,20 @@ public class LoadLineItem {
     }
 
     public static void main(String[] args) throws IOException {
-        build(args);
-        long begin = System.currentTimeMillis();
-        scan(args);
-        System.out.println("batch load: " + (System.currentTimeMillis() - begin));
-        begin = System.currentTimeMillis();
-        filterScan(args);
-        System.out.println("fitlerbatch load: " + (System.currentTimeMillis() - begin));
+        if (args.length != 7) {
+            System.out.println("Command: dataSchema stroage batchSize multation source querySecheam type");
+            System.exit(0);
+        }
+        if (args[6].equals("build")) {
+            build(args);
+        } else if (args[6].equals("scan")) {
+            long begin = System.currentTimeMillis();
+            scan(args);
+            System.out.println("batch load: " + (System.currentTimeMillis() - begin));
+        } else {
+            long begin = System.currentTimeMillis();
+            filterScan(args);
+            System.out.println("fitlerbatch load: " + (System.currentTimeMillis() - begin));
+        }
     }
 }
