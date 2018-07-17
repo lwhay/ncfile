@@ -13,7 +13,7 @@ import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 
-import neci.core.ValueType;
+import misc.ValueType;
 import neci.ncfile.BloomFilter.BloomFilterBuilder;
 import neci.ncfile.CachList.FlagData;
 import neci.ncfile.base.Schema;

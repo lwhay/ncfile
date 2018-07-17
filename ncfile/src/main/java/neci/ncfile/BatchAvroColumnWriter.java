@@ -11,10 +11,10 @@ import java.util.List;
 import org.apache.avro.util.Utf8;
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.BatchColumnFileWriter;
-import neci.core.FileColumnMetaData;
-import neci.core.FileMetaData;
-import neci.core.InsertColumnFileWriter.ListArr;
+import columnar.BatchColumnFileWriter;
+import columnar.InsertColumnFileWriter.ListArr;
+import metadata.FileColumnMetaData;
+import metadata.FileMetaData;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;

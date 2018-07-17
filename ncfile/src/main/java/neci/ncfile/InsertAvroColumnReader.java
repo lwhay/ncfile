@@ -13,10 +13,10 @@ import java.util.Map;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.BlockColumnValues;
-import neci.core.FileColumnMetaData;
-import neci.core.GroupCore;
-import neci.core.InsertColumnFileReader;
+import columnar.BlockColumnValues;
+import columnar.InsertColumnFileReader;
+import metadata.FileColumnMetaData;
+import misc.GroupCore;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
@@ -65,7 +65,7 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
     }
 
     void initialize() throws IOException {
-        //建立文件的列名称和列号之间的map
+        //寤虹珛鏂囦欢鐨勫垪鍚嶇О鍜屽垪鍙蜂箣闂寸殑map
         Map<String, Integer> fileColumnNumbers = new HashMap<String, Integer>();
         int i = 0;
         for (FileColumnMetaData c : new AvroColumnator(fileSchema).getColumns()) {
@@ -89,7 +89,7 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         //findDefaults(readSchema, fileSchema, true);
     }
 
-    //对每个在读schema中而不在写schema中的fields设置default值，并检查匹配性
+    //瀵规瘡涓湪璇籹chema涓�屼笉鍦ㄥ啓schema涓殑fields璁剧疆default鍊硷紝骞舵鏌ュ尮閰嶆��
     //  private void findDefaults(Schema read, Schema write, boolean m){
     //    switch(read.getType()){
     //      case NULL: case BOOLEAN:

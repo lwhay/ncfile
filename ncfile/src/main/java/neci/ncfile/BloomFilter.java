@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import neci.core.CacheBuffer;
-import neci.core.PageBuffer;
+import io.CacheBuffer;
+import io.PageBuffer;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
 

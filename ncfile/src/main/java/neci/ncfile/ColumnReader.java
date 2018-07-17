@@ -12,11 +12,11 @@ import java.util.List;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.BlockColumnValues;
-import neci.core.FileColumnMetaData;
-import neci.core.GroupCore;
-import neci.core.InsertColumnFileReader;
-import neci.core.ValueType;
+import columnar.BlockColumnValues;
+import columnar.InsertColumnFileReader;
+import metadata.FileColumnMetaData;
+import misc.GroupCore;
+import misc.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;

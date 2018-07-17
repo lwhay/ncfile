@@ -9,10 +9,10 @@ import java.util.List;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.BlockColumnValues;
-import neci.core.FileColumnMetaData;
-import neci.core.MidInsertColumnFileReader;
-import neci.core.ValueType;
+import columnar.BlockColumnValues;
+import columnar.MidInsertColumnFileReader;
+import metadata.FileColumnMetaData;
+import misc.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;

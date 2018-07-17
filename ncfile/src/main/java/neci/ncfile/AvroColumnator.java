@@ -24,8 +24,8 @@ import java.util.Map;
 
 import org.apache.trevni.TrevniRuntimeException;
 
-import neci.core.FileColumnMetaData;
-import neci.core.ValueType;
+import metadata.FileColumnMetaData;
+import misc.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.base.Schema.Type;

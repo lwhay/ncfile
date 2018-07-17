@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
-import neci.core.GroupCore;
+import misc.GroupCore;
 import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
@@ -15,11 +15,12 @@ public class GenericGroupWriter {
 
     public static GroupCore writeGroup(Schema schema, Object datum) {
         GroupCore buf = new GroupCore();
-        buf.allocate(1024);
+        buf.allocate(8192);
         Object state = data.getRecordState(datum, schema);
         for (Field f : schema.getFields()) {
             writeField(datum, f, buf, state);
         }
+        buf.trunk();
         return buf;
     }
 

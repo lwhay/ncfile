@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import neci.core.GroupCore;
+import misc.GroupCore;
 import neci.ncfile.base.NeciRuntimeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;

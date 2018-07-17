@@ -7,12 +7,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import neci.core.BlockDescriptor;
-import neci.core.BlockOutputBuffer;
-import neci.core.FileColumnMetaData;
-import neci.core.FileMetaData;
-import neci.core.InsertColumnFileWriter;
-import neci.core.OutputBuffer;
+import columnar.BlockDescriptor;
+import columnar.InsertColumnFileWriter;
+import io.BlockOutputBuffer;
+import io.OutputBuffer;
+import metadata.FileColumnMetaData;
+import metadata.FileMetaData;
 import neci.ncfile.base.Schema;
 
 public class AvroColumnWriter {
