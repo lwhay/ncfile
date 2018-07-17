@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import neci.ncfile.BatchAvroColumnWriter;
+import neci.ncfile.BatchColumnReader;
+import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericData.Record;
 
@@ -69,7 +71,37 @@ public class LoadLineItem {
         writer.flush();
     }
 
+    public static void scan(String[] args) throws IOException {
+        Schema schema = (new Schema.Parser()).parse(new File(args[0]));
+        BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/result.neci"));
+        fr.createSchema(schema);
+        fr.create();
+        while (fr.hasNext()) {
+            Record record = fr.next();
+            //System.out.println(record.toString());
+        }
+        fr.close();
+    }
+
+    public static void filterScan(String[] args) throws IOException {
+        Schema schema = (new Schema.Parser()).parse(new File(args[0]));
+        FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"));
+        fr.createSchema(schema);
+        fr.createRead(1000);
+        while (fr.hasNext()) {
+            Record record = fr.next();
+            //System.out.println(record.toString());
+        }
+        fr.close();
+    }
+
     public static void main(String[] args) throws IOException {
         build(args);
+        long begin = System.currentTimeMillis();
+        scan(args);
+        System.out.println("batch load: " + (System.currentTimeMillis() - begin));
+        begin = System.currentTimeMillis();
+        filterScan(args);
+        System.out.println("fitlerbatch load: " + (System.currentTimeMillis() - begin));
     }
 }

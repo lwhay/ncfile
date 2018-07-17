@@ -32,6 +32,7 @@
     <hadoop1.version>1.2.1</hadoop1.version>
     <hadoop2.version>2.5.1</hadoop2.version>
     <jackson.version>1.9.13</jackson.version>
+    <avro.version>1.8.2</avro.version>
     <jetty.version>6.1.26</jetty.version>
     <jetty-servlet-api.version>2.5-20081211</jetty-servlet-api.version>
     <jopt-simple.version>4.7</jopt-simple.version>
@@ -72,7 +73,6 @@
     <file-management.version>1.2.1</file-management.version>
     <shade-plugin.version>2.4.3</shade-plugin.version>
     <archetype-plugin.version>2.2</archetype-plugin.version>
-    <avro.version>1.9.0-SNAPSHOT</avro.version>
   </properties>
 
   <modules>

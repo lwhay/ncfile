@@ -50,9 +50,6 @@ public class FilterBatchColumnReader<D> implements Closeable {
     protected int[] setStart; //the start of the bitset of every layer
     protected int[] readSet; //the index of chooseSet of every read column
 
-    protected boolean noFilters;
-    protected int currentMax;
-
     //    protected long timeIO;
     //    protected int readBlockSize;
     //    protected int seekedBlock;
@@ -61,6 +58,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
     //    protected List<Long> blockStart;
     //    protected List<Long> blockEnd;
     //    protected List<Long> blockOffset;
+
+    protected boolean noFilters;
+    protected int currentMax;
 
     static int max = 100000;
 
@@ -506,7 +506,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
             values[col].startRow();
             int[] res = values[col].nextLengthAndOffset();
             if (res[0] > 0)
-                set.set(res[1], res[0]);
+                set.set(res[1], res[0] + res[1]);
             q = p;
             p = filterSet.nextSetBit(1);
         }
@@ -560,6 +560,18 @@ public class FilterBatchColumnReader<D> implements Closeable {
         ValueType[] res = new ValueType[values.length];
         for (int i = 0; i < res.length; i++) {
             res[i] = values[i].getType();
+        }
+        return res;
+    }
+
+    public BitSet getCurrentSet() {
+        return filterSet;
+    }
+
+    public ArrayList<BitSet> getReadSet() {
+        ArrayList<BitSet> res = new ArrayList<BitSet>();
+        for (int x : readSet) {
+            res.add(chooseSet.get(x));
         }
         return res;
     }
@@ -681,7 +693,8 @@ public class FilterBatchColumnReader<D> implements Closeable {
             readLength.put(readParent, all);
         }
         readImplNoFilters();
-        all -= currentMax;
+        all -= readLength.get(readParent);
+        readIndex = new int[readNO.length];
     }
 
     private void readImplNoFilters() throws IOException {
@@ -691,12 +704,16 @@ public class FilterBatchColumnReader<D> implements Closeable {
             if (values[readNO[i]].isArray()) {
                 int j = 0;
                 int[] lenAndOff = new int[2];
+                values[readNO[i]].startRow();
+                lenAndOff = values[readNO[i]].nextLengthAndOffset();
+                readValue[i][j++] = lenAndOff[0];
+                int off = lenAndOff[1];
                 while (j < currentMax) {
                     values[readNO[i]].startRow();
                     lenAndOff = values[readNO[i]].nextLengthAndOffset();
                     readValue[i][j++] = lenAndOff[0];
                 }
-                readLength.put(values[readNO[i]].getParentName(), lenAndOff[0] + lenAndOff[1]);
+                readLength.put(values[readNO[i]].getName(), lenAndOff[0] + lenAndOff[1] - off);
             } else {
                 int j = 0;
                 while (j < currentMax) {
