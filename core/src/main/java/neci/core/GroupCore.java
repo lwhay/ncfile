@@ -2,7 +2,7 @@ package neci.core;
 
 import java.nio.ByteBuffer;
 
-public class GroupCore {
+public class GroupCore implements Comparable<GroupCore> {
     private ByteBuffer value;
 
     public GroupCore() {
@@ -29,6 +29,14 @@ public class GroupCore {
         value.put(b);
     }
 
+    public byte get(int i) {
+        return value.get(i);
+    }
+
+    public int position() {
+        return value.position();
+    }
+
     public int remaining() {
         return value.remaining();
     }
@@ -39,5 +47,16 @@ public class GroupCore {
 
     public byte[] array() {
         return value.array();
+    }
+
+    @Override
+    public int compareTo(GroupCore that) {
+        int n = this.position() + Math.min(this.remaining(), that.remaining());
+        for (int i = this.position(), j = that.position(); i < n; i++, j++) {
+            int cmp = Byte.compare(this.get(i), that.get(j));
+            if (cmp != 0)
+                return cmp;
+        }
+        return this.remaining() - that.remaining();
     }
 }

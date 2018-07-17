@@ -152,19 +152,19 @@ public class BlockInputBuffer {
 
     public int readFixed32() throws IOException {
         int len = 1;
-        int n = (buf[pos] & 0xff) | ((buf[pos + len++] & 0xff) << 8) | ((buf[pos + len++] & 0xff) << 16)
-                | ((buf[pos + len++] & 0xff) << 24);
         if ((pos + 4) > buf.length)
             throw new EOFException();
+        int n = (buf[pos] & 0xff) | ((buf[pos + len++] & 0xff) << 8) | ((buf[pos + len++] & 0xff) << 16)
+                | ((buf[pos + len++] & 0xff) << 24);
         pos += 4;
         return n;
     }
 
     public int readFixed16() throws IOException {
         int len = 1;
-        int n = (buf[pos] & 0xff) | ((buf[pos + len++] & 0xff) << 8);
         if ((pos + 2) > buf.length)
             throw new EOFException();
+        int n = (buf[pos] & 0xff) | ((buf[pos + len++] & 0xff) << 8);
         pos += 2;
         return n;
     }

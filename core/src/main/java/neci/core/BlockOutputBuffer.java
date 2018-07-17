@@ -9,7 +9,7 @@ import java.util.Arrays;
 import org.apache.trevni.TrevniRuntimeException;
 
 public class BlockOutputBuffer {
-    static final int BLOCK_SIZE = 48 * 1024;
+    static final int BLOCK_SIZE = 32 * 1024;
     static final int COUNT = 32 * 1024;
 
     protected int bitCount; // position in booleans
@@ -20,8 +20,9 @@ public class BlockOutputBuffer {
     protected int count2;
 
     public BlockOutputBuffer() {
-        buf1 = new byte[BLOCK_SIZE + BLOCK_SIZE >> 2];
+        buf1 = new byte[BLOCK_SIZE];
         buf2 = new byte[BLOCK_SIZE];
+        bitCount = 0;
     }
 
     public boolean isFull() {
@@ -35,6 +36,9 @@ public class BlockOutputBuffer {
     public void close() {
         buf1 = null;
         buf2 = null;
+        count1 = 0;
+        count2 = 0;
+        bitCount = 0;
     }
 
     public void writeValue(Object value, ValueType type) throws IOException {
@@ -67,6 +71,7 @@ public class BlockOutputBuffer {
                 break;
             case GROUP:
                 writeGroup((GroupCore) value);
+                break;
             case BYTES:
                 if (value instanceof ByteBuffer)
                     writeBytes((ByteBuffer) value);

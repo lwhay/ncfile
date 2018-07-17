@@ -1,17 +1,19 @@
 package neci.ncfile.base;
 
-import neci.ncfile.BatchAvroColumnWriter;
-import neci.ncfile.generic.GenericData;
-import neci.ncfile.generic.GenericData.Record;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import neci.ncfile.BatchAvroColumnWriter;
+import neci.ncfile.generic.GenericData;
+import neci.ncfile.generic.GenericData.Record;
+
 /**
  * Created by michael on 2018/7/16.
+ * Default parameters:
+ * ./src/resources/group/lineitem.avsc ./src/resources/group/storage/ 1000 1000 ./src/resources/tpch/lineitem.tbl
  */
 public class LoadLineItem {
     public static void build(String[] args) throws IOException {

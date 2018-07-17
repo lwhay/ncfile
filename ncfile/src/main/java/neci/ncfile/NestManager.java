@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.io.FileUtils;
+
 import neci.core.ValueType;
 import neci.ncfile.BloomFilter.BloomFilterBuilder;
 import neci.ncfile.CachList.FlagData;
@@ -52,6 +54,7 @@ public class NestManager {
         this.mul = mul;
         keySchemas = new Schema[layer];
         nestKeySchemas = new Schema[layer];
+        midSchemas = new Schema[layer];
         nestKeySchemas[layer - 1] = keySchemas[layer - 1] = setSchema(schemas[layer - 1].getSchema(),
                 schemas[layer - 1].getKeyFields());
         for (int i = (layer - 1); i > 0; i--) {
@@ -307,16 +310,15 @@ public class NestManager {
 
     public static void shDelete(String path) {
         try {
-            Process proc = Runtime.getRuntime().exec("rm -f " + path);
-            StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "Error");
-            StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), "Output");
-            errorGobbler.start();
-            outputGobbler.start();
-            proc.waitFor();
+            System.out.println("Delete on: " + path);
+            File file = new File(path);
+            if (file.isDirectory()) {
+                FileUtils.deleteDirectory(new File(path));
+            } else {
+                file.delete();
+            }
         } catch (IOException x) {
             x.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 
@@ -1491,7 +1493,7 @@ public class NestManager {
         BloomFilterBuilder builder2 = createBloom(numElements2, (index - 1));
         tree[index - 1].create((int) (numElements2 / 500));
 
-        //将file1,file2按照file1的外键排序
+        //Sort file1 and file2 based on the foreign key of file1
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeNestedSchema(),
                 keyJoin(schema1.getOutKeyFields(), schema1.getKeyFields()));

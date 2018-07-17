@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import neci.core.BlockDescriptor;
+import neci.core.BlockOutputBuffer;
 import neci.core.FileColumnMetaData;
 import neci.core.FileMetaData;
 import neci.core.InsertColumnFileWriter;
@@ -23,7 +24,7 @@ public class AvroColumnWriter {
     protected int columncount;
     protected long[] columnStart;
     protected Blocks[] blocks;
-    OutputBuffer buf;
+    BlockOutputBuffer buf;
     int index;
 
     public static final String SCHEMA_KEY = "avro.schema";
@@ -77,7 +78,7 @@ public class AvroColumnWriter {
         }
         data = new FileOutputStream(new File(path));
         head = new FileOutputStream(new File(path.substring(0, path.lastIndexOf(".")) + ".head"));
-        buf = new OutputBuffer();
+        buf = new BlockOutputBuffer();
         index = 0;
         rowcount = 0;
     }
@@ -143,19 +144,20 @@ public class AvroColumnWriter {
     }
 
     public void writeHeader() throws IOException {
-        buf.write(InsertColumnFileWriter.MAGIC);
-        buf.writeFixed32(rowcount);
-        buf.writeFixed32(columncount);
-        filemeta.write(buf);
+        OutputBuffer header = new OutputBuffer();
+        header.write(InsertColumnFileWriter.MAGIC);
+        header.writeFixed32(rowcount);
+        header.writeFixed32(columncount);
+        filemeta.write(header);
         int i = 0;
         long delay = 0;
         for (FileColumnMetaData c : meta) {
             columnStart[i] = delay;
-            c.write(buf);
+            c.write(header);
             int size = blocks[i].blocks.size();
             buf.writeFixed32(size);
             for (int k = 0; k < size; k++) {
-                blocks[i].get(k).writeTo(buf);
+                blocks[i].get(k).writeTo(header);
                 delay += blocks[i].get(k).getSize();
             }
             blocks[i].clear();
@@ -163,10 +165,10 @@ public class AvroColumnWriter {
         }
 
         for (i = 0; i < columncount; i++) {
-            buf.writeFixed64(columnStart[i]);
+            header.writeFixed64(columnStart[i]);
         }
-        buf.writeTo(head);
-        buf.close();
+        header.writeTo(head);
+        header.close();
     }
 
     //  public void insertTo(File file) throws IOException {

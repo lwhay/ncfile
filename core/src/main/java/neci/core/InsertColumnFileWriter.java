@@ -198,7 +198,7 @@ public class InsertColumnFileWriter {
     }
 
     private void mergeColumn(OutputStream out, int column) throws IOException {
-        OutputBuffer buf = new OutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer();
         gapFile.seek(4);
         nestFile.seek(0);
         int row = 0;
@@ -236,7 +236,7 @@ public class InsertColumnFileWriter {
     }
 
     private void mergeArrayColumn(OutputStream out, int column) throws IOException {
-        OutputBuffer buf = new OutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer();
         gapFile.seek(4);
         nestFile.seek(0);
         int row = 0;
