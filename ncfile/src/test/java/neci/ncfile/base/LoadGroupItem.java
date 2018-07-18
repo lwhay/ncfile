@@ -23,6 +23,7 @@ import neci.ncfile.generic.GenericData.Record;
  * ./src/resources/group/group.avsc
  * ./src/resources/group/groupread.avsc
  * build
+ * 10
  */
 public class LoadGroupItem {
     public static void build(String[] args) throws IOException {
@@ -36,7 +37,7 @@ public class LoadGroupItem {
         }
         int level = Integer.parseInt(args[2]);
         int mul = Integer.parseInt(args[3]);
-        BatchAvroColumnWriter<Record> writer = new BatchAvroColumnWriter<>(schema, args[1], level, mul);
+        BatchAvroColumnWriter<Record> writer = new BatchAvroColumnWriter<>(schema, args[1], level, mul, "snappy");
         BufferedReader br = new BufferedReader(new FileReader(args[4]));
         String line;
         Schema gs = new Schema.Parser().parse(new File(args[5]));
@@ -47,7 +48,8 @@ public class LoadGroupItem {
                 record.put(i, Long.parseLong(fields[i]));
             }
             record.put(3, Integer.parseInt(fields[3]));
-            record.put(4, Float.parseFloat(fields[7]));
+            if (fields[7] != null)
+                record.put(4, Float.parseFloat(fields[7]));
             Group group = new Group(gs);
             group.put(0, Float.parseFloat(fields[4]));
             group.put(1, Float.parseFloat(fields[5]));
@@ -83,9 +85,11 @@ public class LoadGroupItem {
         BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/result.neci"));
         fr.createSchema(schema);
         fr.create();
+        System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(0));
         while (fr.hasNext()) {
             Record record = fr.next();
-            //System.out.println(record.toString());
+            /*System.out.println(record.getSchema().getFields().size());
+            System.out.println(record.toString());*/
         }
         fr.close();
     }
@@ -94,21 +98,26 @@ public class LoadGroupItem {
         Schema schema = (new Schema.Parser()).parse(new File(args[6]));
         FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"));
         fr.createSchema(schema);
-        fr.createRead(1000);
+        fr.createRead(Integer.parseInt(args[8]));
+        System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(0));
         while (fr.hasNext()) {
             Record record = fr.next();
-            //System.out.println(record.toString());
+            /*System.out.println(record.getSchema().getFields().size());
+            System.out.println(record.toString());*/
         }
         fr.close();
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 8) {
-            System.out.println("Command: dataSchema stroage batchSize multation source inlienSchema querySecheam type");
+        if (args.length != 9) {
+            System.out.println(
+                    "Command: dataSchema stroage loadGran multation  source inlienSchema querySecheam type batchSize");
             System.exit(0);
         }
         if (args[7].equals("build")) {
             build(args);
+            scan(args);
+            filterScan(args);
         } else if (args[7].equals("scan")) {
             long begin = System.currentTimeMillis();
             scan(args);

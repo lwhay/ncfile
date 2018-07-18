@@ -66,9 +66,18 @@ class AvroColumnator {
         if (isSimple(s)) {
             if (path == null)
                 path = s.getFullName();
-            FileColumnMetaData p = addColumn(path, simpleValueType(s), parent, isArray);
-            if (s.getType() == Type.GROUP)
-                p.setGroup_S(s.toString());
+            if (s.getType().equals(Type.UNION)) {
+                List<Schema> brs = s.getTypes();
+                ValueType[] unionArray = new ValueType[brs.size()];
+                for (int i = 0; i < brs.size(); i++) {
+                    unionArray[i] = simpleValueType(brs.get(i));
+                }
+                addUnionColumn(path, unionArray, brs.size(), parent);
+            } else {
+                FileColumnMetaData p = addColumn(path, simpleValueType(s), parent, isArray);
+                if (s.getType() == Type.GROUP)
+                    p.setGroup_S(s.toString());
+            }
             return;
         }
 
@@ -109,11 +118,11 @@ class AvroColumnator {
         seen.remove(s);
     }
 
-    //    private String p(String parent, Schema child, String sep) {
-    //        if (child.getType() == Schema.Type.UNION)
-    //            return parent;
-    //        return p(parent, child.getFullName(), sep);
-    //    }
+    private String p(String parent, Schema child, String sep) {
+        if (child.getType() == Schema.Type.UNION)
+            return parent;
+        return p(parent, child.getFullName(), sep);
+    }
 
     private String p(String parent, String child, String sep) {
         return parent == null ? child : parent + sep + child;
@@ -153,7 +162,7 @@ class AvroColumnator {
         //        }
         // complex array: insert a parent column with lengths
         int start = columns.size();
-        FileColumnMetaData array = addColumn(path, ValueType.ARRAY, parent, true);
+        FileColumnMetaData array = addColumn(path, ValueType.NULL, parent, true);
         if (isSimple(element)) {
             String ePath = path.substring(0, path.length() - 6);
             addColumn(ePath, simpleValueType(element), array, false);

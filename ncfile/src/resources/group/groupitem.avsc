@@ -4,7 +4,7 @@
      {"name": "l_partkey", "type": "long"},
      {"name": "l_suppkey", "type": "long"},
      {"name": "l_linenumber", "type": "int"},
-     {"name": "l_tax", "type": "float"},
+     {"name": "l_tax", "type": ["float", "null"]},
      {"name": "grouptest", "type":{"name": "group", "type": "group",
       "fields": [
          {"name": "l_quantity", "type": "float"},

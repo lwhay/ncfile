@@ -56,7 +56,7 @@ public class BatchColumnReader<D> implements Closeable {
         int j = 0;
         arrayValues = new int[le];
         for (int i = 0; i < le; i++) {
-            while (values[j].getType() != ValueType.ARRAY)
+            while (values[j].getType() != ValueType.NULL)
                 j++;
             arrayValues[i] = j;
             j++;
@@ -328,9 +328,6 @@ public class BatchColumnReader<D> implements Closeable {
         switch (s.getType()) {
             case GROUP:
                 return GenericGroupReader.readGroup((GroupCore) v, s);
-            case UNION:
-                if (v instanceof GroupCore)
-                    return GenericGroupReader.readGroup((GroupCore) v, s);
             case ENUM:
                 return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
             case FIXED:

@@ -15,7 +15,7 @@ import neci.ncfile.generic.GenericData.Record;
 /**
  * Created by michael on 2018/7/16.
  * Default parameters:
- * ./src/resources/group/lineitem.avsc ./src/resources/group/storage/ 1000 1000 ./src/resources/tpch/lineitem.tbl ./src/resources/group/lineread.avsc build
+ * ./src/resources/group/lineitem.avsc ./src/resources/group/storage/ 1000 1000 ./src/resources/tpch/lineitem.tbl ./src/resources/group/lineread.avsc build 10
  */
 public class LoadLineItem {
     public static void build(String[] args) throws IOException {
@@ -29,7 +29,8 @@ public class LoadLineItem {
         }
         int free = Integer.parseInt(args[2]);
         int mul = Integer.parseInt(args[3]);
-        BatchAvroColumnWriter<GenericData.Record> writer = new BatchAvroColumnWriter<>(schema, args[1], free, mul);
+        BatchAvroColumnWriter<GenericData.Record> writer =
+                new BatchAvroColumnWriter<>(schema, args[1], free, mul, "snappy");
         BufferedReader br = new BufferedReader(new FileReader(args[4]));
         String line;
         while ((line = br.readLine()) != null) {
@@ -51,6 +52,11 @@ public class LoadLineItem {
                         break;
                     case BYTES:
                         record.put(i, ByteBuffer.wrap(fields[i].getBytes()));
+                        break;
+                    case UNION:
+                        if (fields[i] != null) {
+                            record.put(i, Integer.parseInt(fields[i]));
+                        }
                         break;
                     default:
                         record.put(i, fields[i]);
@@ -88,7 +94,7 @@ public class LoadLineItem {
         Schema schema = (new Schema.Parser()).parse(new File(args[5]));
         FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"));
         fr.createSchema(schema);
-        fr.createRead(1000);
+        fr.createRead(Integer.parseInt(args[7]));
         while (fr.hasNext()) {
             Record record = fr.next();
             //System.out.println(record.toString());
@@ -97,8 +103,8 @@ public class LoadLineItem {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 7) {
-            System.out.println("Command: dataSchema stroage batchSize multation source querySecheam type");
+        if (args.length != 8) {
+            System.out.println("Command: dataSchema stroage loadGran multation  source querySecheam type batchSize");
             System.exit(0);
         }
         if (args[6].equals("build")) {

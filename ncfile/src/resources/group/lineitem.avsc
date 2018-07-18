@@ -3,7 +3,7 @@
      {"name": "l_orderkey", "type": "long", "order": "ignore"},
      {"name": "l_partkey", "type": "long"},
      {"name": "l_suppkey", "type": "long"},
-     {"name": "l_linenumber", "type": "int"},
+     {"name": "l_linenumber", "type": ["int", "null"]},
      {"name": "l_quantity", "type": "float"},
      {"name": "l_extendedprice", "type": "float"},
      {"name": "l_discount", "type": "float"},

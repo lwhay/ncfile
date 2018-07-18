@@ -2,8 +2,12 @@ package io;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.apache.trevni.TrevniRuntimeException;
+
+import codec.Codec;
 import misc.ValueType;
 
 public class UnionOutputBuffer extends BlockOutputBuffer {
@@ -14,11 +18,35 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
     private int bitCount3;
     private int unionBits;
 
+    ByteBuffer getAsByteBuffer3() {
+        return ByteBuffer.wrap(buf3, 0, count3);
+    }
+
+    public int unionSize() {
+        return count3;
+    }
+
+    public void compressUsing(Codec cc) throws IOException {
+        super.compressUsing(cc);
+        ByteBuffer result;
+        if (count3 != 0) {
+            result = cc.compress(getAsByteBuffer3());
+            //int old = count3;
+            buf3 = result.array();
+            count3 = result.remaining();
+            /*ByteBuffer bb = cc.decompress(result);
+            System.out.println("\t" + old + ":" + count3 + ":" + bb.remaining());*/
+        } else {
+            throw new TrevniRuntimeException("compress zero page: " + count1 + ":" + count2 + ":" + count3);
+        }
+    }
+
     public UnionOutputBuffer(ValueType[] types, int unionBits) {
         super();
         this.union = types.length;
         buf3 = new byte[COUNT];
         unionTypes = types;
+        bitCount3 = 0;
         this.unionBits = unionBits;
     }
 
@@ -33,12 +61,17 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
     public void close() {
         super.close();
         buf3 = null;
+        bitCount = 0;
+        count3 = 0;
     }
 
     public void writeValue(Object value, int index) throws IOException {
         ValueType type = unionTypes[index];
         writeUnion(index);
-        super.writeValue(value, type);
+        if (type.equals(ValueType.BOOLEAN))
+            super.writeBooleanByte((Boolean) value);
+        else
+            super.writeValue(value, type);
         if (isFixed(type))
             writeNull();
     }
@@ -82,8 +115,9 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
     }
 
     public synchronized void reset() {
+        super.reset();
+        buf3 = new byte[COUNT];
         count3 = 0;
-        count1 = 0;
-        count2 = 0;
+        bitCount3 = 0;
     }
 }

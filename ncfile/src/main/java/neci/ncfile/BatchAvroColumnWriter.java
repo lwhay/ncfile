@@ -42,12 +42,16 @@ public class BatchAvroColumnWriter<T> {
     private int mul;
 
     public BatchAvroColumnWriter(Schema schema, String path, int free, int mul) throws IOException {
+        this(schema, path, free, mul, "null");
+    }
+
+    public BatchAvroColumnWriter(Schema schema, String path, int free, int mul, String codec) throws IOException {
         this.schema = schema;
         AvroColumnator columnator = new AvroColumnator(schema);
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         this.meta = columnator.getColumns();
-        this.writer = new BatchColumnFileWriter(filemeta, meta);
+        this.writer = new BatchColumnFileWriter(filemeta.setCodec(codec), meta);
         this.arrayWidths = columnator.getArrayWidths();
         this.model = GenericData.get();
         //    this.numFiles = numFiles;
@@ -107,6 +111,21 @@ public class BatchAvroColumnWriter<T> {
         //    }
     }
 
+    public void flush(T value) throws IOException {
+        values.add(value);
+        if (values.size() < max) {
+            return;
+        }
+        flushTo(new File(path + "file" + String.valueOf(fileIndex) + ".neci"));
+
+        fileIndex++;
+        end = System.currentTimeMillis();
+        System.out.println("############" + (fileIndex) + "\ttime: " + (end - start) + "ms");
+        System.out.println();
+        start = System.currentTimeMillis();
+        //    }
+    }
+
     public int flush() throws IOException {
         if (!values.isEmpty()) {
             if (fileIndex > 0) {
@@ -157,6 +176,10 @@ public class BatchAvroColumnWriter<T> {
         switch (s.getType()) {
             case GROUP:
                 o = GenericGroupWriter.writeGroup(s, o);
+            case UNION:
+                if (o != null && o instanceof Utf8)
+                    o = o.toString();
+                break;
             case STRING:
                 if (o instanceof Utf8)
                     o = o.toString();

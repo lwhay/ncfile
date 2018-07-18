@@ -181,6 +181,20 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         final int startColumn = column;
 
         switch (s.getType()) {
+            case MAP:
+                values[column].startRow();
+                int size = values[column].nextLength();
+                Map<String, Object> map = new HashMap<>(size);
+                for (int i = 0; i < size; i++) {
+                    this.column = startColumn;
+                    values[column].startRow();
+                    values[column++].nextValue();
+                    values[column].startRow();
+                    String key = (String) values[column++].nextValue();
+                    map.put(key, read(s.getValueType()));
+                }
+                column = startColumn + arrayWidths[startColumn];
+                return map;
             case RECORD:
                 Object record = model.newRecord(null, s);
                 for (Field f : s.getFields()) {
@@ -205,22 +219,22 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
                 }
                 column = startColumn + arrayWidths[startColumn];
                 return elements;
-            //            case UNION:
-            //                Object value = null;
-            //                for (Schema branch : s.getTypes()) {
-            //                    if (branch.getType() == Schema.Type.NULL)
-            //                        continue;
-            //                    values[column].startRow();
-            //                    if (values[column].nextLength() == 1) {
-            //                        value = nextValue(branch, column);
-            //                        column++;
-            //                        if (!isSimple(branch))
-            //                            value = read(branch);
-            //                    } else {
-            //                        column += arrayWidths[column];
-            //                    }
-            //                }
-            //                return value;
+            case UNION:
+                Object value = null;
+                for (Schema branch : s.getTypes()) {
+                    if (branch.getType() == Schema.Type.NULL)
+                        continue;
+                    values[column].startRow();
+                    if (values[column].nextLength() == 1) {
+                        value = nextValue(branch, column);
+                        column++;
+                        if (!isSimple(branch))
+                            value = read(branch);
+                    } else {
+                        column += arrayWidths[column];
+                    }
+                }
+                return value;
             default:
                 throw new TrevniRuntimeException("Unknown schema: " + s);
         }

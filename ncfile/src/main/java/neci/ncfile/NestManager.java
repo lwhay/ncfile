@@ -589,7 +589,7 @@ public class NestManager {
         int a = 0;
         int array = 0;
         for (ValueType type : types) {
-            if (type == ValueType.ARRAY) {
+            if (type == ValueType.NULL) {
                 RandomAccessFile in = new RandomAccessFile((tmpPath + "array" + a), "rw");
                 int len = in.readInt();
                 int tmp = 0;
