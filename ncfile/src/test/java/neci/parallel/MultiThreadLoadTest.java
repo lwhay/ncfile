@@ -16,14 +16,14 @@ public class MultiThreadLoadTest {
      * @throws IOException
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length != 8) {
+        if (args.length != 9) {
             System.out.println(
-                    "Command: String sPath, String dPath, String tPath, int wc, int mul, int dg, int gran, String codec");
+                    "Command: String sPath, String dPath, String tPath, int wc, int mul, int dg, int gran, String codec, int bs");
             System.exit(0);
         }
         MultiThreadLoad builder =
-                new MultiThreadLoad(args[0], args[1], args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
-                        Integer.parseInt(args[5]), Integer.parseInt(args[6]), args[7]);
+                new MultiThreadLoad(args[0], args[1], args[2], Integer.parseInt(args[8]), Integer.parseInt(args[3]),
+                        Integer.parseInt(args[4]), Integer.parseInt(args[5]), Integer.parseInt(args[6]), args[7]);
         builder.build();
     }
 

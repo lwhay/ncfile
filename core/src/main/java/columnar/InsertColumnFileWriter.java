@@ -27,6 +27,7 @@ public class InsertColumnFileWriter {
     private int rowcount;
     private int columncount;
     private String path;
+    private final BlockManager bm;
     //    private int[] gap;
     private RandomAccessFile gapFile;
     //    private int[] nest;
@@ -101,9 +102,11 @@ public class InsertColumnFileWriter {
     //    this.addRow = sort[0].size();
     //  }
 
-    public InsertColumnFileWriter(FileMetaData filemeta, FileColumnMetaData[] meta) throws IOException {
+    public InsertColumnFileWriter(FileMetaData filemeta, FileColumnMetaData[] meta, BlockManager bm)
+            throws IOException {
         this.filemeta = filemeta;
         this.meta = meta;
+        this.bm = bm;
         this.columncount = meta.length;
         this.columnStart = new long[columncount];
         this.blocks = new Blocks[columncount];
@@ -206,7 +209,7 @@ public class InsertColumnFileWriter {
     }
 
     private void mergeColumn(OutputStream out, int column) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         gapFile.seek(4);
         nestFile.seek(0);
         int row = 0;
@@ -244,7 +247,7 @@ public class InsertColumnFileWriter {
     }
 
     private void mergeArrayColumn(OutputStream out, int column) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         gapFile.seek(4);
         nestFile.seek(0);
         int row = 0;
@@ -309,7 +312,7 @@ public class InsertColumnFileWriter {
     //  }
 
     private void writeSourceColumns(OutputStream out) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
@@ -326,7 +329,8 @@ public class InsertColumnFileWriter {
                     row++;
                 }
             } else if (type.equals(ValueType.UNION)) {
-                UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits());
+                UnionOutputBuffer ubuf =
+                        new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits(), bm.getBlockSize());
                 for (Object x : insert[i].toArray()) {
                     if (ubuf.isFull()) {
                         BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
@@ -380,7 +384,7 @@ public class InsertColumnFileWriter {
      * write array column incremently
      */
     private void flushSourceColumns(OutputStream out) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
@@ -399,7 +403,8 @@ public class InsertColumnFileWriter {
                     row++;
                 }
             } else if (type.equals(ValueType.UNION)) {
-                UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits());
+                UnionOutputBuffer ubuf =
+                        new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits(), bm.getBlockSize());
                 for (Object x : insert[i].toArray()) {
                     if (ubuf.isFull()) {
                         BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());

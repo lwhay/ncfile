@@ -41,17 +41,17 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
         }
     }
 
-    public UnionOutputBuffer(ValueType[] types, int unionBits) {
-        super();
+    public UnionOutputBuffer(ValueType[] types, int unionBits, int bs) {
+        super(bs);
         this.union = types.length;
-        buf3 = new byte[COUNT];
+        buf3 = new byte[maxCount];
         unionTypes = types;
         bitCount3 = 0;
         this.unionBits = unionBits;
     }
 
     public boolean isFull() {
-        return (count1 + count2 + count3) >= BLOCK_SIZE;
+        return (count1 + count2 + count3) >= blockSize;
     }
 
     public int size() {
@@ -116,7 +116,7 @@ public class UnionOutputBuffer extends BlockOutputBuffer {
 
     public synchronized void reset() {
         super.reset();
-        buf3 = new byte[COUNT];
+        buf3 = new byte[maxCount];
         count3 = 0;
         bitCount3 = 0;
     }

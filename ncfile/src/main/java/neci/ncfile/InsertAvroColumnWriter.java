@@ -9,6 +9,7 @@ import java.util.Collection;
 import org.apache.avro.util.Utf8;
 import org.apache.trevni.TrevniRuntimeException;
 
+import columnar.BlockManager;
 import columnar.InsertColumnFileWriter;
 import columnar.InsertColumnFileWriter.ListArr;
 import metadata.FileColumnMetaData;
@@ -21,6 +22,7 @@ import neci.ncfile.generic.GenericGroupWriter;
 
 public class InsertAvroColumnWriter<K, V> {
     private Schema schema;
+    private BlockManager bm;
     private int[] keyFields;
     private InsertColumnFileWriter writer;
     private FileColumnMetaData[] meta;
@@ -41,18 +43,20 @@ public class InsertAvroColumnWriter<K, V> {
     private int free;
     private int mul;
 
-    public InsertAvroColumnWriter(Schema schema, String path, int[] keyFields, int free, int mul) throws IOException {
-        this(schema, path, keyFields, free, mul, "null");
+    public InsertAvroColumnWriter(Schema schema, String path, int[] keyFields, int free, int mul, int bs)
+            throws IOException {
+        this(schema, path, keyFields, free, mul, bs, "null");
     }
 
-    public InsertAvroColumnWriter(Schema schema, String path, int[] keyFields, int free, int mul, String codec)
+    public InsertAvroColumnWriter(Schema schema, String path, int[] keyFields, int free, int mul, int bs, String codec)
             throws IOException {
         this.schema = schema;
         AvroColumnator columnator = new AvroColumnator(schema);
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         this.meta = columnator.getColumns();
-        this.writer = new InsertColumnFileWriter(filemeta.setCodec(codec), meta);
+        this.bm = new BlockManager(bs);
+        this.writer = new InsertColumnFileWriter(filemeta.setCodec(codec), meta, bm);
         this.arrayWidths = columnator.getArrayWidths();
         this.model = GenericData.get();
         this.keyFields = keyFields;

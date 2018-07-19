@@ -29,8 +29,9 @@ public class LoadLineItem {
         }
         int free = Integer.parseInt(args[2]);
         int mul = Integer.parseInt(args[3]);
+        int bs = Integer.parseInt(args[8]);
         BatchAvroColumnWriter<GenericData.Record> writer =
-                new BatchAvroColumnWriter<>(schema, args[1], free, mul, "snappy");
+                new BatchAvroColumnWriter<>(schema, args[1], free, mul, bs, "snappy");
         BufferedReader br = new BufferedReader(new FileReader(args[4]));
         String line;
         while ((line = br.readLine()) != null) {
@@ -103,8 +104,9 @@ public class LoadLineItem {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 8) {
-            System.out.println("Command: dataSchema stroage loadGran multation  source querySecheam type batchSize");
+        if (args.length != 9) {
+            System.out.println(
+                    "Command: dataSchema stroage loadGran multation source querySecheam type batchSize blockSize");
             System.exit(0);
         }
         if (args[6].equals("build")) {

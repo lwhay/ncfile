@@ -12,6 +12,7 @@ import org.apache.avro.util.Utf8;
 import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BatchColumnFileWriter;
+import columnar.BlockManager;
 import columnar.InsertColumnFileWriter.ListArr;
 import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
@@ -22,6 +23,7 @@ import neci.ncfile.generic.GenericFixed;
 import neci.ncfile.generic.GenericGroupWriter;
 
 public class BatchAvroColumnWriter<T> {
+    private final BlockManager bm;
     private Schema schema;
     private BatchColumnFileWriter writer;
     private FileColumnMetaData[] meta;
@@ -41,17 +43,19 @@ public class BatchAvroColumnWriter<T> {
     private int free;
     private int mul;
 
-    public BatchAvroColumnWriter(Schema schema, String path, int free, int mul) throws IOException {
-        this(schema, path, free, mul, "null");
+    public BatchAvroColumnWriter(Schema schema, String path, int free, int mul, int bs) throws IOException {
+        this(schema, path, free, mul, bs, "null");
     }
 
-    public BatchAvroColumnWriter(Schema schema, String path, int free, int mul, String codec) throws IOException {
+    public BatchAvroColumnWriter(Schema schema, String path, int free, int mul, int bs, String codec)
+            throws IOException {
         this.schema = schema;
+        this.bm = new BlockManager(bs);
         AvroColumnator columnator = new AvroColumnator(schema);
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         this.meta = columnator.getColumns();
-        this.writer = new BatchColumnFileWriter(filemeta.setCodec(codec), meta);
+        this.writer = new BatchColumnFileWriter(filemeta.setCodec(codec), meta, bm);
         this.arrayWidths = columnator.getArrayWidths();
         this.model = GenericData.get();
         //    this.numFiles = numFiles;

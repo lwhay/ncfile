@@ -16,6 +16,8 @@ import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
 
 public class OLTest {
+    private static final int DEFAULT_BLOCK_KBYTES = 32;
+
     //public static void MemPrint(){
     //System.out.println("########\t"+(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
     //}
@@ -91,8 +93,8 @@ public class OLTest {
         }
 
         if (args[5].equals("true")) {
-            InsertAvroColumnWriter<CombKey, Record> writer =
-                    new InsertAvroColumnWriter<CombKey, Record>(olS, olPath, fs, Integer.parseInt(args[6]), 40);
+            InsertAvroColumnWriter<CombKey, Record> writer = new InsertAvroColumnWriter<CombKey, Record>(olS, olPath,
+                    fs, Integer.parseInt(args[6]), 40, DEFAULT_BLOCK_KBYTES);
 
             String otemp = "";
             String ltemp = "";
@@ -149,8 +151,8 @@ public class OLTest {
             }
             writer.flush();
         } else {
-            InsertAvroColumnWriter<ComparableKey, Record> writer =
-                    new InsertAvroColumnWriter<ComparableKey, Record>(olS, olPath, fs, Integer.parseInt(args[6]), 40);
+            InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(
+                    olS, olPath, fs, Integer.parseInt(args[6]), 40, DEFAULT_BLOCK_KBYTES);
 
             String otemp = "";
             String ltemp = "";

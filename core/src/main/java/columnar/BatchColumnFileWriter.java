@@ -27,6 +27,7 @@ public class BatchColumnFileWriter {
     private ListArr[] insert;
     private int rowcount;
     private int columncount;
+    private final BlockManager bm;
     //    private String path;
     //    private int[] gap;
     //    private RandomAccessFile gapFile;
@@ -49,12 +50,13 @@ public class BatchColumnFileWriter {
     //    this.addRow = sort[0].size();
     //  }
 
-    public BatchColumnFileWriter(FileMetaData filemeta, FileColumnMetaData[] meta) throws IOException {
+    public BatchColumnFileWriter(FileMetaData filemeta, FileColumnMetaData[] meta, BlockManager bm) throws IOException {
         this.filemeta = filemeta;
         this.meta = meta;
         this.columncount = meta.length;
         this.columnStart = new long[columncount];
         this.blocks = new Blocks[columncount];
+        this.bm = bm;
         for (int i = 0; i < columncount; i++) {
             blocks[i] = new Blocks();
         }
@@ -175,7 +177,8 @@ public class BatchColumnFileWriter {
         ValueType type = meta[column].getType();
 
         if (type.equals(ValueType.UNION)) {
-            UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[column].getUnionArray(), meta[column].getUnionBits());
+            UnionOutputBuffer ubuf =
+                    new UnionOutputBuffer(meta[column].getUnionArray(), meta[column].getUnionBits(), bm.getBlockSize());
             for (int i = 0; i < readers.length; i++) {
                 while (values[i].hasNext()) {
                     if (ubuf.isFull()) {
@@ -203,7 +206,7 @@ public class BatchColumnFileWriter {
             }
             ubuf.close();
         } else {
-            BlockOutputBuffer buf = new BlockOutputBuffer();
+            BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
             for (int i = 0; i < readers.length; i++) {
                 while (values[i].hasNext()) {
                     if (buf.isFull()) {
@@ -229,7 +232,7 @@ public class BatchColumnFileWriter {
     }
 
     private void mergeArrayColumn(OutputStream out, int column) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         //        gapFile.seek(4);
         //        nestFile.seek(0);
         int row = 0;
@@ -309,7 +312,7 @@ public class BatchColumnFileWriter {
     //  }
 
     private void writeSourceColumns(OutputStream out) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
@@ -326,7 +329,8 @@ public class BatchColumnFileWriter {
                     row++;
                 }
             } else if (type.equals(ValueType.UNION)) {
-                UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits());
+                UnionOutputBuffer ubuf =
+                        new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits(), bm.getBlockSize());
                 for (Object x : insert[i].toArray()) {
                     if (ubuf.isFull()) {
                         CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, ubuf);
@@ -380,7 +384,7 @@ public class BatchColumnFileWriter {
      * write array column incremently
      */
     private void flushSourceColumns(OutputStream out) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer();
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         for (int i = 0; i < columncount; i++) {
             ValueType type = meta[i].getType();
             int row = 0;
@@ -399,7 +403,8 @@ public class BatchColumnFileWriter {
                     row++;
                 }
             } else if (type.equals(ValueType.UNION)) {
-                UnionOutputBuffer ubuf = new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits());
+                UnionOutputBuffer ubuf =
+                        new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits(), bm.getBlockSize());
                 for (Object x : insert[i].toArray()) {
                     if (ubuf.isFull()) {
                         CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, ubuf);

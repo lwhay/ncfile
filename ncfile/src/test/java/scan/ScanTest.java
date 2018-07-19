@@ -15,6 +15,8 @@ import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData.Record;
 
 public class ScanTest {
+    private static final int DEFAULT_BLOCK_KBYTES = 32;
+
     public static boolean match(String s, String left, String right) {
         if (left == null)
             return s.compareTo(right) < 0;
@@ -34,9 +36,9 @@ public class ScanTest {
         return s.compareTo(right) < 0;
     }
 
-    public static void loadLineitem(int free, int mul, String lPath, String resultPath, String sPath, List<Field> fs,
-            Schema s) throws IOException {
-        BatchAvroColumnWriter<Record> writer = new BatchAvroColumnWriter<Record>(s, resultPath, free, mul);
+    public static void loadLineitem(int bs, int free, int mul, String lPath, String resultPath, String sPath,
+            List<Field> fs, Schema s) throws IOException {
+        BatchAvroColumnWriter<Record> writer = new BatchAvroColumnWriter<Record>(s, resultPath, free, mul, bs);
         BufferedReader reader = new BufferedReader(new FileReader(lPath));
         String line = "";
         while ((line = reader.readLine()) != null) {
@@ -1198,7 +1200,7 @@ public class ScanTest {
         if (args[5].equals("load")) {
             Schema s = new Schema.Parser().parse(new File(sPath));
             List<Field> fs = s.getFields();
-            loadLineitem(free, mul, lPath, resultPath, sPath, fs, s);
+            loadLineitem(DEFAULT_BLOCK_KBYTES, free, mul, lPath, resultPath, sPath, fs, s);
         } else if (args[5].equals("neciRecord")) {
             System.out.println("##########" + args[6]);
             int max = Integer.parseInt(args[7]);

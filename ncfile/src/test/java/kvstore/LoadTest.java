@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import columnar.BlockManager;
 import neci.ncfile.KeyofBTree;
 import neci.ncfile.NestManager;
 import neci.ncfile.NestSchema;
@@ -22,6 +23,7 @@ import neci.ncfile.generic.GenericData.Record;
  */
 
 public class LoadTest {
+    private static final int DEFAULT_BLOCK_KBYTES = 32;
     static Schema lSchema;
     static Schema oSchema;
     static Schema cSchema;
@@ -525,7 +527,8 @@ public class LoadTest {
         oNS.setBTreeFile(new File(toPath + "ock.db"));
         lNS.setBTreeFile(new File(toPath + "lok.db"));
 
-        load = new NestManager(new NestSchema[] { cNS, oNS, lNS }, toPath + "tmp/", toPath + "result/", free, mul);
+        load = new NestManager(new NestSchema[] { cNS, oNS, lNS }, toPath + "tmp/", toPath + "result/", free, mul,
+                new BlockManager(DEFAULT_BLOCK_KBYTES));
         load.setMax(max);
 
         if (arg.equals("load")) {
@@ -573,7 +576,8 @@ public class LoadTest {
         oNS.setBTreeFile(new File(toPath + "pspk.db"));
         lNS.setBTreeFile(new File(toPath + "lpsk.db"));
 
-        load = new NestManager(new NestSchema[] { cNS, oNS, lNS }, toPath + "tmp/", toPath + "result/", free, mul);
+        load = new NestManager(new NestSchema[] { cNS, oNS, lNS }, toPath + "tmp/", toPath + "result/", free, mul,
+                new BlockManager(DEFAULT_BLOCK_KBYTES));
         load.setMax(max);
         load.openTree();
         if (arg.equals("load")) {

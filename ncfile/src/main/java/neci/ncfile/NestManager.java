@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 
+import columnar.BlockManager;
 import misc.ValueType;
 import neci.ncfile.BloomFilter.BloomFilterBuilder;
 import neci.ncfile.CachList.FlagData;
@@ -22,6 +23,7 @@ import neci.ncfile.base.Schema.Type;
 import neci.ncfile.generic.GenericData.Record;
 
 public class NestManager {
+    private final BlockManager bm;
     private NestSchema[] schemas;
     private Schema[] keySchemas;
     private Schema[] nestKeySchemas;
@@ -44,8 +46,10 @@ public class NestManager {
     private int tmpMerge;
     private String tmpPid;
 
-    public NestManager(NestSchema[] schemas, String tmppath, String resultPath, int free, int mul) throws IOException {
+    public NestManager(NestSchema[] schemas, String tmppath, String resultPath, int free, int mul, BlockManager bm)
+            throws IOException {
         assert (schemas.length > 1);
+        this.bm = bm;
         this.schemas = schemas;
         this.tmpPath = tmppath;
         this.resultPath = resultPath;
@@ -55,8 +59,8 @@ public class NestManager {
         keySchemas = new Schema[layer];
         nestKeySchemas = new Schema[layer];
         midSchemas = new Schema[layer];
-        nestKeySchemas[layer - 1] = keySchemas[layer - 1] = setSchema(schemas[layer - 1].getSchema(),
-                schemas[layer - 1].getKeyFields());
+        nestKeySchemas[layer - 1] =
+                keySchemas[layer - 1] = setSchema(schemas[layer - 1].getSchema(), schemas[layer - 1].getKeyFields());
         for (int i = (layer - 1); i > 0; i--) {
             keySchemas[i - 1] = setSchema(schemas[i - 1].getSchema(), schemas[i - 1].getKeyFields());
             nestKeySchemas[i - 1] = setSchema(keySchemas[i - 1], nestKeySchemas[i]);
@@ -583,7 +587,7 @@ public class NestManager {
     public void mergeWrite() throws IOException {
         reader.create();
         ValueType[] types = reader.getTypes();
-        AvroColumnWriter writer = new AvroColumnWriter(schemas[0].getNestedSchema(), tmpPath + "result.tmp");
+        AvroColumnWriter writer = new AvroColumnWriter(schemas[0].getNestedSchema(), tmpPath + "result.tmp", bm);
         cach.mergeWriteCreate();
         int i = 0;
         int a = 0;
@@ -1304,7 +1308,7 @@ public class NestManager {
         long start = System.currentTimeMillis();
         BufferedReader reader = new BufferedReader(new FileReader(file));
         InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(s,
-                resultPath, keyFields, free, mul);
+                resultPath, keyFields, free, mul, bm.getBlockSize());
         String line;
         while ((line = reader.readLine()) != null) {
             String[] tmp = line.split("\\|");
@@ -1347,10 +1351,10 @@ public class NestManager {
         BloomFilterBuilder builder2 = createBloom(numElements2, 0);
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeSchema(), fields1);
-        SortedAvroReader reader2 = new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(),
-                schema2.getKeyFields());
+        SortedAvroReader reader2 =
+                new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(), schema2.getKeyFields());
         InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(
-                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul);
+                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul, bm.getBlockSize());
 
         Record record1 = reader1.next();
         builder1.add(record1);
@@ -1436,10 +1440,10 @@ public class NestManager {
 
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeSchema(), fields1);
-        SortedAvroReader reader2 = new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(),
-                schema2.getKeyFields());
-        SortedAvroWriter<ComparableKey, Record> writer = new SortedAvroWriter<ComparableKey, Record>(tmpPath,
-                schema2.getEncodeNestedSchema(), free, mul);
+        SortedAvroReader reader2 =
+                new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(), schema2.getKeyFields());
+        SortedAvroWriter<ComparableKey, Record> writer =
+                new SortedAvroWriter<ComparableKey, Record>(tmpPath, schema2.getEncodeNestedSchema(), free, mul);
         int[] sortFields = keyJoin(schema2.getOutKeyFields(), schema2.getKeyFields());
 
         Record record1 = reader1.next();
@@ -1497,10 +1501,10 @@ public class NestManager {
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeNestedSchema(),
                 keyJoin(schema1.getOutKeyFields(), schema1.getKeyFields()));
-        SortedAvroReader reader2 = new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(),
-                schema2.getKeyFields());
-        SortedAvroWriter<ComparableKey, Record> writer = new SortedAvroWriter<ComparableKey, Record>(tmpPath,
-                schema2.getEncodeNestedSchema(), free, mul);
+        SortedAvroReader reader2 =
+                new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(), schema2.getKeyFields());
+        SortedAvroWriter<ComparableKey, Record> writer =
+                new SortedAvroWriter<ComparableKey, Record>(tmpPath, schema2.getEncodeNestedSchema(), free, mul);
         int[] sortFields = keyJoin(schema2.getOutKeyFields(), schema2.getKeyFields());
 
         Record record1 = reader1.next();
@@ -1554,10 +1558,10 @@ public class NestManager {
         long start = System.currentTimeMillis();
         SortedAvroReader reader1 = new SortedAvroReader(schema1.getPath(), schema1.getEncodeNestedSchema(),
                 keyJoin(schema1.getOutKeyFields(), schema1.getKeyFields()));
-        SortedAvroReader reader2 = new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(),
-                schema2.getKeyFields());
+        SortedAvroReader reader2 =
+                new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(), schema2.getKeyFields());
         InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(
-                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul);
+                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul, bm.getBlockSize());
 
         Record record1 = reader1.next();
         while (reader2.hasNext()) {
@@ -1787,8 +1791,8 @@ public class NestManager {
         long start = System.currentTimeMillis();
         File file = schema.getPrFile();
         BufferedReader reader = new BufferedReader(new FileReader(file));
-        SortedAvroWriter<ComparableKey, Record> writer = new SortedAvroWriter<ComparableKey, Record>(schema.getPath(),
-                schema.getEncodeSchema(), free, mul);
+        SortedAvroWriter<ComparableKey, Record> writer =
+                new SortedAvroWriter<ComparableKey, Record>(schema.getPath(), schema.getEncodeSchema(), free, mul);
         String line;
         while ((line = reader.readLine()) != null) {
             String[] tmp = line.split("\\|");

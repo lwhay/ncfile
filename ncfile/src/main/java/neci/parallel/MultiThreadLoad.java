@@ -26,6 +26,8 @@ public class MultiThreadLoad {
 
     private final String targetPath;
 
+    private final int blockSize;
+
     private final int degree;
 
     private final int gran;
@@ -48,11 +50,12 @@ public class MultiThreadLoad {
 
     private List<BatchAvroColumnWriter<GenericData.Record>> writers = new ArrayList<>();
 
-    public MultiThreadLoad(String sPath, String dPath, String tPath, int wc, int mul, int dg, int gran, String codec)
-            throws IOException {
+    public MultiThreadLoad(String sPath, String dPath, String tPath, int bs, int wc, int mul, int dg, int gran,
+            String codec) throws IOException {
         this.schema = new Schema.Parser().parse(new File(sPath));
         this.dataPath = dPath;
         this.targetPath = tPath;
+        this.blockSize = bs;
         this.degree = dg;
         this.gran = gran;
         this.wc = wc;
@@ -78,7 +81,7 @@ public class MultiThreadLoad {
                     file.delete();
                 }
             }
-            writers.add(new BatchAvroColumnWriter<>(schema, targetPath + i + "/", wc, mul, codec));
+            writers.add(new BatchAvroColumnWriter<>(schema, targetPath + i + "/", wc, mul, blockSize, codec));
         }
 
         BufferedReader br = new BufferedReader(new FileReader(dataPath));

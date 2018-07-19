@@ -13,8 +13,8 @@ import misc.GroupCore;
 import misc.ValueType;
 
 public class BlockOutputBuffer {
-    static final int BLOCK_SIZE = 32 * 1024;
-    static final int COUNT = 32 * 1024;
+    protected final int blockSize;
+    protected final int maxCount;
 
     protected int bitCount; // position in booleans
 
@@ -23,14 +23,16 @@ public class BlockOutputBuffer {
     protected int count1;
     protected int count2;
 
-    public BlockOutputBuffer() {
-        buf1 = new byte[BLOCK_SIZE];
-        buf2 = new byte[BLOCK_SIZE];
+    public BlockOutputBuffer(int bs) {
+        this.blockSize = bs;
+        this.maxCount = bs;
+        buf1 = new byte[blockSize];
+        buf2 = new byte[blockSize];
         bitCount = 0;
     }
 
     public boolean isFull() {
-        return (count1 + count2) >= BLOCK_SIZE;
+        return (count1 + count2) >= blockSize;
     }
 
     public int unionSize() {
@@ -58,8 +60,8 @@ public class BlockOutputBuffer {
     }
 
     public synchronized void reset() {
-        buf1 = new byte[BLOCK_SIZE];
-        buf2 = new byte[BLOCK_SIZE];
+        buf1 = new byte[blockSize];
+        buf2 = new byte[blockSize];
         count1 = 0;
         count2 = 0;
         bitCount = 0;
@@ -138,7 +140,7 @@ public class BlockOutputBuffer {
     }
 
     protected void ensureB1() {
-        if (count1 == BLOCK_SIZE)
+        if (count1 == blockSize)
             buf1 = Arrays.copyOf(buf1, (buf1.length << 1));
     }
 

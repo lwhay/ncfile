@@ -37,7 +37,9 @@ public class LoadGroupItem {
         }
         int level = Integer.parseInt(args[2]);
         int mul = Integer.parseInt(args[3]);
-        BatchAvroColumnWriter<Record> writer = new BatchAvroColumnWriter<>(schema, args[1], level, mul, "snappy");
+        int blockSize = Integer.parseInt(args[9]);
+        BatchAvroColumnWriter<Record> writer =
+                new BatchAvroColumnWriter<>(schema, args[1], level, mul, blockSize, "snappy");
         BufferedReader br = new BufferedReader(new FileReader(args[4]));
         String line;
         Schema gs = new Schema.Parser().parse(new File(args[5]));
@@ -109,9 +111,9 @@ public class LoadGroupItem {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 9) {
+        if (args.length != 10) {
             System.out.println(
-                    "Command: dataSchema stroage loadGran multation  source inlienSchema querySecheam type batchSize");
+                    "Command: dataSchema stroage loadGran multation source inlienSchema querySecheam type batchSize blockSize");
             System.exit(0);
         }
         if (args[7].equals("build")) {

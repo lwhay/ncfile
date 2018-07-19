@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import columnar.BlockDescriptor;
+import columnar.BlockManager;
 import columnar.InsertColumnFileWriter;
 import io.BlockOutputBuffer;
 import io.OutputBuffer;
@@ -24,6 +25,7 @@ public class AvroColumnWriter {
     protected int columncount;
     protected long[] columnStart;
     protected Blocks[] blocks;
+    protected final BlockManager bm;
     BlockOutputBuffer buf;
     int index;
 
@@ -65,10 +67,11 @@ public class AvroColumnWriter {
     //    this.addRow = sort[0].size();
     //  }
 
-    public AvroColumnWriter(Schema schema, String path) throws IOException {
+    public AvroColumnWriter(Schema schema, String path, BlockManager bm) throws IOException {
         AvroColumnator columnator = new AvroColumnator(schema);
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
+        this.bm = bm;
         meta = columnator.getColumns();
         this.columncount = meta.length;
         this.columnStart = new long[columncount];
@@ -78,7 +81,7 @@ public class AvroColumnWriter {
         }
         data = new FileOutputStream(new File(path));
         head = new FileOutputStream(new File(path.substring(0, path.lastIndexOf(".")) + ".head"));
-        buf = new BlockOutputBuffer();
+        buf = new BlockOutputBuffer(bm.getBlockSize());
         index = 0;
         rowcount = 0;
     }
