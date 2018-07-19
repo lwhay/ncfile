@@ -20,7 +20,9 @@ import neci.ncfile.generic.GenericData.Record;
  * @author Michael
  *
  */
-public class MultiThreadLoad {
+public class MultiThreadLoad<T extends Builder> {
+
+    private final Class<T> buildClass;
 
     private final String dataPath;
 
@@ -50,8 +52,9 @@ public class MultiThreadLoad {
 
     private List<BatchAvroColumnWriter<GenericData.Record>> writers = new ArrayList<>();
 
-    public MultiThreadLoad(String sPath, String dPath, String tPath, int bs, int wc, int mul, int dg, int gran,
-            String codec) throws IOException {
+    public MultiThreadLoad(final Class<T> buildClass, String sPath, String dPath, String tPath, int bs, int wc, int mul,
+            int dg, int gran, String codec) throws IOException {
+        this.buildClass = buildClass;
         this.schema = new Schema.Parser().parse(new File(sPath));
         this.dataPath = dPath;
         this.targetPath = tPath;
@@ -68,8 +71,10 @@ public class MultiThreadLoad {
      * @param args
      * @throws IOException
      * @throws InterruptedException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
      */
-    public void build() throws IOException, InterruptedException {
+    public void build() throws IOException, InterruptedException, InstantiationException, IllegalAccessException {
         for (int i = 0; i < degree; i++) {
             loadQueues.add(new ArrayList<String>());
 
@@ -93,7 +98,7 @@ public class MultiThreadLoad {
             loadQueues.get(pid).add(line);
             if (++count % gran == 0) {
                 for (int i = 0; i < degree; i++) {
-                    Runnable worker = new BuildThread(writers.get(i), schema, null);
+                    Runnable worker = new BuildThreadFactory<T>(buildClass, writers.get(i), schema, null).create();
                     ((BuildThread) (worker)).set(loadQueues.get(i));
                     threads[i] = new Thread(worker);
                     threads[i].start();
@@ -106,7 +111,7 @@ public class MultiThreadLoad {
         }
 
         for (int i = 0; i < degree; i++) {
-            Runnable worker = new BuildThread(writers.get(i), schema, null);
+            Runnable worker = new BuildThreadFactory<T>(buildClass, writers.get(i), schema, null).create();
             ((BuildThread) (worker)).set(loadQueues.get(i));
             threads[i] = new Thread(worker);
             threads[i].start();
@@ -117,7 +122,8 @@ public class MultiThreadLoad {
         }
         for (int i = 0; i < degree; i++) {
             writers.get(i).flush();
-            Runnable worker = new BuildThread(writers.get(i), schema, targetPath + i + "/");
+            Runnable worker =
+                    new BuildThreadFactory<T>(buildClass, writers.get(i), schema, targetPath + i + "/").create();
             ((BuildThread) (worker)).set(null);
             threads[i] = new Thread(worker);
             threads[i].start();

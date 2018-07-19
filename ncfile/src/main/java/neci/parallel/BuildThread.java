@@ -16,16 +16,16 @@ import neci.ncfile.generic.GenericData.Record;
  * @author Michael
  *
  */
-public class BuildThread implements Runnable {
-    private List<String> payload;
+public class BuildThread extends Builder {
+    protected List<String> payload;
 
-    private Schema schema;
+    protected Schema schema;
 
-    private String path;
+    protected String path;
 
-    private BatchAvroColumnWriter<Record> writer;
+    protected BatchAvroColumnWriter<Record> writer;
 
-    public BuildThread(BatchAvroColumnWriter<Record> writer, Schema schema, String path) {
+    public void init(BatchAvroColumnWriter<Record> writer, Schema schema, String path) {
         this.writer = writer;
         this.schema = schema;
         this.path = path;
@@ -63,7 +63,7 @@ public class BuildThread implements Runnable {
         }
     }
 
-    private void build() {
+    public void build() {
         System.out.println(path + " on: " + payload.size());
         for (String line : payload) {
             Record record = new Record(schema);
