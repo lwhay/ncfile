@@ -56,6 +56,8 @@ public class MultiThreadScan {
             Runnable worker = new ScanThread(readers.get(i), schema, path);
             threads[i] = new Thread(worker);
             threads[i].start();
+        }
+        for (int i = 0; i < degree; i++) {
             threads[i].join();
         }
     }

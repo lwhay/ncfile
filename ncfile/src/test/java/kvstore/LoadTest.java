@@ -607,6 +607,9 @@ public class LoadTest {
         int free = Integer.parseInt(args[6]);
         int mul = Integer.parseInt(args[7]);
         String arg = args[8];
+        if (arg.equals("load")) {
+            NestManager.shDelete(toPath);
+        }
         if (args[0].equals("COL"))
             colTest(filePath, schemaPath, toPath, opPath, max, free, mul, arg);
         else
