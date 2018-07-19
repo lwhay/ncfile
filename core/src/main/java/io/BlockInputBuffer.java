@@ -21,7 +21,7 @@ public class BlockInputBuffer {
     protected int runLength; // length of run
     protected int runValue; // value of run
 
-    private static final CharsetDecoder UTF8 = Charset.forName("UTF-8").newDecoder();
+    private /*static*/ final CharsetDecoder UTF8 = Charset.forName("UTF-8").newDecoder();
 
     public BlockInputBuffer() {
     }

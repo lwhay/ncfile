@@ -326,15 +326,15 @@ public class ColumnReader<D> implements Closeable {
         Object v = values[column].nextValue();
 
         switch (s.getType()) {
+            case ENUM:
+                return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
+            case FIXED:
+                return model.createFixed(null, ((ByteBuffer) v).array(), s);
             case GROUP:
                 return GenericGroupReader.readGroup((GroupCore) v, s);
             case UNION:
                 if (v instanceof GroupCore)
                     return GenericGroupReader.readGroup((GroupCore) v, s);
-            case ENUM:
-                return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
-            case FIXED:
-                return model.createFixed(null, ((ByteBuffer) v).array(), s);
         }
 
         return v;

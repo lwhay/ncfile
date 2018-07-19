@@ -40,7 +40,7 @@ public class InputBuffer {
     protected int pos; // position within buffer
     protected int limit; // end of valid buffer data
 
-    private static final CharsetDecoder UTF8 = Charset.forName("UTF-8").newDecoder();
+    private /*static*/ final CharsetDecoder UTF8 = Charset.forName("UTF-8").newDecoder();
 
     protected int bitCount; // position in booleans
 

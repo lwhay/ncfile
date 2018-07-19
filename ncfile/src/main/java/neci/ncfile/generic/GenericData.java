@@ -42,12 +42,12 @@ import org.codehaus.jackson.JsonNode;
 
 import com.google.common.collect.MapMaker;
 
-import neci.ncfile.base.NeciRuntimeException;
-import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Conversion;
 import neci.ncfile.base.Conversions;
 import neci.ncfile.base.JsonProperties;
 import neci.ncfile.base.LogicalType;
+import neci.ncfile.base.NeciRuntimeException;
+import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.base.Schema.Type;
