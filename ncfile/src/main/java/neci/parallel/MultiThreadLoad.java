@@ -40,7 +40,11 @@ public class MultiThreadLoad {
 
     private final String codec;
 
-    private List<List<String>> payloads = new ArrayList<List<String>>();
+    private List<List<String>> distQueues = new ArrayList<List<String>>();
+
+    private List<List<List<String>>> localQueues = new ArrayList<List<List<String>>>();
+
+    private List<List<String>> loadQueues = new ArrayList<List<String>>();
 
     private List<BatchAvroColumnWriter<GenericData.Record>> writers = new ArrayList<>();
 
@@ -64,7 +68,7 @@ public class MultiThreadLoad {
      */
     public void build() throws IOException, InterruptedException {
         for (int i = 0; i < degree; i++) {
-            payloads.add(new ArrayList<String>());
+            loadQueues.add(new ArrayList<String>());
 
             File[] oldfiles = new File(targetPath + i + "/").listFiles();
 
@@ -83,30 +87,30 @@ public class MultiThreadLoad {
         while ((line = br.readLine()) != null) {
             String[] keys = line.split("\\|");
             int pid = Math.abs(keys[0].hashCode()) % degree;
-            payloads.get(pid).add(line);
+            loadQueues.get(pid).add(line);
             if (++count % gran == 0) {
                 for (int i = 0; i < degree; i++) {
                     Runnable worker = new BuildThread(writers.get(i), schema, null);
-                    ((BuildThread) (worker)).set(payloads.get(i));
+                    ((BuildThread) (worker)).set(loadQueues.get(i));
                     threads[i] = new Thread(worker);
                     threads[i].start();
                 }
                 for (int i = 0; i < degree; i++) {
                     threads[i].join();
-                    payloads.get(i).clear();
+                    loadQueues.get(i).clear();
                 }
             }
         }
 
         for (int i = 0; i < degree; i++) {
             Runnable worker = new BuildThread(writers.get(i), schema, null);
-            ((BuildThread) (worker)).set(payloads.get(i));
+            ((BuildThread) (worker)).set(loadQueues.get(i));
             threads[i] = new Thread(worker);
             threads[i].start();
         }
         for (int i = 0; i < degree; i++) {
             threads[i].join();
-            payloads.get(i).clear();
+            loadQueues.get(i).clear();
         }
         for (int i = 0; i < degree; i++) {
             writers.get(i).flush();
