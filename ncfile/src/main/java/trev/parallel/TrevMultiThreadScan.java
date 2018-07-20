@@ -1,19 +1,20 @@
 /**
  * 
  */
-package neci.parallel;
+package trev.parallel;
 
 import java.io.File;
 import java.io.IOException;
 
-import neci.ncfile.base.Schema;
-import neci.parallel.worker.Scanner;
+import org.apache.avro.Schema;
+
+import trev.parallel.worker.TrevScanner;
 
 /**
  * @author Michael
  *
  */
-public class MultiThreadScan<T extends Scanner> {
+public class TrevMultiThreadScan<T extends TrevScanner> {
     private static final int DEFAULT_READ_SCALE = 1;
 
     private final Class<T> scannerClass;
@@ -30,7 +31,7 @@ public class MultiThreadScan<T extends Scanner> {
 
     private final Runnable[] workers;
 
-    public MultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs)
+    public TrevMultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs)
             throws IOException {
         this.schema = (new Schema.Parser()).parse(new File(schemaPath));
         this.scannerClass = scannerClass;
@@ -50,11 +51,11 @@ public class MultiThreadScan<T extends Scanner> {
      */
     public void scan() throws IOException, InterruptedException, InstantiationException, IllegalAccessException {
         for (int i = 0; i < degree; i++) {
-            String path = targetPath + i + "/result.neci";
+            String path = targetPath + i + "/result.trev";
             if (!new File(path).exists()) {
                 continue;
             }
-            workers[i] = new ScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create();
+            workers[i] = new TrevScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create();
             threads[i] = new Thread(workers[i]);
             threads[i].start();
         }
