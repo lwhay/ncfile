@@ -7,19 +7,19 @@ import java.io.IOException;
 
 import org.apache.avro.Schema;
 
-import trev.parallel.worker.TrevScanner;
+import trev.parallel.worker.DremelsScanner;
 
 /**
  * @author Michael
  *
  */
-public class TrevScanThreadFactory<T extends TrevScanner> {
+public class DremelsScanThreadFactory<T extends DremelsScanner> {
     final Class<T> scannerClass;
     final Schema schema;
     final String path;
     final int batchSize;
 
-    public TrevScanThreadFactory(final Class<T> scannerClass, Schema schema, String path, int batchSize)
+    public DremelsScanThreadFactory(final Class<T> scannerClass, Schema schema, String path, int batchSize)
             throws IOException {
         this.scannerClass = scannerClass;
         this.schema = schema;

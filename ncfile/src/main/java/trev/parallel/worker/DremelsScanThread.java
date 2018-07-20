@@ -13,7 +13,7 @@ import org.apache.avro.generic.GenericData.Record;
 import org.apache.trevni.avro.AvroColumnReader;
 import org.apache.trevni.avro.AvroColumnReader.Params;
 
-public class TrevScanThread extends TrevScanner {
+public class DremelsScanThread extends DremelsScanner {
 
     protected Schema schema;
 

@@ -8,13 +8,13 @@ import java.io.IOException;
 
 import org.apache.avro.Schema;
 
-import trev.parallel.worker.TrevScanner;
+import trev.parallel.worker.DremelsScanner;
 
 /**
  * @author Michael
  *
  */
-public class TrevMultiThreadScan<T extends TrevScanner> {
+public class DremelsMultiThreadScan<T extends DremelsScanner> {
     private static final int DEFAULT_READ_SCALE = 1;
 
     private final Class<T> scannerClass;
@@ -31,8 +31,10 @@ public class TrevMultiThreadScan<T extends TrevScanner> {
 
     private final Runnable[] workers;
 
-    public TrevMultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs)
-            throws IOException {
+    private final String type;
+
+    public DremelsMultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs,
+            String type) throws IOException {
         this.schema = (new Schema.Parser()).parse(new File(schemaPath));
         this.scannerClass = scannerClass;
         this.targetPath = targetPath;
@@ -40,6 +42,7 @@ public class TrevMultiThreadScan<T extends TrevScanner> {
         this.batchSize = bs;
         this.threads = new Thread[degree];
         this.workers = new Runnable[degree];
+        this.type = type;
     }
 
     /**
@@ -51,11 +54,12 @@ public class TrevMultiThreadScan<T extends TrevScanner> {
      */
     public void scan() throws IOException, InterruptedException, InstantiationException, IllegalAccessException {
         for (int i = 0; i < degree; i++) {
-            String path = targetPath + i + "/result.trev";
+            String path = targetPath + i + "/result." + type;
             if (!new File(path).exists()) {
                 continue;
             }
-            workers[i] = new TrevScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create();
+            workers[i] = new DremelsScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE)
+                    .create();
             threads[i] = new Thread(workers[i]);
             threads[i].start();
         }
