@@ -15,6 +15,8 @@ import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericData.Record;
+import neci.parallel.worker.BuildThread;
+import neci.parallel.worker.Builder;
 
 /**
  * @author Michael
@@ -44,8 +46,10 @@ public class MultiThreadLoad<T extends Builder> {
 
     private final String codec;
 
+    @SuppressWarnings("unused")
     private List<List<String>> distQueues = new ArrayList<List<String>>();
 
+    @SuppressWarnings("unused")
     private List<List<List<String>>> localQueues = new ArrayList<List<List<String>>>();
 
     private List<List<String>> loadQueues = new ArrayList<List<String>>();

@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Group;
 import neci.ncfile.generic.GenericData.Record;
-import neci.parallel.BuildThread;
+import neci.parallel.worker.BuildThread;
 
 /**
  * @author Michael

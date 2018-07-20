@@ -30,7 +30,7 @@ import io.OutputBuffer;
  */
 public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> {
 
-    static final String RESERVED_KEY_PREFIX = "trevni.";
+    protected static final String RESERVED_KEY_PREFIX = "trevni.";
 
     static final String CODEC_KEY = RESERVED_KEY_PREFIX + "codec";
     static final String CHECKSUM_KEY = RESERVED_KEY_PREFIX + "checksum";
@@ -128,12 +128,12 @@ public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> 
         return set(key, value.getBytes(UTF8));
     }
 
-    T setReserved(String key, String value) {
+    protected T setReserved(String key, String value) {
         put(key, value.getBytes(UTF8));
         return (T) this;
     }
 
-    T setReservedBoolean(String key, boolean value) {
+    protected T setReservedBoolean(String key, boolean value) {
         if (value)
             setReserved(key, "");
         else
@@ -148,7 +148,7 @@ public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> 
         return set(key, Long.toString(value));
     }
 
-    public void write(OutputBuffer out) throws IOException {
+    protected void write(OutputBuffer out) throws IOException {
         out.writeInt(size());
         for (Map.Entry<String, byte[]> e : entrySet()) {
             out.writeString(e.getKey());
@@ -156,7 +156,7 @@ public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> 
         }
     }
 
-    public static void read(InputBuffer in, MetaData<?> metaData) throws IOException {
+    protected static void read(InputBuffer in, MetaData<?> metaData) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++)
             metaData.put(in.readString(), in.readBytes());

@@ -25,6 +25,7 @@ import neci.ncfile.generic.GenericGroupReader;
 public class ColumnReader<D> implements Closeable {
     InsertColumnFileReader reader;
     protected GenericData model;
+    protected GenericGroupReader groupReader;
     protected BlockColumnValues[] values;
     protected int[] readNO;
     protected int[] arrayWidths;
@@ -330,11 +331,19 @@ public class ColumnReader<D> implements Closeable {
                 return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
             case FIXED:
                 return model.createFixed(null, ((ByteBuffer) v).array(), s);
-            case GROUP:
-                return GenericGroupReader.readGroup((GroupCore) v, s);
+            case GROUP: {
+                if (groupReader == null) {
+                    groupReader = new GenericGroupReader();
+                }
+                return groupReader.readGroup((GroupCore) v, s);
+            }
             case UNION:
-                if (v instanceof GroupCore)
-                    return GenericGroupReader.readGroup((GroupCore) v, s);
+                if (v instanceof GroupCore) {
+                    if (groupReader == null) {
+                        groupReader = new GenericGroupReader();
+                    }
+                    return groupReader.readGroup((GroupCore) v, s);
+                }
         }
 
         return v;

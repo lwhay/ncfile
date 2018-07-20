@@ -5,18 +5,19 @@ package neci.parallel;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.base.Schema;
-import neci.ncfile.generic.GenericData.Record;
+import neci.parallel.worker.Scanner;
 
 /**
  * @author Michael
  *
  */
-public class MultiThreadScan {
+public class MultiThreadScan<T extends Scanner> {
+    private static final int DEFAULT_READ_SCALE = 100;
+
+    private final Class<T> scannerClass;
+
     private final Schema schema;
 
     private final String targetPath;
@@ -27,36 +28,58 @@ public class MultiThreadScan {
 
     private final Thread[] threads;
 
-    //private static List<List<String>> payloads = new ArrayList<List<String>>();
+    private final Runnable[] workers;
 
-    private List<FilterBatchColumnReader<Record>> readers = new ArrayList<>();
-
-    public MultiThreadScan(String schemaPath, String targetPath, int degree, int bs) throws IOException {
+    public MultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs)
+            throws IOException {
         this.schema = (new Schema.Parser()).parse(new File(schemaPath));
+        this.scannerClass = scannerClass;
         this.targetPath = targetPath;
         this.degree = degree;
         this.batchSize = bs;
         this.threads = new Thread[degree];
+        this.workers = new Runnable[degree];
     }
 
     /**
      * @param args
      * @throws IOException
      * @throws InterruptedException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
      */
-    public void scan() throws IOException, InterruptedException {
+    public void scan() throws IOException, InterruptedException, InstantiationException, IllegalAccessException {
         for (int i = 0; i < degree; i++) {
             String path = targetPath + i + "/result.neci";
             if (!new File(path).exists()) {
                 continue;
             }
-            readers.add(new FilterBatchColumnReader<>(new File(path)));
-            readers.get(i).createSchema(schema);
-            readers.get(i).createRead(batchSize);
-            Runnable worker = new ScanThread(readers.get(i), schema, path);
-            threads[i] = new Thread(worker);
+            workers[i] = new ScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create();
+            threads[i] = new Thread(workers[i]);
             threads[i].start();
         }
+        /*boolean finished = false;
+        int count = 0;
+        while (!finished) {
+            finished = true;
+            for (int i = 0; i < degree; i++) {
+                if (threads[i].isAlive()) {
+                    ScanThread worker = (ScanThread) workers[i];
+                    worker.lock();
+                    int lc = worker.fetch().size();
+                    worker.reset();
+                    worker.release();
+                    worker.unlock();
+                    System.out.println("Worker " + i + " fetched: " + lc);
+                    count += lc;
+                    finished = false;
+                } else {
+                    //threads[i].join();
+                    finished |= true;
+                }
+            }
+        }
+        System.out.println("Total count: " + count);*/
         for (int i = 0; i < degree; i++) {
             threads[i].join();
         }

@@ -13,16 +13,18 @@ import neci.ncfile.generic.GenericData.Group;
 import neci.ncfile.generic.GenericData.Record;
 
 public class GenericGroupReader {
-    static GenericData data = GenericData.get();
-    static byte[] buf;
-    static int pos;
-    static int limit;
+    GenericData data = new GenericData();
+    byte[] buf;
+    int pos;
+    int limit;
+    Schema schema;
 
-    public static Group readGroup(GroupCore buffer, Schema schema) {
-        Group res = new Group(schema);
-        buf = buffer.array();
+    public Group readGroup(GroupCore buffer, Schema schema) {
+        this.schema = schema;
+        this.buf = buffer.array();
+        this.limit = buf.length;
         pos = 0;
-        limit = buf.length;
+        Group res = new Group(schema);
         int i = 0;
         for (Field f : schema.getFields()) {
             res.put(i++, readField(f));
@@ -30,7 +32,7 @@ public class GenericGroupReader {
         return res;
     }
 
-    static Record readRecord(Schema schema) {
+    public Record readRecord(Schema schema) {
         Record res = new Record(schema);
         int i = 0;
         for (Field f : schema.getFields()) {
@@ -39,11 +41,11 @@ public class GenericGroupReader {
         return res;
     }
 
-    static Object readField(Field f) {
+    public Object readField(Field f) {
         return read(f.schema());
     }
 
-    static Object read(Schema schema) {
+    public Object read(Schema schema) {
         switch (schema.getType()) {
             case RECORD:
                 return readRecord(schema);
@@ -79,7 +81,7 @@ public class GenericGroupReader {
         }
     }
 
-    static Object readArray(Schema schema) {
+    public Object readArray(Schema schema) {
         int len = readInt();
         Schema element = schema.getElementType();
         if (len > 0) {
@@ -93,13 +95,13 @@ public class GenericGroupReader {
         }
     }
 
-    static Object readUnion(Schema schema) {
+    public Object readUnion(Schema schema) {
         ensureBounds(1);
         int index = buf[pos++] & 0xff;
         return read(schema.getTypes().get(index));
     }
 
-    static String readString() {
+    public String readString() {
         int len = readInt();
         ensureBounds(len);
         String res = new String(buf, pos, len);
@@ -107,7 +109,7 @@ public class GenericGroupReader {
         return res;
     }
 
-    static ByteBuffer readBytes() {
+    public ByteBuffer readBytes() {
         int len = readInt();
         ensureBounds(len);
         ByteBuffer res = ByteBuffer.allocate(len);
@@ -116,7 +118,7 @@ public class GenericGroupReader {
         return res;
     }
 
-    static int readInt() {
+    public int readInt() {
         ensureBounds(4);
         int len = 1;
         int n = (buf[pos] & 0xff) | ((buf[pos + len++] & 0xff) << 8) | ((buf[pos + len++] & 0xff) << 16)
@@ -125,7 +127,7 @@ public class GenericGroupReader {
         return n;
     }
 
-    static long readLong() {
+    public long readLong() {
         int len = 1;
         int n1 = (buf[pos] & 0xff) | ((buf[pos + len++] & 0xff) << 8) | ((buf[pos + len++] & 0xff) << 16)
                 | ((buf[pos + len++] & 0xff) << 24);
@@ -135,15 +137,15 @@ public class GenericGroupReader {
         return (((long) n1) & 0xffffffffL) | (((long) n2) << 32);
     }
 
-    static float readFloat() {
+    public float readFloat() {
         return Float.intBitsToFloat(readInt());
     }
 
-    static double readDouble() {
+    public double readDouble() {
         return Double.longBitsToDouble(readLong());
     }
 
-    static boolean readBoolean() {
+    public boolean readBoolean() {
         ensureBounds(1);
         boolean res = false;
         if (buf[pos] == (byte) 1)
@@ -152,10 +154,10 @@ public class GenericGroupReader {
         return res;
     }
 
-    static void readNull() {
+    public void readNull() {
     }
 
-    static void ensureBounds(int num) {
+    public void ensureBounds(int num) {
         int remaining = limit - pos;
         try {
             if (remaining < num) {

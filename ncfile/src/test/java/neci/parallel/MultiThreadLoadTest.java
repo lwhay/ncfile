@@ -5,6 +5,8 @@ package neci.parallel;
 
 import java.io.IOException;
 
+import neci.parallel.worker.BuildThread;
+
 /**
  * @author Michael
  *

@@ -6,6 +6,7 @@ package neci.parallel;
 import neci.ncfile.BatchAvroColumnWriter;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
+import neci.parallel.worker.Builder;
 
 /**
  * @author Michael

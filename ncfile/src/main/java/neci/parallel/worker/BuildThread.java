@@ -1,7 +1,7 @@
 /**
  * 
  */
-package neci.parallel;
+package neci.parallel.worker;
 
 import java.io.File;
 import java.io.IOException;

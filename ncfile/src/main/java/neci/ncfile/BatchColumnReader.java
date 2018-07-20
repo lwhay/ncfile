@@ -30,6 +30,7 @@ public class BatchColumnReader<D> implements Closeable {
     protected int[] arrayWidths;
     protected int column;
     protected int[] arrayValues;
+    protected GenericGroupReader groupReader;
     protected HashMap<String, Integer> columnsByName;
     protected Schema readSchema;
 
@@ -326,8 +327,12 @@ public class BatchColumnReader<D> implements Closeable {
         Object v = values[column].nextValue();
 
         switch (s.getType()) {
-            case GROUP:
-                return GenericGroupReader.readGroup((GroupCore) v, s);
+            case GROUP: {
+                if (groupReader == null) {
+                    groupReader = new GenericGroupReader();
+                }
+                return groupReader.readGroup((GroupCore) v, s);
+            }
             case ENUM:
                 return model.createEnum(s.getEnumSymbols().get((Integer) v), s);
             case FIXED:

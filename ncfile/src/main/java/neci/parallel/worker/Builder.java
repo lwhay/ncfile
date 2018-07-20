@@ -1,4 +1,4 @@
-package neci.parallel;
+package neci.parallel.worker;
 
 import java.io.IOException;
 import java.util.List;

@@ -5,7 +5,6 @@ package neci.parallel;
 
 import java.io.IOException;
 
-import neci.parallel.MultiThreadLoad;
 import neci.worker.GroupBuilder;
 
 /**
@@ -29,6 +28,7 @@ public class MultiThreadGroupLoadTest {
                 Integer.parseInt(args[5]), Integer.parseInt(args[6]), args[7]);
         long begin = System.currentTimeMillis();
         builder.build();
+        builder.verify();
         System.out.println("Build elipse: " + (System.currentTimeMillis() - begin));
     }
 
