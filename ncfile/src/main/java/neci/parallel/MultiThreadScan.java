@@ -5,6 +5,8 @@ package neci.parallel;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import neci.ncfile.base.Schema;
 import neci.parallel.worker.Scanner;
@@ -14,21 +16,21 @@ import neci.parallel.worker.Scanner;
  *
  */
 public class MultiThreadScan<T extends Scanner> {
-    private static final int DEFAULT_READ_SCALE = 1;
+    protected static final int DEFAULT_READ_SCALE = 1;
 
-    private final Class<T> scannerClass;
+    protected final Class<T> scannerClass;
 
-    private final Schema schema;
+    protected final Schema schema;
 
-    private final String targetPath;
+    protected final String targetPath;
 
-    private final int degree;
+    protected final int degree;
 
-    private final int batchSize;
+    protected final int batchSize;
 
-    private final Thread[] threads;
+    protected final Thread[] threads;
 
-    private final Runnable[] workers;
+    protected final List<T> workers;
 
     public MultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs)
             throws IOException {
@@ -38,7 +40,7 @@ public class MultiThreadScan<T extends Scanner> {
         this.degree = degree;
         this.batchSize = bs;
         this.threads = new Thread[degree];
-        this.workers = new Runnable[degree];
+        this.workers = new ArrayList<>();
     }
 
     /**
@@ -54,8 +56,8 @@ public class MultiThreadScan<T extends Scanner> {
             if (!new File(path).exists()) {
                 continue;
             }
-            workers[i] = new ScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create();
-            threads[i] = new Thread(workers[i]);
+            workers.add(new ScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create());
+            threads[i] = new Thread(workers.get(i));
             threads[i].start();
         }
         /*boolean finished = false;
