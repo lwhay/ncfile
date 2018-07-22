@@ -19,24 +19,24 @@ import misc.TranToValueType;
 import misc.ValueType;
 
 public class BatchColumnFileWriter {
-    private Codec codec;
-    private FileColumnMetaData[] meta;
-    private FileMetaData filemeta;
-    private File[] files;
+    protected Codec codec;
+    protected FileColumnMetaData[] meta;
+    protected FileMetaData filemeta;
+    protected File[] files;
     private BatchColumnFileReader[] readers;
-    private ListArr[] insert;
-    private int rowcount;
-    private int columncount;
-    private final BlockManager bm;
+    protected ListArr[] insert;
+    protected int rowcount;
+    protected int columncount;
+    protected final BlockManager bm;
     //    private String path;
     //    private int[] gap;
     //    private RandomAccessFile gapFile;
     //    private int[] nest;
     //    private RandomAccessFile nestFile;
-    private long[] columnStart;
-    private Blocks[] blocks;
+    protected long[] columnStart;
+    protected Blocks[] blocks;
 
-    private int addRow;
+    protected int addRow;
     public static final byte[] MAGIC = new byte[] { 'N', 'E', 'C', 'I' };
     // public static void MemPrint(){
     //     System.out.println("$$$$$$$$$\t"+(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
@@ -65,7 +65,7 @@ public class BatchColumnFileWriter {
         }
     }
 
-    private CompressedBlockDescriptor applyCodingWithBlockDesc(int row, BlockOutputBuffer buf) throws IOException {
+    protected CompressedBlockDescriptor applyCodingWithBlockDesc(int row, BlockOutputBuffer buf) throws IOException {
         int unCompressSize = buf.size();
         if (codec != null) {
             buf.compressUsing(codec);

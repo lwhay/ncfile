@@ -1,42 +1,24 @@
 package columnar;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.trevni.TrevniRuntimeException;
-
 import io.BlockOutputBuffer;
-import io.OutputBuffer;
-import io.UnionOutputBuffer;
 import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
-import misc.TranToValueType;
 import misc.ValueType;
 
-public class InsertColumnFileWriter {
-    private FileColumnMetaData[] meta;
-    private FileMetaData filemeta;
-    private File[] files;
+public class InsertColumnFileWriter extends BatchColumnFileWriter {
     private InsertColumnFileReader[] readers;
-    private ListArr[] insert;
-    private int rowcount;
-    private int columncount;
     private String path;
-    private final BlockManager bm;
     //    private int[] gap;
     private RandomAccessFile gapFile;
     //    private int[] nest;
     private RandomAccessFile nestFile;
-    private long[] columnStart;
-    private Blocks[] blocks;
-
-    private int addRow;
-    public static final byte[] MAGIC = new byte[] { 'N', 'E', 'C', 'I' };
 
     public static class Blocks {
         private List<BlockDescriptor> blocks;
@@ -104,15 +86,7 @@ public class InsertColumnFileWriter {
 
     public InsertColumnFileWriter(FileMetaData filemeta, FileColumnMetaData[] meta, BlockManager bm)
             throws IOException {
-        this.filemeta = filemeta;
-        this.meta = meta;
-        this.bm = bm;
-        this.columncount = meta.length;
-        this.columnStart = new long[columncount];
-        this.blocks = new Blocks[columncount];
-        for (int i = 0; i < columncount; i++) {
-            blocks[i] = new Blocks();
-        }
+        super(filemeta, meta, bm);
     }
 
     public void setMergeFiles(File[] files) throws IOException {
@@ -121,11 +95,6 @@ public class InsertColumnFileWriter {
         for (int i = 0; i < files.length; i++) {
             readers[i] = new InsertColumnFileReader(files[i]);
         }
-    }
-
-    public void setInsert(ListArr[] sort) {
-        this.insert = sort;
-        this.addRow = sort[0].size();
     }
 
     public void setGap(String path) throws IOException {
@@ -137,53 +106,6 @@ public class InsertColumnFileWriter {
     //        this.gap = gap;
     //    }
 
-    public void appendTo(File file) throws IOException {
-        OutputStream data = new FileOutputStream(file);
-        OutputStream head = new FileOutputStream(
-                new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head"));
-        appendTo(head, data);
-    }
-
-    /*
-     * write array column incremently
-     */
-    public void flushTo(File file) throws IOException {
-        OutputStream data = new FileOutputStream(file);
-        OutputStream head = new FileOutputStream(
-                new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head"));
-        flushTo(head, data);
-    }
-
-    //  public void insertTo(File file) throws IOException {
-    //    OutputStream data = new FileOutputStream(file);
-    //    OutputStream head = new FileOutputStream(new File(file.getPath().substring(0, file.getPath().lastIndexOf(".")) + ".head"));
-    //    insertTo(head, data);
-    //  }
-
-    public void appendTo(OutputStream head, OutputStream data) throws IOException {
-        rowcount = addRow;
-
-        writeSourceColumns(data);
-        writeHeader(head);
-    }
-
-    /*
-     * write array column incremently
-     */
-    public void flushTo(OutputStream head, OutputStream data) throws IOException {
-        rowcount = addRow;
-
-        flushSourceColumns(data);
-        writeHeader(head);
-    }
-
-    public void mergeFiles(File file) throws IOException {
-        mergeFiles(
-                new FileOutputStream(new File(
-                        file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head")),
-                new FileOutputStream(file));
-    }
-
     public void mergeFiles(OutputStream head, OutputStream data) throws IOException {
         rowcount = gapFile.readInt();
         //        nest = new int[rowcount];
@@ -191,7 +113,7 @@ public class InsertColumnFileWriter {
         //            nest[i] = 1;
         //        }
         for (int i = 0; i < columncount; i++) {
-            if (meta[i].getType() == ValueType.NULL) {
+            if (meta[i].isArray()) {
                 mergeArrayColumn(data, i);
             } else {
                 mergeColumn(data, i);
@@ -225,7 +147,7 @@ public class InsertColumnFileWriter {
             //            int index = gap[i];
             for (int j = 0; j < nest; j++) {
                 if (buf.isFull()) {
-                    BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+                    CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, buf);
                     blocks[column].add(b);
                     row = 0;
                     buf.writeTo(out);
@@ -238,7 +160,7 @@ public class InsertColumnFileWriter {
         }
 
         if (buf.size() != 0) {
-            BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+            CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, buf);
             blocks[column].add(b);
             buf.writeTo(out);
         }
@@ -266,7 +188,7 @@ public class InsertColumnFileWriter {
             int tmpnest = 0;
             for (int j = 0; j < nest; j++) {
                 if (buf.isFull()) {
-                    BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+                    CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, buf);
                     blocks[column].add(b);
                     row = 0;
                     buf.writeTo(out);
@@ -292,194 +214,12 @@ public class InsertColumnFileWriter {
         nestFile = new RandomAccessFile(path + "nest", "rw");
 
         if (buf.size() != 0) {
-            BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
+            CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, buf);
             blocks[column].add(b);
             buf.writeTo(out);
         }
 
         buf.close();
-    }
-
-    //  public void insertTo(OutputStream head, OutputStream data) throws IOException {
-    //    rowcount = addRow + reader.getRowCount();
-    //    values = new ColumnValues[meta.length];
-    //    for(int i = 0; i < meta.length; i++){
-    //      values[i] = reader.getValues(i);
-    //    }
-    //
-    //    writeColumns(data);
-    //    writeHeader(head);
-    //  }
-
-    private void writeSourceColumns(OutputStream out) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
-        for (int i = 0; i < columncount; i++) {
-            ValueType type = meta[i].getType();
-            int row = 0;
-            if (type == ValueType.NULL) {
-                for (Object x : insert[i].toArray()) {
-                    if (buf.isFull()) {
-                        BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
-                        blocks[i].add(b);
-                        row = 0;
-                        buf.writeTo(out);
-                        buf.reset();
-                    }
-                    buf.writeLength((Integer) x);
-                    row++;
-                }
-            } else if (type.equals(ValueType.UNION)) {
-                UnionOutputBuffer ubuf =
-                        new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits(), bm.getBlockSize());
-                for (Object x : insert[i].toArray()) {
-                    if (ubuf.isFull()) {
-                        BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
-                        blocks[i].add(b);
-                        row = 0;
-                        ubuf.writeTo(out);
-                        ubuf.reset();
-                    }
-                    ValueType tt = TranToValueType.tran(x);
-                    Integer index = meta[i].getUnionIndex(tt);
-                    if (index == null)
-                        throw new TrevniRuntimeException("Illegal value type: " + tt);
-                    ubuf.writeValue(x, index);
-                    row++;
-                }
-                if (ubuf.size() != 0) {
-                    BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
-                    blocks[i].add(b);
-                    ubuf.writeTo(out);
-                    ubuf.reset();
-                }
-                ubuf.close();
-            } else {
-                for (Object x : insert[i].toArray()) {
-                    if (buf.isFull()) {
-                        BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
-                        blocks[i].add(b);
-                        row = 0;
-                        buf.writeTo(out);
-                        buf.reset();
-                    }
-                    buf.writeValue(x, type);
-                    row++;
-                }
-            }
-
-            insert[i].clear();
-
-            if (buf.size() != 0) {
-                BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
-                blocks[i].add(b);
-                buf.writeTo(out);
-                buf.reset();
-            }
-        }
-        insert = null;
-        buf.close();
-    }
-
-    /*
-     * write array column incremently
-     */
-    private void flushSourceColumns(OutputStream out) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
-        for (int i = 0; i < columncount; i++) {
-            ValueType type = meta[i].getType();
-            int row = 0;
-            if (type == ValueType.NULL) {
-                int tmp = 0;
-                for (Object x : insert[i].toArray()) {
-                    if (buf.isFull()) {
-                        BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
-                        blocks[i].add(b);
-                        row = 0;
-                        buf.writeTo(out);
-                        buf.reset();
-                    }
-                    tmp += (int) x;
-                    buf.writeLength((Integer) tmp);
-                    row++;
-                }
-            } else if (type.equals(ValueType.UNION)) {
-                UnionOutputBuffer ubuf =
-                        new UnionOutputBuffer(meta[i].getUnionArray(), meta[i].getUnionBits(), bm.getBlockSize());
-                for (Object x : insert[i].toArray()) {
-                    if (ubuf.isFull()) {
-                        BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
-                        blocks[i].add(b);
-                        row = 0;
-                        ubuf.writeTo(out);
-                        ubuf.reset();
-                    }
-                    ValueType tt = TranToValueType.tran(x);
-                    Integer index = meta[i].getUnionIndex(tt);
-                    if (index == null)
-                        throw new TrevniRuntimeException("Illegal value type: " + tt);
-                    ubuf.writeValue(x, index);
-                    row++;
-                }
-                if (ubuf.size() != 0) {
-                    BlockDescriptor b = new BlockDescriptor(row, ubuf.size(), ubuf.size());
-                    blocks[i].add(b);
-                    ubuf.writeTo(out);
-                    ubuf.reset();
-                }
-                ubuf.close();
-            } else {
-                for (Object x : insert[i].toArray()) {
-                    if (buf.isFull()) {
-                        BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
-                        blocks[i].add(b);
-                        row = 0;
-                        buf.writeTo(out);
-                        buf.reset();
-                    }
-                    buf.writeValue(x, type);
-                    row++;
-                }
-            }
-
-            insert[i].clear();
-
-            if (buf.size() != 0) {
-                BlockDescriptor b = new BlockDescriptor(row, buf.size(), buf.size());
-                blocks[i].add(b);
-                buf.writeTo(out);
-                buf.reset();
-            }
-        }
-        insert = null;
-        buf.close();
-    }
-
-    public void writeHeader(OutputStream out) throws IOException {
-        OutputBuffer header = new OutputBuffer();
-        header.write(MAGIC);
-        header.writeFixed32(rowcount);
-        header.writeFixed32(columncount);
-        filemeta.write(header);
-        int i = 0;
-        long delay = 0;
-        for (FileColumnMetaData c : meta) {
-            columnStart[i] = delay;
-            c.write(header);
-            int size = blocks[i].blocks.size();
-            header.writeFixed32(size);
-            for (int k = 0; k < size; k++) {
-                blocks[i].get(k).writeTo(header);
-                delay += blocks[i].get(k).compressedSize;
-            }
-            blocks[i].clear();
-            i++;
-        }
-
-        for (i = 0; i < columncount; i++) {
-            header.writeFixed64(columnStart[i]);
-        }
-        header.writeTo(out);
-        header.close();
     }
 
     public void clearGap() throws IOException {

@@ -11,6 +11,9 @@ import java.nio.ByteBuffer;
 
 import neci.ncfile.BatchColumnReader;
 import neci.ncfile.CombKey;
+import neci.ncfile.FilterBatchColumnReader;
+import neci.ncfile.InsertAvroColumnReader;
+import neci.ncfile.InsertAvroColumnReader.Params;
 import neci.ncfile.InsertAvroColumnWriter;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData;
@@ -88,23 +91,45 @@ public class insertTest {
         BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/file0.trv"));
         fr.createSchema(schema);
         fr.create();
+        int count = 0;
         while (fr.hasNext()) {
             Record record = fr.next();
             //System.out.println(record.toString());
+            count++;
         }
+        System.out.println("BatchColumnReader: " + count);
         fr.close();
     }
 
     public static void filterScan(String[] args) throws IOException {
-        /*Schema schema = (new Schema.Parser()).parse(new File(args[5]));
-        InsertAvroColumnReader<Record> fr = new InsertAvroColumnReader<>(new File(args[1] + "/file0.trv"));
+        Schema schema = (new Schema.Parser()).parse(new File(args[5]));
+        FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/file0.trv"));
         fr.createSchema(schema);
         fr.createRead(Integer.parseInt(args[7]));
+        int count = 0;
         while (fr.hasNext()) {
             Record record = fr.next();
+            count++;
             //System.out.println(record.toString());
         }
-        fr.close();*/
+        System.out.println("FilterBatchColumnReader: " + count);
+        fr.close();
+    }
+
+    public static void insertScan(String[] args) throws IOException {
+        Schema schema = (new Schema.Parser()).parse(new File(args[5]));
+        Params params = new Params(new File(args[1] + "/file0.trv"));
+        params.setSchema(schema);
+        InsertAvroColumnReader<Record> fr = new InsertAvroColumnReader<>(params);
+        //fr.createRead(Integer.parseInt(args[7]));
+        int count = 0;
+        while (fr.hasNext()) {
+            Record record = fr.next();
+            count++;
+            //System.out.println(record.toString());
+        }
+        System.out.println("InsertAvroColumnReader: " + count);
+        fr.close();
     }
 
     public static void main(String[] args) throws IOException {
@@ -116,6 +141,8 @@ public class insertTest {
         if (args[6].equals("build")) {
             build(args);
             scan(args);
+            filterScan(args);
+            insertScan(args);
         } else if (args[6].equals("scan")) {
             long begin = System.currentTimeMillis();
             scan(args);
