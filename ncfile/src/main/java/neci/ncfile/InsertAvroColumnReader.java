@@ -14,6 +14,7 @@ import java.util.Map;
 import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BlockColumnValues;
+import columnar.BlockManager;
 import columnar.InsertColumnFileReader;
 import metadata.FileColumnMetaData;
 import misc.GroupCore;
@@ -62,6 +63,10 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         this.fileSchema = Schema.parse(reader.getMetaData().getString(InsertAvroColumnWriter.SCHEMA_KEY));
         this.readSchema = params.schema == null ? fileSchema : params.schema;
         initialize();
+    }
+
+    public BlockManager getBlockManager() {
+        return reader.getBlockManager();
     }
 
     void initialize() throws IOException {

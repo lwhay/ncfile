@@ -23,7 +23,7 @@ public class MidInsertColumnFileReader extends InsertColumnFileReader {
     }
 
     public InputBuffer readHeader() throws IOException {
-        InputBuffer in = new InputBuffer(headFile, 0);
+        InputBuffer in = new InputBuffer(bm, headFile, 0);
         readMagic(in);
         this.rowCount = in.readFixed32();
         this.columnCount = in.readFixed32();

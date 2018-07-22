@@ -97,7 +97,7 @@ public class insertTest {
             //System.out.println(record.toString());
             count++;
         }
-        System.out.println("BatchColumnReader: " + count);
+        System.out.println("BatchColumnReader: " + count + " ios: " + fr.getBlockManager().getTotalRead());
         fr.close();
     }
 
@@ -112,7 +112,7 @@ public class insertTest {
             count++;
             //System.out.println(record.toString());
         }
-        System.out.println("FilterBatchColumnReader: " + count);
+        System.out.println("FilterBatchColumnReader: " + count + " ios: " + fr.getBlockManager().getTotalRead());
         fr.close();
     }
 
@@ -128,7 +128,7 @@ public class insertTest {
             count++;
             //System.out.println(record.toString());
         }
-        System.out.println("InsertAvroColumnReader: " + count);
+        System.out.println("InsertAvroColumnReader: " + count + " ios: " + fr.getBlockManager().getTotalRead());
         fr.close();
     }
 

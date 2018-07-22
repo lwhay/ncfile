@@ -5,17 +5,18 @@ import java.io.IOException;
 import org.apache.trevni.Input;
 import org.apache.trevni.TrevniRuntimeException;
 
+import columnar.BlockManager;
 import misc.KeyGroup;
 import misc.ValueType;
 
 public class MidInputBuffer extends InputBuffer {
 
-    public MidInputBuffer(Input in) throws IOException {
-        super(in);
+    public MidInputBuffer(BlockManager bm, Input in) throws IOException {
+        super(bm, in);
     }
 
-    public MidInputBuffer(Input in, int position) throws IOException {
-        super(in, position);
+    public MidInputBuffer(BlockManager bm, Input in, int position) throws IOException {
+        super(bm, in, position);
     }
 
     @Override

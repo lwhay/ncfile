@@ -24,6 +24,7 @@ import java.nio.charset.CharsetDecoder;
 import org.apache.trevni.Input;
 import org.apache.trevni.TrevniRuntimeException;
 
+import columnar.BlockManager;
 import misc.InputBytes;
 import misc.ValueType;
 
@@ -31,7 +32,8 @@ import misc.ValueType;
  * Used to read values.
  */
 public class InputBuffer {
-    private Input in;
+    private final Input in;
+    private final BlockManager bm;
 
     private long inLength;
     private long offset; // pos of next read from in
@@ -47,12 +49,13 @@ public class InputBuffer {
     protected int runLength; // length of run
     protected int runValue; // value of run
 
-    public InputBuffer(Input in) throws IOException {
-        this(in, 0);
+    public InputBuffer(BlockManager bm, Input in) throws IOException {
+        this(bm, in, 0);
     }
 
-    public InputBuffer(Input in, long position) throws IOException {
+    public InputBuffer(BlockManager bm, Input in, long position) throws IOException {
         this.in = in;
+        this.bm = bm;
         this.inLength = in.length();
         this.offset = position;
 
@@ -390,7 +393,12 @@ public class InputBuffer {
     }
 
     private int readInput(byte[] b, int start, int len) throws IOException {
-        int read = in.read(offset, b, start, len);
+        int read;
+        if (bm == null) { // We read header here.
+            read = in.read(offset, b, start, len);
+        } else { // We column headers and column data here.
+            read = bm.read(in, offset, b, start, len);
+        }
         if (read < 0)
             throw new EOFException();
         offset += read;

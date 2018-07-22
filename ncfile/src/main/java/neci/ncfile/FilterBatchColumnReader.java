@@ -16,6 +16,7 @@ import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BatchColumnFileReader;
 import columnar.BlockColumnValues;
+import columnar.BlockManager;
 import metadata.FileColumnMetaData;
 import misc.GroupCore;
 import misc.ValueType;
@@ -114,6 +115,10 @@ public class FilterBatchColumnReader<D> implements Closeable {
             values[i] = reader.getValues(i);
         }
         noFilters = (filters == null);
+    }
+
+    public BlockManager getBlockManager() {
+        return reader.getBlockManager();
     }
 
     //    public long getTimeIO() {

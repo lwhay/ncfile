@@ -43,6 +43,10 @@ public class ColumnDescriptor<T extends Comparable> {
         this.bm = bm;
     }
 
+    public BlockManager getBlockManager() {
+        return bm;
+    }
+
     public String getCodecName() {
         return metaData.getCodec();
     }
@@ -86,7 +90,7 @@ public class ColumnDescriptor<T extends Comparable> {
         //    if (blocks != null) return;
 
         // read block descriptors
-        InputBuffer in = new InputBuffer(dataFile, start);
+        InputBuffer in = new InputBuffer(bm, dataFile, start);
         int blockCount = blocks.length;
         //    int blockCount = in.readFixed32();
         //    BlockDescriptor[] blocks = new BlockDescriptor[blockCount];

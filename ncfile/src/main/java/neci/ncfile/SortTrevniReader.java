@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import columnar.BlockManager;
 import neci.ncfile.InsertAvroColumnReader.Params;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
@@ -66,6 +67,14 @@ public class SortTrevniReader {
 
     public int[] getKeyFields() {
         return keyFields;
+    }
+
+    public BlockManager[] getBlockManager() {
+        BlockManager[] bms = new BlockManager[readers.length];
+        for (int i = 0; i < readers.length; i++) {
+            bms[i] = readers[i].getBlockManager();
+        }
+        return bms;
     }
 
     //    public void createGap() throws IOException {
@@ -156,6 +165,10 @@ public class SortTrevniReader {
             //        values[i] = reader.getValues(i);
             //        types[i] = values[i].getType();
             //      }
+        }
+
+        public BlockManager getBlockManager() {
+            return reader.getBlockManager();
         }
 
         public int getRowcount() {

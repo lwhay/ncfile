@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import columnar.BlockManager;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
 
@@ -61,6 +62,14 @@ public class BatchSortTrevniReader {
         } else
             hasGap = false;
         //        nestFile.seek(4);
+    }
+
+    public BlockManager[] getBlockManager() {
+        BlockManager[] bms = new BlockManager[readers.length];
+        for (int i = 0; i < readers.length; i++) {
+            bms[i] = readers[i].getBlockManager();
+        }
+        return bms;
     }
 
     public int[] getKeyFields() {
@@ -153,6 +162,10 @@ public class BatchSortTrevniReader {
 
         public int getRowcount() {
             return reader.getRowCount(0);
+        }
+
+        public BlockManager getBlockManager() {
+            return reader.getBlockManager();
         }
 
         public ComparableKey nextKey() throws IOException {

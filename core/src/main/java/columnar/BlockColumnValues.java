@@ -63,7 +63,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         this.type = column.metaData.getType();
         this.codec = Codec.get(column.metaData);
         this.checksum = Checksum.get(column.metaData);
-        this.in = new InputBuffer(column.dataFile);
+        this.in = new InputBuffer(column.getBlockManager(), column.dataFile);
 
         if (type.equals(ValueType.UNION)) {
             isUnion = true;

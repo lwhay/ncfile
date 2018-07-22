@@ -3,6 +3,8 @@
  */
 package columnar;
 
+import java.io.IOException;
+
 import org.apache.trevni.Input;
 
 /**
@@ -17,7 +19,8 @@ public class BlockManager {
     private final int columnNumber;
     private final byte[][] columnBuffer;
     private final int bufferSize;
-    private Input in;
+    //private Input in; // Need to be encapsulated.
+    private int totalRead = 0;
 
     public BlockManager(int bs, int cs) {
         this(bs, cs, 0);
@@ -38,8 +41,18 @@ public class BlockManager {
         }
     }
 
+    public int read(final Input in, long offset, byte[] b, int start, int len) throws IOException {
+        int readlen = in.read(offset, b, start, len);
+        totalRead++;
+        return readlen;
+    }
+
     public void getBlock() {
         //this.in = new InputBuffer(column.dataFile);
+    }
+
+    public int getTotalRead() {
+        return totalRead;
     }
 
     public int getBlockSize() {

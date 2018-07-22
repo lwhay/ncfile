@@ -51,7 +51,7 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
         this.type = column.metaData.getType();
         this.codec = Codec.get(column.metaData);
         this.checksum = Checksum.get(column.metaData);
-        this.in = new InputBuffer(column.dataFile);
+        this.in = new InputBuffer(column.getBlockManager(), column.dataFile);
 
         column.ensureBlocksRead();
     }
@@ -128,7 +128,7 @@ public class ColumnValues<T extends Comparable> implements Iterator<T>, Iterable
         ByteBuffer data = codec.decompress(ByteBuffer.wrap(raw, 0, end));
         if (!checksum.compute(data).equals(ByteBuffer.wrap(raw, end, checksum.size())))
             throw new IOException("Checksums mismatch.");
-        values = new InputBuffer(new InputBytes(data));
+        values = new InputBuffer(column.getBlockManager(), new InputBytes(data));
     }
 
     @Override

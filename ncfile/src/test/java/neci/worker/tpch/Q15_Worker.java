@@ -82,7 +82,7 @@ public class Q15_Worker extends FilteringScanner {
             e.printStackTrace();
         }
         long end = System.currentTimeMillis();
-        System.out.println(
-                "total: " + (end - start) + "s filter: " + (t2 - t1) + "s result: " + result + " count: " + count);
+        System.out.println("total: " + (end - start) + "s filter: " + (t2 - t1) + "s result: " + result + " count: "
+                + count + " reads: " + reader.getBlockManager().getTotalRead());
     }
 }

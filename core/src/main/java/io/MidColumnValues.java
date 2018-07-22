@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 
 import columnar.ColumnDescriptor;
 import columnar.ColumnValues;
-import io.MidInputBuffer;
 import misc.InputBytes;
 
 public class MidColumnValues<T extends Comparable> extends ColumnValues<T> {
@@ -25,6 +24,6 @@ public class MidColumnValues<T extends Comparable> extends ColumnValues<T> {
         ByteBuffer data = codec.decompress(ByteBuffer.wrap(raw, 0, end));
         if (!checksum.compute(data).equals(ByteBuffer.wrap(raw, end, checksum.size())))
             throw new IOException("Checksums mismatch.");
-        values = new MidInputBuffer(new InputBytes(data));
+        values = new MidInputBuffer(column.getBlockManager(), new InputBytes(data));
     }
 }

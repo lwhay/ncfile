@@ -44,6 +44,10 @@ public class BatchColumnFileReader implements Closeable {
         readColumns(headerBuffer);
     }
 
+    public BlockManager getBlockManager() {
+        return bm;
+    }
+
     public int getRowCount() {
         return rowCount;
     }
@@ -96,7 +100,7 @@ public class BatchColumnFileReader implements Closeable {
     }
 
     private InputBuffer readHeader() throws IOException {
-        InputBuffer in = new InputBuffer(headFile, 0);
+        InputBuffer in = new InputBuffer(bm, headFile, 0);
         readMagic(in);
         this.rowCount = in.readFixed32();
         this.columnCount = in.readFixed32();

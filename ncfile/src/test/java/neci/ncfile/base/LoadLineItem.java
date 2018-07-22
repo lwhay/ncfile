@@ -88,6 +88,7 @@ public class LoadLineItem {
             Record record = fr.next();
             //System.out.println(record.toString());
         }
+        System.out.print("ios: " + fr.getBlockManager().getTotalRead() + " ");
         fr.close();
     }
 
@@ -100,6 +101,7 @@ public class LoadLineItem {
             Record record = fr.next();
             //System.out.println(record.toString());
         }
+        System.out.print("ios: " + fr.getBlockManager().getTotalRead() + " ");
         fr.close();
     }
 

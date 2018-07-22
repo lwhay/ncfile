@@ -10,6 +10,7 @@ import java.util.List;
 import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BlockColumnValues;
+import columnar.BlockManager;
 import columnar.MidInsertColumnFileReader;
 import metadata.FileColumnMetaData;
 import misc.ValueType;
@@ -48,6 +49,10 @@ public class MidColumnReader<D> extends ColumnReader<D> {
             arrayValues[i] = j;
             j++;
         }
+    }
+
+    public BlockManager getBlockManager() {
+        return reader.getBlockManager();
     }
 
     public void createSchema(Schema s) {
