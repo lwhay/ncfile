@@ -50,11 +50,11 @@ public class BatchAvroColumnWriter<T> {
     public BatchAvroColumnWriter(Schema schema, String path, int free, int mul, int bs, String codec)
             throws IOException {
         this.schema = schema;
-        this.bm = new BlockManager(bs);
         AvroColumnator columnator = new AvroColumnator(schema);
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         this.meta = columnator.getColumns();
+        this.bm = new BlockManager(bs, BlockManager.DEFAULT_SCALE, meta.length);
         this.writer = new BatchColumnFileWriter(filemeta.setCodec(codec), meta, bm);
         this.arrayWidths = columnator.getArrayWidths();
         this.model = GenericData.get();
@@ -180,6 +180,7 @@ public class BatchAvroColumnWriter<T> {
         switch (s.getType()) {
             case GROUP:
                 o = GenericGroupWriter.writeGroup(s, o);
+                break;
             case UNION:
                 if (o != null && o instanceof Utf8)
                     o = o.toString();

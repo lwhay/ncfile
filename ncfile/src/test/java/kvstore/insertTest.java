@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import neci.ncfile.BatchColumnReader;
 import neci.ncfile.CombKey;
 import neci.ncfile.InsertAvroColumnWriter;
 import neci.ncfile.base.Schema;
@@ -73,7 +74,7 @@ public class insertTest {
         File[] toBeMerged = new File[files.length / 2];
         int fidx = 0;
         for (File file : files) {
-            if (file.getAbsolutePath().endsWith("neci")) {
+            if (file.getAbsolutePath().endsWith("trv")) {
                 toBeMerged[fidx++] = file;
             }
         }
@@ -83,7 +84,7 @@ public class insertTest {
     }
 
     public static void scan(String[] args) throws IOException {
-        /*Schema schema = (new Schema.Parser()).parse(new File(args[5]));
+        Schema schema = (new Schema.Parser()).parse(new File(args[5]));
         BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/file0.trv"));
         fr.createSchema(schema);
         fr.create();
@@ -91,7 +92,7 @@ public class insertTest {
             Record record = fr.next();
             //System.out.println(record.toString());
         }
-        fr.close();*/
+        fr.close();
     }
 
     public static void filterScan(String[] args) throws IOException {

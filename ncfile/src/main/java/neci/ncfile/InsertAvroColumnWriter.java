@@ -55,7 +55,7 @@ public class InsertAvroColumnWriter<K, V> {
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         this.meta = columnator.getColumns();
-        this.bm = new BlockManager(bs);
+        this.bm = new BlockManager(bs, BlockManager.DEFAULT_SCALE, meta.length);
         this.writer = new InsertColumnFileWriter(filemeta.setCodec(codec), meta, bm);
         this.arrayWidths = columnator.getArrayWidths();
         this.model = GenericData.get();

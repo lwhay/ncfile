@@ -17,9 +17,10 @@ import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
 
 public class BatchColumnFileReader implements Closeable {
+    public final static int DEFAULT_BLOCK_SIZE = 1;
     protected Input headFile;
     protected Input dataFile;
-
+    protected BlockManager bm;
     protected int rowCount;
     protected int columnCount;
     protected FileMetaData metaData;
@@ -31,16 +32,16 @@ public class BatchColumnFileReader implements Closeable {
     }
 
     public BatchColumnFileReader(File file) throws IOException {
-        this.dataFile = new InputFile(file);
-        this.headFile = new InputFile(
-                new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head"));
-        readHeader();
+        this(new InputFile(file), new InputFile(
+                new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head")));
     }
 
     public BatchColumnFileReader(Input data, Input head) throws IOException {
         this.dataFile = data;
         this.headFile = head;
-        readHeader();
+        InputBuffer headerBuffer = readHeader();
+        this.bm = new BlockManager(DEFAULT_BLOCK_SIZE, BlockManager.DEFAULT_SCALE, columnCount);
+        readColumns(headerBuffer);
     }
 
     public int getRowCount() {
@@ -94,14 +95,17 @@ public class BatchColumnFileReader implements Closeable {
         return (ColumnDescriptor<T>) columns[getColumnNumber(name)];
     }
 
-    private void readHeader() throws IOException {
+    private InputBuffer readHeader() throws IOException {
         InputBuffer in = new InputBuffer(headFile, 0);
         readMagic(in);
         this.rowCount = in.readFixed32();
         this.columnCount = in.readFixed32();
         this.metaData = FileMetaData.read(in);
         this.columnsByName = new HashMap<String, Integer>(columnCount);
+        return in;
+    }
 
+    private void readColumns(InputBuffer in) throws IOException {
         columns = new ColumnDescriptor[columnCount];
         readFileColumnMetaData(in);
         readColumnStarts(in);
@@ -133,7 +137,7 @@ public class BatchColumnFileReader implements Closeable {
                 //          if (meta.hasIndexValues())
                 //          firstValues[i] = in.<T>readValue(meta.getType());
             }
-            ColumnDescriptor column = new ColumnDescriptor(dataFile, meta);
+            ColumnDescriptor column = new ColumnDescriptor(dataFile, meta, bm);
             column.setBlockDescriptor(blocks);
             columns[i] = column;
             meta.setNumber(i);

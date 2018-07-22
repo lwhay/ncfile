@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 
-import columnar.BlockManager;
 import misc.ValueType;
 import neci.ncfile.BloomFilter.BloomFilterBuilder;
 import neci.ncfile.CachList.FlagData;
@@ -23,7 +22,7 @@ import neci.ncfile.base.Schema.Type;
 import neci.ncfile.generic.GenericData.Record;
 
 public class NestManager {
-    private final BlockManager bm;
+    private final int blockSize;
     private NestSchema[] schemas;
     private Schema[] keySchemas;
     private Schema[] nestKeySchemas;
@@ -46,10 +45,10 @@ public class NestManager {
     private int tmpMerge;
     private String tmpPid;
 
-    public NestManager(NestSchema[] schemas, String tmppath, String resultPath, int free, int mul, BlockManager bm)
+    public NestManager(NestSchema[] schemas, String tmppath, String resultPath, int free, int mul, int blockSize)
             throws IOException {
         assert (schemas.length > 1);
-        this.bm = bm;
+        this.blockSize = blockSize;
         this.schemas = schemas;
         this.tmpPath = tmppath;
         this.resultPath = resultPath;
@@ -587,7 +586,7 @@ public class NestManager {
     public void mergeWrite() throws IOException {
         reader.create();
         ValueType[] types = reader.getTypes();
-        AvroColumnWriter writer = new AvroColumnWriter(schemas[0].getNestedSchema(), tmpPath + "result.tmp", bm);
+        AvroColumnWriter writer = new AvroColumnWriter(schemas[0].getNestedSchema(), tmpPath + "result.tmp", blockSize);
         cach.mergeWriteCreate();
         int i = 0;
         int a = 0;
@@ -1307,8 +1306,8 @@ public class NestManager {
         Schema s = schema.getSchema();
         long start = System.currentTimeMillis();
         BufferedReader reader = new BufferedReader(new FileReader(file));
-        InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(s,
-                resultPath, keyFields, free, mul, bm.getBlockSize());
+        InsertAvroColumnWriter<ComparableKey, Record> writer =
+                new InsertAvroColumnWriter<ComparableKey, Record>(s, resultPath, keyFields, free, mul, blockSize);
         String line;
         while ((line = reader.readLine()) != null) {
             String[] tmp = line.split("\\|");
@@ -1354,7 +1353,7 @@ public class NestManager {
         SortedAvroReader reader2 =
                 new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(), schema2.getKeyFields());
         InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(
-                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul, bm.getBlockSize());
+                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul, blockSize);
 
         Record record1 = reader1.next();
         builder1.add(record1);
@@ -1561,7 +1560,7 @@ public class NestManager {
         SortedAvroReader reader2 =
                 new SortedAvroReader(schema2.getPath(), schema2.getEncodeSchema(), schema2.getKeyFields());
         InsertAvroColumnWriter<ComparableKey, Record> writer = new InsertAvroColumnWriter<ComparableKey, Record>(
-                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul, bm.getBlockSize());
+                schema2.getNestedSchema(), resultPath, schema2.getKeyFields(), free, mul, blockSize);
 
         Record record1 = reader1.next();
         while (reader2.hasNext()) {

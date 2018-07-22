@@ -67,12 +67,12 @@ public class AvroColumnWriter {
     //    this.addRow = sort[0].size();
     //  }
 
-    public AvroColumnWriter(Schema schema, String path, BlockManager bm) throws IOException {
+    public AvroColumnWriter(Schema schema, String path, int blockSize) throws IOException {
         AvroColumnator columnator = new AvroColumnator(schema);
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
-        this.bm = bm;
         meta = columnator.getColumns();
+        this.bm = new BlockManager(blockSize, BlockManager.DEFAULT_SCALE, meta.length);
         this.columncount = meta.length;
         this.columnStart = new long[columncount];
         this.blocks = new Blocks[columncount];
@@ -84,6 +84,10 @@ public class AvroColumnWriter {
         buf = new BlockOutputBuffer(bm.getBlockSize());
         index = 0;
         rowcount = 0;
+    }
+
+    public BlockManager getBlockManager() {
+        return bm;
     }
 
     public void writeColumn(int columnNo, Object value) throws IOException {

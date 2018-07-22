@@ -25,6 +25,7 @@ import io.InputBuffer;
 import metadata.FileColumnMetaData;
 
 public class ColumnDescriptor<T extends Comparable> {
+    final BlockManager bm;
     final Input dataFile;
     public final FileColumnMetaData metaData;
 
@@ -36,9 +37,10 @@ public class ColumnDescriptor<T extends Comparable> {
     public int[] firstRows; // for binary searches
     public T[] firstValues; // for binary searches
 
-    public ColumnDescriptor(Input dataFile, FileColumnMetaData metaData) {
+    public ColumnDescriptor(Input dataFile, FileColumnMetaData metaData, BlockManager bm) {
         this.dataFile = dataFile;
         this.metaData = metaData;
+        this.bm = bm;
     }
 
     public String getCodecName() {

@@ -17,10 +17,12 @@ public class MidInsertColumnFileReader extends InsertColumnFileReader {
         dataFile = new InputFile(file);
         headFile = new InputFile(
                 new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head"));
-        readHeader();
+        InputBuffer headerBuffer = readHeader();
+        this.bm = new BlockManager(BatchColumnFileReader.DEFAULT_BLOCK_SIZE, BlockManager.DEFAULT_SCALE, columnCount);
+        readColumns(headerBuffer);
     }
 
-    public void readHeader() throws IOException {
+    public InputBuffer readHeader() throws IOException {
         InputBuffer in = new InputBuffer(headFile, 0);
         readMagic(in);
         this.rowCount = in.readFixed32();
@@ -31,7 +33,10 @@ public class MidInsertColumnFileReader extends InsertColumnFileReader {
             keyLen[i] = in.readFixed32();
         this.metaData = FileMetaData.read(in);
         this.columnsByName = new HashMap<String, Integer>(columnCount);
+        return in;
+    }
 
+    public void readColumns(InputBuffer in) throws IOException {
         columns = new ColumnDescriptor[columnCount];
         readFileColumnMetaData(in);
         readColumnStarts(in);

@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 
-import columnar.BlockManager;
 import neci.ncfile.NestManager;
 import neci.ncfile.NestSchema;
 import neci.ncfile.base.Schema;
@@ -34,7 +33,7 @@ public class TwoNestTest {
         lNS.setBloomFile(new File("/home/ly/test/lBloom"));
         oNS.setBTreeFile(new File("/home/ly/test/ock.db"));
         NestManager load = new NestManager(new NestSchema[] { cNS, oNS, lNS }, "/home/ly/test/tmp/",
-                "/home/ly/test/result/", 150, 40, new BlockManager(DEFAULT_BLOCK_KBYTES));
+                "/home/ly/test/result/", 150, 40, DEFAULT_BLOCK_KBYTES);
         //        load.load();
         //        load.create();
 
