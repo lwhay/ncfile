@@ -74,20 +74,40 @@ public class FilterBatchColumnReader<D> implements Closeable {
         this(file, null, GenericData.get());
     }
 
+    public FilterBatchColumnReader(File file, int bs) throws IOException {
+        this(file, null, GenericData.get(), bs);
+    }
+
     public FilterBatchColumnReader(Input data, Input head) throws IOException {
-        this(data, head, null, GenericData.get());
+        this(data, head, null, GenericData.get(), BatchColumnFileReader.DEFAULT_BLOCK_SIZE);
+    }
+
+    public FilterBatchColumnReader(Input data, Input head, int bs) throws IOException {
+        this(data, head, null, GenericData.get(), bs);
     }
 
     public FilterBatchColumnReader(File file, FilterOperator[] filters) throws IOException {
         this(file, filters, GenericData.get());
     }
 
+    public FilterBatchColumnReader(File file, FilterOperator[] filters, int bs) throws IOException {
+        this(file, filters, GenericData.get(), bs);
+    }
+
     public FilterBatchColumnReader(Input data, Input head, FilterOperator[] filters) throws IOException {
-        this(data, head, filters, GenericData.get());
+        this(data, head, filters, GenericData.get(), BatchColumnFileReader.DEFAULT_BLOCK_SIZE);
+    }
+
+    public FilterBatchColumnReader(Input data, Input head, FilterOperator[] filters, int bs) throws IOException {
+        this(data, head, filters, GenericData.get(), bs);
     }
 
     public FilterBatchColumnReader(File file, FilterOperator[] filters, GenericData model) throws IOException {
-        this.reader = new BatchColumnFileReader(file);
+        this(file, filters, model, BatchColumnFileReader.DEFAULT_BLOCK_SIZE);
+    }
+
+    public FilterBatchColumnReader(File file, FilterOperator[] filters, GenericData model, int bs) throws IOException {
+        this.reader = new BatchColumnFileReader(file, bs);
         this.filters = filters;
         columnsByName = reader.getColumnsByName();
         this.model = model;
@@ -103,9 +123,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
         noFilters = (filters == null);
     }
 
-    public FilterBatchColumnReader(Input data, Input head, FilterOperator[] filters, GenericData model)
+    public FilterBatchColumnReader(Input data, Input head, FilterOperator[] filters, GenericData model, int bs)
             throws IOException {
-        this.reader = new BatchColumnFileReader(data, head);
+        this.reader = new BatchColumnFileReader(data, head, bs);
         this.filters = filters;
         columnsByName = reader.getColumnsByName();
         this.model = model;

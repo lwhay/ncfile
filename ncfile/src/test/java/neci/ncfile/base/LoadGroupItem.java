@@ -84,7 +84,8 @@ public class LoadGroupItem {
 
     public static void scan(String[] args) throws IOException {
         Schema schema = (new Schema.Parser()).parse(new File(args[6]));
-        BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/result.neci"));
+        BatchColumnReader<Record> fr =
+                new BatchColumnReader<>(new File(args[1] + "/result.neci"), Integer.parseInt(args[9]));
         fr.createSchema(schema);
         fr.create();
         System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(0));
@@ -98,7 +99,8 @@ public class LoadGroupItem {
 
     public static void filterScan(String[] args) throws IOException {
         Schema schema = (new Schema.Parser()).parse(new File(args[6]));
-        FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"));
+        FilterBatchColumnReader<Record> fr =
+                new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"), Integer.parseInt(args[9]));
         fr.createSchema(schema);
         fr.createRead(Integer.parseInt(args[8]));
         System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(0));

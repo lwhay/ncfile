@@ -24,6 +24,7 @@ import java.nio.charset.CharsetDecoder;
 import org.apache.trevni.Input;
 import org.apache.trevni.TrevniRuntimeException;
 
+import columnar.BatchColumnFileReader;
 import columnar.BlockManager;
 import misc.InputBytes;
 import misc.ValueType;
@@ -64,8 +65,12 @@ public class InputBuffer {
             this.limit = (int) in.length();
             this.offset = limit;
             this.pos = (int) position;
-        } else { // create new buffer
-            this.buf = new byte[8192]; // big enough for primitives
+        } else { // delay buffer creation in BlockManager
+            if (bm == null) {
+                this.buf = new byte[BatchColumnFileReader.DEFAULT_BLOCK_SIZE * 1024];
+            } else {
+                this.buf = new byte[bm.getBlockSize()]; // big enough for primitives
+            }
         }
     }
 

@@ -41,6 +41,10 @@ public class BlockManager {
         }
     }
 
+    public int fetch(final Input in, long offset, byte[] b, int start, int len) throws IOException {
+        return read(in, offset, b, start, len);
+    }
+
     public int read(final Input in, long offset, byte[] b, int start, int len) throws IOException {
         int readlen = in.read(offset, b, start, len);
         totalRead++;

@@ -17,7 +17,7 @@ import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
 
 public class BatchColumnFileReader implements Closeable {
-    public final static int DEFAULT_BLOCK_SIZE = 1;
+    public final static int DEFAULT_BLOCK_SIZE = 8;
     protected Input headFile;
     protected Input dataFile;
     protected BlockManager bm;
@@ -41,6 +41,19 @@ public class BatchColumnFileReader implements Closeable {
         this.headFile = head;
         InputBuffer headerBuffer = readHeader();
         this.bm = new BlockManager(DEFAULT_BLOCK_SIZE, BlockManager.DEFAULT_SCALE, columnCount);
+        readColumns(headerBuffer);
+    }
+
+    public BatchColumnFileReader(File file, int bs) throws IOException {
+        this(new InputFile(file), new InputFile(
+                new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head")), bs);
+    }
+
+    public BatchColumnFileReader(Input data, Input head, int bs) throws IOException {
+        this.dataFile = data;
+        this.headFile = head;
+        InputBuffer headerBuffer = readHeader();
+        this.bm = new BlockManager(bs, BlockManager.DEFAULT_SCALE, columnCount);
         readColumns(headerBuffer);
     }
 

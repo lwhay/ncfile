@@ -93,6 +93,12 @@ public class DremelsScanThread extends DremelsScanner {
             reader.next();
             count++;
         }
+        try {
+            reader.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         outline += " elipse: " + (System.currentTimeMillis() - begin) + " for " + count;
         System.out.println(outline);
     }

@@ -40,11 +40,15 @@ public class BatchColumnReader<D> implements Closeable {
     }
 
     public BatchColumnReader(File file) throws IOException {
-        this(file, GenericData.get());
+        this(file, GenericData.get(), BatchColumnFileReader.DEFAULT_BLOCK_SIZE);
     }
 
-    public BatchColumnReader(File file, GenericData model) throws IOException {
-        this.reader = new BatchColumnFileReader(file);
+    public BatchColumnReader(File file, int blockSize) throws IOException {
+        this(file, GenericData.get(), blockSize);
+    }
+
+    public BatchColumnReader(File file, GenericData model, int bs) throws IOException {
+        this.reader = new BatchColumnFileReader(file, bs);
         columnsByName = reader.getColumnsByName();
         this.model = model;
         this.values = new BlockColumnValues[reader.getColumnCount()];
