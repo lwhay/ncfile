@@ -64,7 +64,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
     protected boolean noFilters;
     protected int currentMax;
 
-    static int max = 100000;
+    private int defaultMax = 100000;
 
     public FilterBatchColumnReader() {
 
@@ -676,14 +676,14 @@ public class FilterBatchColumnReader<D> implements Closeable {
 
     public void createFilterRead() throws IOException {
         if (noFilters)
-            createRead(max);
+            createRead(defaultMax);
         else
-            createFilterRead(max);
+            createFilterRead(defaultMax);
     }
 
     public void createFilterRead(int max) throws IOException {
         assert (!noFilters);
-        this.max = max;
+        this.defaultMax = max;
         for (int i = 0; i < readNO.length; i++) {
             //            values[readNO[i]].createTime();
             //            values[readNO[i]].createSeekBlock();
@@ -696,7 +696,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
 
     public void createRead(int max) throws IOException {
         assert (noFilters);
-        this.max = max;
+        this.defaultMax = max;
         for (int i = 0; i < readNO.length; i++) {
             //            values[readNO[i]].createTime();
             //            values[readNO[i]].createSeekBlock();
@@ -711,9 +711,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
     private void readImplPriNoFilters() throws IOException {
         if (all == 0)
             return;
-        if (all > max) {
-            currentMax = max;
-            readLength.put(readParent, max);
+        if (all > defaultMax) {
+            currentMax = defaultMax;
+            readLength.put(readParent, defaultMax);
         } else {
             currentMax = all;
             readLength.put(readParent, all);
@@ -758,8 +758,8 @@ public class FilterBatchColumnReader<D> implements Closeable {
         if (layer != currentLayer || (parent != null && !currentParent.equals(parent)))
             readSetTran(readNO[0]);
         all = filterSet.cardinality();
-        if (all > max) {
-            readLength.put(readParent, max);
+        if (all > defaultMax) {
+            readLength.put(readParent, defaultMax);
         } else {
             readLength.put(readParent, all);
         }
@@ -795,8 +795,8 @@ public class FilterBatchColumnReader<D> implements Closeable {
     private void readImpl() throws IOException {
         if (all == 0)
             return;
-        if (all > max) {
-            readLength.put(readParent, max);
+        if (all > defaultMax) {
+            readLength.put(readParent, defaultMax);
         } else {
             readLength.put(readParent, all);
         }
@@ -886,7 +886,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         return readIndex[0] < readValue[0].length || all > 0;
     }
 
-    public Object read(Schema s) throws IOException {
+    private Object read(Schema s) throws IOException {
         if (isSimple(s)) {
             return readValue(s, column++);
         }
@@ -925,7 +925,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         }
     }
 
-    public Object readValue(Schema s, int column) throws IOException {
+    private Object readValue(Schema s, int column) throws IOException {
         Object v = readValue[column][readIndex[column]++];
 
         switch (s.getType()) {

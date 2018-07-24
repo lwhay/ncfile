@@ -46,6 +46,7 @@ public class BlockManager {
     }
 
     public int read(final Input in, long offset, byte[] b, int start, int len) throws IOException {
+        //System.out.println(offset + "+" + len + "=" + (offset + len));
         int readlen = in.read(offset, b, start, len);
         totalRead++;
         return readlen;

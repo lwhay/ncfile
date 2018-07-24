@@ -48,7 +48,7 @@ public class Q15_Worker extends FilteringScanner {
         filters[0] = new Q15_ShipdateFilter(begin, end); //l_shipdate
         long start = System.currentTimeMillis();
         try {
-            reader = new FilterBatchColumnReader<Record>(file, filters);
+            reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

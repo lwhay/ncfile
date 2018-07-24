@@ -22,16 +22,19 @@ public class ScanThread extends Scanner {
 
     protected int batchSize;
 
+    protected int blockSize;
+
     protected List<Record> listRecord = new ArrayList<>();
 
     private ReadWriteLock lock;
 
     private Semaphore fetched = new Semaphore(0);
 
-    public void init(Schema schema, String path, int batchSize) {
+    public void init(Schema schema, String path, int batchSize, int blockSize) {
         this.schema = schema;
         this.path = path;
         this.batchSize = batchSize;
+        this.blockSize = blockSize;
         this.lock = new ReentrantReadWriteLock();
         //this.lock();
         //System.out.println("Thread created: bs " + batchSize);
@@ -77,7 +80,7 @@ public class ScanThread extends Scanner {
         long begin = System.currentTimeMillis();
         if (reader == null) {
             try {
-                reader = new BatchColumnReader<>(new File(path));
+                reader = new BatchColumnReader<>(new File(path), blockSize);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

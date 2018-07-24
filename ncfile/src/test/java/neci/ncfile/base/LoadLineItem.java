@@ -81,7 +81,8 @@ public class LoadLineItem {
 
     public static void scan(String[] args) throws IOException {
         Schema schema = (new Schema.Parser()).parse(new File(args[5]));
-        BatchColumnReader<Record> fr = new BatchColumnReader<>(new File(args[1] + "/result.neci"));
+        BatchColumnReader<Record> fr =
+                new BatchColumnReader<>(new File(args[1] + "/result.neci"), Integer.parseInt(args[8]));
         fr.createSchema(schema);
         fr.create();
         while (fr.hasNext()) {
@@ -94,7 +95,8 @@ public class LoadLineItem {
 
     public static void filterScan(String[] args) throws IOException {
         Schema schema = (new Schema.Parser()).parse(new File(args[5]));
-        FilterBatchColumnReader<Record> fr = new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"));
+        FilterBatchColumnReader<Record> fr =
+                new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"), Integer.parseInt(args[8]));
         fr.createSchema(schema);
         fr.createRead(Integer.parseInt(args[7]));
         while (fr.hasNext()) {

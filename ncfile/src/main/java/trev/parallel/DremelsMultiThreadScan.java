@@ -5,6 +5,8 @@ package trev.parallel;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.avro.Schema;
 
@@ -15,23 +17,23 @@ import trev.parallel.worker.DremelsScanner;
  *
  */
 public class DremelsMultiThreadScan<T extends DremelsScanner> {
-    private static final int DEFAULT_READ_SCALE = 1;
+    protected static final int DEFAULT_READ_SCALE = 1;
 
-    private final Class<T> scannerClass;
+    protected final Class<T> scannerClass;
 
-    private final Schema schema;
+    protected final Schema schema;
 
-    private final String targetPath;
+    protected final String targetPath;
 
-    private final int degree;
+    protected final int degree;
 
-    private final int batchSize;
+    protected final int batchSize;
 
-    private final Thread[] threads;
+    protected final Thread[] threads;
 
-    private final Runnable[] workers;
+    protected final List<T> workers;
 
-    private final String type;
+    protected final String type;
 
     public DremelsMultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs,
             String type) throws IOException {
@@ -41,7 +43,7 @@ public class DremelsMultiThreadScan<T extends DremelsScanner> {
         this.degree = degree;
         this.batchSize = bs;
         this.threads = new Thread[degree];
-        this.workers = new Runnable[degree];
+        this.workers = new ArrayList<>();
         this.type = type;
     }
 
@@ -58,9 +60,9 @@ public class DremelsMultiThreadScan<T extends DremelsScanner> {
             if (!new File(path).exists()) {
                 continue;
             }
-            workers[i] = new DremelsScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE)
-                    .create();
-            threads[i] = new Thread(workers[i]);
+            workers.add(new DremelsScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE)
+                    .create());
+            threads[i] = new Thread(workers.get(i));
             threads[i].start();
         }
         /*boolean finished = false;

@@ -28,17 +28,20 @@ public class MultiThreadScan<T extends Scanner> {
 
     protected final int batchSize;
 
+    protected final int blockSize;
+
     protected final Thread[] threads;
 
     protected final List<T> workers;
 
-    public MultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int bs)
-            throws IOException {
+    public MultiThreadScan(final Class<T> scannerClass, String schemaPath, String targetPath, int degree, int batchSize,
+            int blockSize) throws IOException {
         this.schema = (new Schema.Parser()).parse(new File(schemaPath));
         this.scannerClass = scannerClass;
         this.targetPath = targetPath;
         this.degree = degree;
-        this.batchSize = bs;
+        this.batchSize = batchSize;
+        this.blockSize = blockSize;
         this.threads = new Thread[degree];
         this.workers = new ArrayList<>();
     }
@@ -56,7 +59,7 @@ public class MultiThreadScan<T extends Scanner> {
             if (!new File(path).exists()) {
                 continue;
             }
-            workers.add(new ScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create());
+            workers.add(new ScanThreadFactory<T>(scannerClass, schema, path, batchSize, blockSize).create());
             threads[i] = new Thread(workers.get(i));
             threads[i].start();
         }

@@ -17,18 +17,20 @@ public class ScanThreadFactory<T extends Scanner> {
     final Schema schema;
     final String path;
     final int batchSize;
+    final int blockSize;
 
-    public ScanThreadFactory(final Class<T> scannerClass, Schema schema, String path, int batchSize)
+    public ScanThreadFactory(final Class<T> scannerClass, Schema schema, String path, int batchSize, int blockSize)
             throws IOException {
         this.scannerClass = scannerClass;
         this.schema = schema;
         this.path = path;
         this.batchSize = batchSize;
+        this.blockSize = blockSize;
     }
 
     public T create() throws InstantiationException, IllegalAccessException {
         T builder = scannerClass.newInstance();
-        builder.init(schema, path, batchSize);
+        builder.init(schema, path, batchSize, blockSize);
         return builder;
     }
 }

@@ -19,8 +19,8 @@ public class MultiThreadFilterScan<T extends FilteringScanner> extends MultiThre
     protected final String queryPath;
 
     public MultiThreadFilterScan(Class<T> scannerClass, String schemaPath, String targetPath, String queryPath,
-            int degree, int bs) throws IOException {
-        super(scannerClass, schemaPath, targetPath, degree, bs);
+            int degree, int batchSize, int blockSize) throws IOException {
+        super(scannerClass, schemaPath, targetPath, degree, batchSize, blockSize);
         this.queryPath = queryPath;
     }
 
@@ -30,7 +30,7 @@ public class MultiThreadFilterScan<T extends FilteringScanner> extends MultiThre
             if (!new File(path).exists()) {
                 continue;
             }
-            workers.add(new ScanThreadFactory<T>(scannerClass, schema, path, batchSize * DEFAULT_READ_SCALE).create());
+            workers.add(new ScanThreadFactory<T>(scannerClass, schema, path, batchSize, blockSize).create());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode queryCond = mapper.readTree(new File(queryPath));
             workers.get(i).config(queryCond);

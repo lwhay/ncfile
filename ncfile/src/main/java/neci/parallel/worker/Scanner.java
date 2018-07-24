@@ -11,7 +11,7 @@ import neci.ncfile.base.Schema;
  */
 public abstract class Scanner implements Runnable {
 
-    public abstract void init(Schema schema, String path, int batchSize);
+    public abstract void init(Schema schema, String path, int batchSize, int blockSize);
 
     public abstract void run();
 }
