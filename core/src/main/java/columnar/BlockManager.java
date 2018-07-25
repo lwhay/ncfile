@@ -37,7 +37,7 @@ public class BlockManager {
         this.columnBuffer = new byte[columnNumber][];
         this.bufferSize = (blockSize * cacheScale > MAX_FETCH_SIZE) ? MAX_FETCH_SIZE : blockSize * cacheScale;
         for (int i = 0; i < columnNumber; i++) {
-            columnBuffer[i] = new byte[bufferSize];
+            //columnBuffer[i] = new byte[bufferSize];
         }
     }
 

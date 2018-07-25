@@ -10,5 +10,5 @@ import java.io.File;
  *
  */
 public interface Merger {
-    public abstract void set(File payload);
+    public abstract void setInput(File payload);
 }

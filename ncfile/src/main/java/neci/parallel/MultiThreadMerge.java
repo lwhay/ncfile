@@ -13,7 +13,6 @@ import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericData.Record;
-import neci.parallel.worker.BuildThread;
 import neci.parallel.worker.MergeThread;
 
 /**
@@ -101,7 +100,7 @@ public class MultiThreadMerge<T extends MergeThread> {
             int pid = fid % degree;
             loadQueues.add(file);
             Runnable worker = new MergeThreadFactory<T>(buildClass, writers.get(pid), schema, null).create();
-            ((MergeThread) (worker)).set(file);
+            ((MergeThread) (worker)).setInput(file);
             threads[pid] = new Thread(worker);
             threads[pid].start();
             fid++;
@@ -115,8 +114,8 @@ public class MultiThreadMerge<T extends MergeThread> {
         for (int i = 0; i < degree; i++) {
             writers.get(i).flush();
             Runnable worker =
-                    new BuildThreadFactory<T>(buildClass, writers.get(i), schema, targetPath + i + "/").create();
-            ((BuildThread) (worker)).set(null);
+                    new MergeThreadFactory<T>(buildClass, writers.get(i), schema, targetPath + i + "/").create();
+            //((MergeThread) (worker)).setInput((File) null);
             threads[i] = new Thread(worker);
             threads[i].start();
         }

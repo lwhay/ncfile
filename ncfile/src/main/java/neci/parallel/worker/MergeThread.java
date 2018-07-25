@@ -17,7 +17,7 @@ public class MergeThread extends BuildThread implements Merger {
     private BatchColumnReader<Record> reader;
 
     @Override
-    public void set(File datafile) {
+    public void setInput(File datafile) {
         try {
             reader = new BatchColumnReader<>(datafile);
             reader.createSchema(schema);
@@ -30,12 +30,12 @@ public class MergeThread extends BuildThread implements Merger {
 
     @Override
     public void build() {
-        System.out.println(path + " on: " + reader.getRowCount(0));
+        System.out.println(path + " self translation: " + reader.getRowCount(0));
         while (reader.hasNext()) {
-            Record record = reader.next();
+            Record record = (Record) reader.next();
             //System.out.println(record.toString());
             try {
-                writer.append(record);
+                writer.flush(record);
             } catch (IOException e) {
                 e.printStackTrace();
             }
