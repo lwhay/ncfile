@@ -115,7 +115,7 @@ public class BuildThread extends Builder {
      */
     @Override
     public void run() {
-        if (payload != null) {
+        if (path == null) {
             build();
         } else {
             merge();
