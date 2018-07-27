@@ -8,16 +8,16 @@ import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData.Record;
 
 public class CombKey implements Comparable<CombKey> {
-    private int[] keys;
+    private long[] keys;
 
     public CombKey(int len) {
-        keys = new int[len];
+        keys = new long[len];
     }
 
     public CombKey(Record record) {
         List<Field> fs = record.getSchema().getFields();
         int len = fs.size();
-        this.keys = new int[len];
+        this.keys = new long[len];
         for (int i = 0; i < len; i++) {
             keys[i] = Integer.parseInt(record.get(i).toString());
         }
@@ -28,16 +28,16 @@ public class CombKey implements Comparable<CombKey> {
     }
 
     public CombKey(String[] k) {
-        keys = new int[k.length];
+        keys = new long[k.length];
         for (int i = 0; i < k.length; i++)
             keys[i] = Integer.parseInt(k[i]);
     }
 
     public CombKey(Record record, int len) {
-        this.keys = new int[len];
+        this.keys = new long[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
-            keys[i] = Integer.parseInt(record.get(i).toString());
+            keys[i] = Long.parseLong(record.get(i).toString());
         }
     }
 
@@ -47,14 +47,14 @@ public class CombKey implements Comparable<CombKey> {
 
     public CombKey(Record record, int[] keyFields) {
         int len = keyFields.length;
-        this.keys = new int[len];
+        this.keys = new long[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
-            keys[i] = Integer.parseInt(record.get(keyFields[i]).toString());
+            keys[i] = Long.parseLong(record.get(keyFields[i]).toString());
         }
     }
 
-    public CombKey(int[] keys) {
+    public CombKey(long[] keys) {
         this.keys = keys;
     }
 
@@ -114,7 +114,7 @@ public class CombKey implements Comparable<CombKey> {
 
     @Override
     public int hashCode() {
-        return keys[0];
+        return (int) keys[0];
     }
 
     @Override
@@ -126,7 +126,7 @@ public class CombKey implements Comparable<CombKey> {
         return keys.length;
     }
 
-    public int[] get() {
+    public long[] get() {
         return keys;
     }
 
@@ -135,7 +135,7 @@ public class CombKey implements Comparable<CombKey> {
     }
 
     public CombKey get(int[] fields) {
-        int[] k = new int[fields.length];
+        long[] k = new long[fields.length];
         for (int i = 0; i < fields.length; i++) {
             k[i] = keys[fields[i]];
         }

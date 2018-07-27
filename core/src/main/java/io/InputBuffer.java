@@ -67,7 +67,7 @@ public class InputBuffer {
             this.pos = (int) position;
         } else { // delay buffer creation in BlockManager
             if (bm == null) {
-                this.buf = new byte[BatchColumnFileReader.DEFAULT_BLOCK_SIZE * 1024];
+                this.buf = new byte[BatchColumnFileReader.DEFAULT_BLOCK_SIZE * BlockManager.DEFAULT_SCALE * 1024];
             } else {
                 this.buf = new byte[bm.getBlockSize()]; // big enough for primitives
             }

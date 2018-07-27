@@ -12,7 +12,9 @@ import org.apache.trevni.Input;
  *
  */
 public class BlockManager {
-    public static final int DEFAULT_SCALE = 16;
+    public static final boolean TRACE_IO = true;
+    public static final boolean AIO_OPEN = true;
+    public static final int DEFAULT_SCALE = 32;
     public static final int MAX_FETCH_SIZE = 256 * 1024;
     private final int blockSize;
     private final int cacheScale;
@@ -21,6 +23,8 @@ public class BlockManager {
     private final int bufferSize;
     //private Input in; // Need to be encapsulated.
     private int totalRead = 0;
+    private long ioTime = 0;
+    private long readLength = 0;
 
     public BlockManager(int bs, int cs) {
         this(bs, cs, 0);
@@ -39,6 +43,7 @@ public class BlockManager {
         for (int i = 0; i < columnNumber; i++) {
             //columnBuffer[i] = new byte[bufferSize];
         }
+        GlobalInformation.totalBlockManagerCreated++;
     }
 
     public int fetch(final Input in, long offset, byte[] b, int start, int len) throws IOException {
@@ -47,8 +52,16 @@ public class BlockManager {
 
     public int read(final Input in, long offset, byte[] b, int start, int len) throws IOException {
         //System.out.println(offset + "+" + len + "=" + (offset + len));
-        int readlen = in.read(offset, b, start, len);
-        totalRead++;
+        int readlen;
+        if (TRACE_IO) {
+            long begin = System.nanoTime();
+            readlen = in.read(offset, b, start, len);
+            ioTime += (System.nanoTime() - begin);
+            totalRead++;
+            readLength += readlen;
+        } else {
+            readlen = in.read(offset, b, start, len);
+        }
         return readlen;
     }
 
@@ -58,6 +71,18 @@ public class BlockManager {
 
     public int getTotalRead() {
         return totalRead;
+    }
+
+    public long getTotalTime() {
+        return ioTime;
+    }
+
+    public long getReadLength() {
+        return readLength;
+    }
+
+    public int getCreated() {
+        return GlobalInformation.totalBlockManagerCreated;
     }
 
     public int getBlockSize() {

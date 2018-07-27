@@ -9,7 +9,7 @@ import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData.Record;
 
 public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
-    int[] values;
+    long[] values;
 
     public KeyofBTree() {
     }
@@ -21,7 +21,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     public KeyofBTree(Record record) {
         List<Field> fs = record.getSchema().getFields();
         int len = fs.size();
-        this.values = new int[len];
+        this.values = new long[len];
         for (int i = 0; i < len; i++) {
             values[i] = Integer.parseInt(record.get(i).toString());
         }
@@ -32,23 +32,23 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     }
 
     public KeyofBTree(String[] keys) {
-        values = new int[keys.length];
+        values = new long[keys.length];
         for (int i = 0; i < keys.length; i++)
             values[i] = Integer.parseInt(keys[i]);
     }
 
-    public KeyofBTree(int[] keys) {
+    public KeyofBTree(long[] keys) {
         values = keys;
     }
 
     public KeyofBTree(String[] keys, int len) {
-        values = new int[len];
+        values = new long[len];
         for (int i = 0; i < len; i++)
             values[i] = Integer.parseInt(keys[i]);
     }
 
     public KeyofBTree(Record record, int len) {
-        this.values = new int[len];
+        this.values = new long[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
             values[i] = Integer.parseInt(record.get(i).toString());
@@ -57,7 +57,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
 
     public KeyofBTree(Record record, int[] keyFields) {
         int len = keyFields.length;
-        this.values = new int[len];
+        this.values = new long[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
             values[i] = Integer.parseInt(record.get(keyFields[i]).toString());
@@ -65,7 +65,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     }
 
     public KeyofBTree get(int[] fields) {
-        int[] k = new int[fields.length];
+        long[] k = new long[fields.length];
         for (int i = 0; i < fields.length; i++) {
             k[i] = values[fields[i]];
         }
@@ -76,7 +76,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         deseriablize(data);
     }
 
-    public int[] getKey() {
+    public long[] getKey() {
         return values;
     }
 
@@ -114,8 +114,8 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     public byte[] serialize() {
         List<Byte> res = new ArrayList<Byte>();
         int i = 0;
-        for (int v : values) {
-            for (byte b : getBytes4(v))
+        for (long v : values) {
+            for (byte b : getBytes8(v))
                 res.add(b);
         }
         byte[] ee = new byte[res.size()];
@@ -129,7 +129,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     public void deseriablize(byte[] data) {
         int index = 0;
         int len = data.length / 4;
-        values = new int[len];
+        values = new long[len];
         int in = 0;
         while (in < len) {
             values[in] = Utils.getInt(data, index);
@@ -149,7 +149,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
 
     @Override
     public int hashCode() {
-        return values[0];
+        return (int) values[0];
     }
 
     @Override

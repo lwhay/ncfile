@@ -28,11 +28,12 @@ public class KeyToBytes {
 
     public KeyToBytes(KeyofBTree key) {
         //        boolean[] types = key.getTypes();
-        int[] keys = key.getKey();
+        long[] keys = key.getKey();
         bytes = new byte[keys.length][];
         for (int i = 0; i < key.getLength(); i++) {
             //            if (types[i])
-            createIntField(keys[i], i);
+            //createIntField(keys[i], i);
+            createLongField(keys[i], i);
             //            else
             //                createLongField(Integer.parseInt(keys[i].toString()), i);
         }

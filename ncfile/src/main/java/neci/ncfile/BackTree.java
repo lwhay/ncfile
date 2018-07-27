@@ -295,7 +295,7 @@ public class BackTree {
                 //                }
             }
         } else {
-            int[] rr = key.get();
+            long[] rr = key.get();
             for (int i = 0; i < valueFields.length; i++) {
                 //                if (key.getType(i)) {
                 res.put(i, rr[vOFKFields[i]]);
