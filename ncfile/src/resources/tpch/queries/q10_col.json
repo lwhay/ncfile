@@ -1,0 +1,11 @@
+{
+	"Order": {
+		"o_orderdate": {
+			"begin": "1993-10-01",
+			"end": "1994-01-01"
+		},
+		"LineItem": {
+			"l_returnflat": "R"
+		}
+	}
+}

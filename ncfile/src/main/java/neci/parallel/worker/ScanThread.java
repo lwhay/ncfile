@@ -101,7 +101,10 @@ public class ScanThread extends Scanner {
             count++;
         }
         outline += " elipse: " + (System.currentTimeMillis() - begin) + " for " + count;
-        System.out.println(outline + " reads: " + reader.getBlockManager().getTotalRead());
+        System.out.println(outline + " reads: " + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalTime() / 1000000 + " created: "
+                + reader.getBlockManager().getCreated() + " read: "
+                + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
         /*while (reader.hasNext()) {
             if (listRecord.size() == batchSize) {
                 this.unlock();

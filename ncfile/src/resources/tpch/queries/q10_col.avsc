@@ -1,0 +1,24 @@
+{"type": "record", "name": "Customer",
+ "fields": [
+     {"name": "c_custkey", "type": "long", "order": "ignore"},
+     {"name": "c_name", "type": "string"},
+     {"name": "c_address", "type": "string"},
+     {"name": "c_nationkey", "type": "int"},
+     {"name": "c_phone", "type": "string"},
+     {"name": "c_acctbal", "type": "float"},
+	 {"name": "OrderList", "type":{"type": "array",
+	  "items":{"type": "record", "name": "Order",
+	   "fields": [
+		 {"name": "LineitemList", "type":{"type": "array",
+		  "items": {"type": "record", "name": "Lineitem",
+		   "fields": [
+			 {"name": "l_extendedprice", "type": "float"},
+			 {"name": "l_discount", "type": "float"}
+         ]
+        }
+       }}
+     ]
+    }
+   }}
+ ]
+}
