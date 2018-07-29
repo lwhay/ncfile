@@ -45,14 +45,12 @@ public class CompressedBlockDescriptor extends BlockDescriptor {
         out.writeFixed32(lengthPayload);
     }
 
-    public static CompressedBlockDescriptor read(InputBuffer in) throws IOException {
-        CompressedBlockDescriptor result = new CompressedBlockDescriptor();
-        result.rowCount = in.readFixed32();
-        result.uncompressedSize = in.readFixed32();
-        result.lengthUnion = in.readFixed32();
-        result.lengthOffset = in.readFixed32();
-        result.lengthPayload = in.readFixed32();
-        return result;
+    public void read(InputBuffer in) throws IOException {
+        this.rowCount = in.readFixed32();
+        this.uncompressedSize = in.readFixed32();
+        this.lengthUnion = in.readFixed32();
+        this.lengthOffset = in.readFixed32();
+        this.lengthPayload = in.readFixed32();
     }
 
 }

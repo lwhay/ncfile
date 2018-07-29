@@ -44,12 +44,10 @@ public class BlockDescriptor {
         out.writeFixed32(compressedSize);
     }
 
-    public static BlockDescriptor read(InputBuffer in) throws IOException {
-        BlockDescriptor result = new BlockDescriptor();
-        result.rowCount = in.readFixed32();
-        result.uncompressedSize = in.readFixed32();
-        result.compressedSize = in.readFixed32();
-        return result;
+    public void read(InputBuffer in) throws IOException {
+        this.rowCount = in.readFixed32();
+        this.uncompressedSize = in.readFixed32();
+        this.compressedSize = in.readFixed32();
     }
 
 }

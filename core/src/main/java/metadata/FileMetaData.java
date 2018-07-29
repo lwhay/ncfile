@@ -24,10 +24,8 @@ import io.OutputBuffer;
  * File-level metadata.
  */
 public class FileMetaData extends MetaData<FileMetaData> {
-    public static FileMetaData read(InputBuffer in) throws IOException {
-        FileMetaData result = new FileMetaData();
-        MetaData.read(in, result);
-        return result;
+    public void read(InputBuffer in, MetaData metaData) throws IOException {
+        super.read(in, metaData);
     }
 
     public void write(OutputBuffer out) throws IOException {

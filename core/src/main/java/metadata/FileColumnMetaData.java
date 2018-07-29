@@ -33,6 +33,7 @@ import misc.ValueType;
  * Metadata for a column.
  */
 public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
+    private static final long serialVersionUID = 1L;
     static final String NAME_KEY = RESERVED_KEY_PREFIX + "name";
     static final String TYPE_KEY = RESERVED_KEY_PREFIX + "type";
     static final String VALUES_KEY = RESERVED_KEY_PREFIX + "values";
@@ -60,8 +61,9 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
     private transient List<FileColumnMetaData> children = new ArrayList<FileColumnMetaData>();
     private transient int number = -1;
 
-    private FileColumnMetaData() {
-    } // non-public ctor
+    public FileColumnMetaData() {
+
+    }
 
     /**
      * Construct given a name and type.
@@ -239,72 +241,64 @@ public class FileColumnMetaData extends MetaData<FileColumnMetaData> {
         return getBoolean(VALUES_KEY);
     }
 
-    public static FileColumnMetaData read(InputBuffer in, InsertColumnFileReader file) throws IOException {
-        FileColumnMetaData result = new FileColumnMetaData();
-        MetaData.read(in, result);
-        result.name = result.getString(NAME_KEY);
-        result.type = ValueType.forName(result.getString(TYPE_KEY));
-        result.values = result.getBoolean(VALUES_KEY);
-        result.isArray = result.getBoolean(ARRAY_KEY);
-        result.layer = result.getInteger(LAYER_KEY);
-        if (result.type.equals(ValueType.UNION)) {
-            result.union = result.getInteger(UNION_KEY);
-
-            if (result.union <= 2)
-                result.unionBits = 1;
-            else if (result.union <= 4)
-                result.unionBits = 2;
-            else if (result.union <= 16)
-                result.unionBits = 4;
-            else if (result.union <= 32)
-                result.unionBits = 8;
+    public void read(InputBuffer in, InsertColumnFileReader file) throws IOException {
+        read(in, this);
+        this.name = this.getString(NAME_KEY);
+        this.type = ValueType.forName(this.getString(TYPE_KEY));
+        this.values = this.getBoolean(VALUES_KEY);
+        this.isArray = this.getBoolean(ARRAY_KEY);
+        this.layer = this.getInteger(LAYER_KEY);
+        if (this.type.equals(ValueType.UNION)) {
+            this.union = this.getInteger(UNION_KEY);
+            if (this.union <= 2)
+                this.unionBits = 1;
+            else if (this.union <= 4)
+                this.unionBits = 2;
+            else if (this.union <= 16)
+                this.unionBits = 4;
+            else if (this.union <= 32)
+                this.unionBits = 8;
             else
                 throw new TrevniRuntimeException("this union schema has too many children!");
 
-            String[] tmp = result.getString(UNION_ARRAY).split("\\|");
-            result.unionArray = new ValueType[tmp.length];
+            String[] tmp = this.getString(UNION_ARRAY).split("\\|");
+            this.unionArray = new ValueType[tmp.length];
             for (int i = 0; i < tmp.length; i++)
-                result.unionArray[i] = ValueType.valueOf(tmp[i]);
+                this.unionArray[i] = ValueType.valueOf(tmp[i]);
         }
-        String parentName = result.getString(PARENT_KEY);
+        String parentName = this.getString(PARENT_KEY);
         if (parentName != null)
-            result.setParent(file.getFileColumnMetaData(parentName));
-
-        return result;
+            this.setParent(file.getFileColumnMetaData(parentName));
     }
 
-    public static FileColumnMetaData read(InputBuffer in, BatchColumnFileReader file) throws IOException {
-        FileColumnMetaData result = new FileColumnMetaData();
-        MetaData.read(in, result);
-        result.name = result.getString(NAME_KEY);
-        result.type = ValueType.forName(result.getString(TYPE_KEY));
-        result.values = result.getBoolean(VALUES_KEY);
-        result.isArray = result.getBoolean(ARRAY_KEY);
-        result.layer = result.getInteger(LAYER_KEY);
-        if (result.type.equals(ValueType.UNION)) {
-            result.union = result.getInteger(UNION_KEY);
-
-            if (result.union <= 2)
-                result.unionBits = 1;
-            else if (result.union <= 4)
-                result.unionBits = 2;
-            else if (result.union <= 16)
-                result.unionBits = 4;
-            else if (result.union <= 32)
-                result.unionBits = 8;
+    public void read(InputBuffer in, BatchColumnFileReader file) throws IOException {
+        this.read(in, this);
+        this.name = this.getString(NAME_KEY);
+        this.type = ValueType.forName(this.getString(TYPE_KEY));
+        this.values = this.getBoolean(VALUES_KEY);
+        this.isArray = this.getBoolean(ARRAY_KEY);
+        this.layer = this.getInteger(LAYER_KEY);
+        if (this.type.equals(ValueType.UNION)) {
+            this.union = this.getInteger(UNION_KEY);
+            if (this.union <= 2)
+                this.unionBits = 1;
+            else if (this.union <= 4)
+                this.unionBits = 2;
+            else if (this.union <= 16)
+                this.unionBits = 4;
+            else if (this.union <= 32)
+                this.unionBits = 8;
             else
                 throw new TrevniRuntimeException("this union schema has too many children!");
 
-            String[] tmp = result.getString(UNION_ARRAY).split("\\|");
-            result.unionArray = new ValueType[tmp.length];
+            String[] tmp = this.getString(UNION_ARRAY).split("\\|");
+            this.unionArray = new ValueType[tmp.length];
             for (int i = 0; i < tmp.length; i++)
-                result.unionArray[i] = ValueType.valueOf(tmp[i]);
+                this.unionArray[i] = ValueType.valueOf(tmp[i]);
         }
-        String parentName = result.getString(PARENT_KEY);
+        String parentName = this.getString(PARENT_KEY);
         if (parentName != null)
-            result.setParent(file.getFileColumnMetaData(parentName));
-
-        return result;
+            this.setParent(file.getFileColumnMetaData(parentName));
     }
 
     public void write(OutputBuffer out) throws IOException {

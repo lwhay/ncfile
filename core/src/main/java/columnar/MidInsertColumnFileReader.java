@@ -31,7 +31,8 @@ public class MidInsertColumnFileReader extends InsertColumnFileReader {
         keyLen = new int[layer];
         for (int i = 0; i < layer; i++)
             keyLen[i] = in.readFixed32();
-        this.metaData = FileMetaData.read(in);
+        this.metaData = new FileMetaData();
+        this.metaData.read(in, metaData);
         this.columnsByName = new HashMap<String, Integer>(columnCount);
         return in;
     }

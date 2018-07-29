@@ -117,15 +117,20 @@ public class BatchColumnFileReader implements Closeable {
         readMagic(in);
         this.rowCount = in.readFixed32();
         this.columnCount = in.readFixed32();
-        this.metaData = FileMetaData.read(in);
+        this.metaData = new FileMetaData();
+        this.metaData.read(in, metaData);
         this.columnsByName = new HashMap<String, Integer>(columnCount);
         return in;
     }
 
     private void readColumns(InputBuffer in) throws IOException {
+        long begin = System.nanoTime();
         columns = new ColumnDescriptor[columnCount];
         readFileColumnMetaData(in);
+        bm.colBlockTime += (System.nanoTime() - begin);
+        begin = System.nanoTime();
         readColumnStarts(in);
+        bm.colStartTime += (System.nanoTime() - begin);
     }
 
     public HashMap<String, Integer> getColumnsByName() {
@@ -145,12 +150,14 @@ public class BatchColumnFileReader implements Closeable {
 
     protected void readFileColumnMetaData(InputBuffer in) throws IOException {
         for (int i = 0; i < columnCount; i++) {
-            FileColumnMetaData meta = FileColumnMetaData.read(in, this);
+            FileColumnMetaData meta = new FileColumnMetaData();
+            meta.read(in, this);
             meta.setDefaults(this.metaData);
             int blockCount = in.readFixed32();
             CompressedBlockDescriptor[] blocks = new CompressedBlockDescriptor[blockCount];
             for (int j = 0; j < blockCount; j++) {
-                blocks[j] = CompressedBlockDescriptor.read(in);
+                blocks[j] = new CompressedBlockDescriptor();
+                blocks[j].read(in);
                 //          if (meta.hasIndexValues())
                 //          firstValues[i] = in.<T>readValue(meta.getType());
             }

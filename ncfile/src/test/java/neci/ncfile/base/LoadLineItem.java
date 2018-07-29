@@ -31,7 +31,7 @@ public class LoadLineItem {
         int mul = Integer.parseInt(args[3]);
         int bs = Integer.parseInt(args[8]);
         BatchAvroColumnWriter<GenericData.Record> writer =
-                new BatchAvroColumnWriter<>(schema, args[1], free, mul, bs, "snappy");
+                new BatchAvroColumnWriter<>(schema, args[1], free, mul, bs, "null");
         BufferedReader br = new BufferedReader(new FileReader(args[4]));
         String line;
         while ((line = br.readLine()) != null) {
@@ -118,11 +118,11 @@ public class LoadLineItem {
         } else if (args[6].equals("scan")) {
             long begin = System.currentTimeMillis();
             scan(args);
-            System.out.println("batch load: " + (System.currentTimeMillis() - begin));
+            System.out.println("batch scan: " + (System.currentTimeMillis() - begin));
         } else {
             long begin = System.currentTimeMillis();
             filterScan(args);
-            System.out.println("fitlerbatch load: " + (System.currentTimeMillis() - begin));
+            System.out.println("fitlerbatch scan: " + (System.currentTimeMillis() - begin));
         }
     }
 }

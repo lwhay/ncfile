@@ -25,6 +25,9 @@ public class BlockManager {
     private int totalRead = 0;
     private long ioTime = 0;
     private long readLength = 0;
+    public long colBlockTime = 0;
+    public long colStartTime = 0;
+    public int headerIOs = 0;
 
     public BlockManager(int bs, int cs) {
         this(bs, cs, 0);
@@ -87,6 +90,14 @@ public class BlockManager {
 
     public int getBlockSize() {
         return blockSize;
+    }
+
+    public long getColumnBlockTime() {
+        return colBlockTime;
+    }
+
+    public long getColumnStartTime() {
+        return colStartTime;
     }
 
     public int getBufferSize() {

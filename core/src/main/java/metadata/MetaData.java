@@ -35,7 +35,7 @@ public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> 
     static final String CODEC_KEY = RESERVED_KEY_PREFIX + "codec";
     static final String CHECKSUM_KEY = RESERVED_KEY_PREFIX + "checksum";
 
-    public static final Charset UTF8 = Charset.forName("UTF-8");
+    public final Charset UTF8 = Charset.forName("UTF-8");
 
     private MetaData<?> defaults;
 
@@ -117,7 +117,7 @@ public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> 
     /**
      * Test if a metadata key is reserved.
      */
-    public static boolean isReserved(String key) {
+    public boolean isReserved(String key) {
         return key.startsWith(RESERVED_KEY_PREFIX);
     }
 
@@ -156,7 +156,7 @@ public class MetaData<T extends MetaData> extends LinkedHashMap<String, byte[]> 
         }
     }
 
-    protected static void read(InputBuffer in, MetaData<?> metaData) throws IOException {
+    protected void read(InputBuffer in, MetaData<?> metaData) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++)
             metaData.put(in.readString(), in.readBytes());

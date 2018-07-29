@@ -82,7 +82,7 @@ public class GenericData {
      * Set the Java type to be used when reading this schema. Meaningful only
      * only string schemas and map schemas (for the keys).
      */
-    public static void setStringType(Schema s, StringType stringType) {
+    public void setStringType(Schema s, StringType stringType) {
         // Utf8 is the default and implements CharSequence, so we only need to add
         // a property when the type is String
         if (stringType == StringType.String)
@@ -111,7 +111,8 @@ public class GenericData {
 
     private Map<String, Conversion<?>> conversions = new HashMap<String, Conversion<?>>();
 
-    private Map<Class<?>, Map<String, Conversion<?>>> conversionsByClass = new IdentityHashMap<Class<?>, Map<String, Conversion<?>>>();
+    private Map<Class<?>, Map<String, Conversion<?>>> conversionsByClass =
+            new IdentityHashMap<Class<?>, Map<String, Conversion<?>>>();
 
     /**
      * Registers the given conversion to be used when reading and writing with
@@ -357,7 +358,7 @@ public class GenericData {
     /** Default implementation of an array. */
     @SuppressWarnings(value = "unchecked")
     public static class Array<T> extends AbstractList<T> implements GenericArray<T>, Comparable<GenericArray<T>> {
-        private static final Object[] EMPTY = new Object[0];
+        private /*static*/ final Object[] EMPTY = new Object[0];
         private final Schema schema;
         private int size;
         private Object[] elements = EMPTY;
@@ -683,7 +684,8 @@ public class GenericData {
         return buffer.toString();
     }
 
-    private static final String TOSTRING_CIRCULAR_REFERENCE_ERROR_TEXT = " \">>> CIRCULAR REFERENCE CANNOT BE PUT IN JSON STRING, ABORTING RECURSION <<<\" ";
+    private static final String TOSTRING_CIRCULAR_REFERENCE_ERROR_TEXT =
+            " \">>> CIRCULAR REFERENCE CANNOT BE PUT IN JSON STRING, ABORTING RECURSION <<<\" ";
 
     /** Renders a Java datum as <a href="http://www.json.org/">JSON</a>. */
     protected void toString(Object datum, StringBuilder buffer, IdentityHashMap<Object, Object> seenObjects) {
