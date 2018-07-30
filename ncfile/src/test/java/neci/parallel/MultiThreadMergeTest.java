@@ -13,6 +13,7 @@ import neci.ncfile.BatchColumnReader;
 import neci.ncfile.NestManager;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
+import neci.parallel.worker.MergeThread;
 
 /**
  * @author Michael
@@ -24,40 +25,39 @@ public class MultiThreadMergeTest {
         NestManager.shDelete(args[2]);
         Schema schema = new Schema.Parser().parse(new File(args[0]));
         BatchAvroColumnWriter<Record> writer = new BatchAvroColumnWriter<>(schema, args[1], 10, 10, 1, "null");
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10000; i++) {
             Record r1 = new Record(schema);
             r1.put(0, i);
             List<Record> f1 = new ArrayList<>();
             Record r11 = new Record(schema.getFields().get(1).schema().getElementType());
             r11.put(0, i);
+            Record r12 = new Record(
+                    schema.getFields().get(1).schema().getElementType().getFields().get(1).schema().getElementType());
+            r12.put(0, i);
+            List<Record> f2 = new ArrayList<>();
+            f2.add(r12);
+            r11.put(1, f2);
             f1.add(r11);
             r1.put(1, f1);
             System.out.println(r1);
             writer.flush(r1);
         }
         writer.flush();
-        File[] files = new File(args[1]).listFiles();
-        File[] toBeMerged = new File[files.length / 2];
-        int fidx = 0;
-        for (File file : files) {
-            if (file.getAbsolutePath().endsWith("neci")) {
-                toBeMerged[fidx++] = file;
-            }
-        }
-        writer.mergeFiles(toBeMerged);
-        writer.flush();
     }
 
     public static void scan(String[] args) throws IOException {
-        Schema schema = new Schema.Parser().parse(new File(args[0]));
-        BatchColumnReader<Record> reader = new BatchColumnReader<>(new File(args[1] + "result.neci"), 1);
-        reader.createSchema(schema);
-        reader.create();
-        while (reader.hasNext()) {
-            Record record = reader.next();
-            System.out.println(record);
+        for (int i = 0; i < Integer.parseInt(args[5]); i++) {
+            System.out.println("Openning file: " + args[2] + i + "/result.neci");
+            Schema schema = new Schema.Parser().parse(new File(args[0]));
+            BatchColumnReader<Record> reader = new BatchColumnReader<>(new File(args[2] + i + "/result.neci"), 1);
+            reader.createSchema(schema);
+            reader.create();
+            while (reader.hasNext()) {
+                Record record = reader.next();
+                System.out.println(record);
+            }
+            reader.close();
         }
-        reader.close();
     }
 
     public static void clear(String[] args) throws IOException {
@@ -75,7 +75,7 @@ public class MultiThreadMergeTest {
     public static void main(String[] args)
             throws IOException, InterruptedException, InstantiationException, IllegalAccessException {
         create(args);
-        /*if (args.length != 9) {
+        if (args.length != 9) {
             System.out.println(
                     "Command: String sPath, String dPath, String tPath, int wc, int mul, int dg, int gran, String codec, int blockSize");
             System.exit(0);
@@ -85,9 +85,9 @@ public class MultiThreadMergeTest {
                 Integer.parseInt(args[5]), Integer.parseInt(args[6]), args[7]);
         long begin = System.currentTimeMillis();
         builder.build();
-        System.out.println("Merge elipse: " + (System.currentTimeMillis() - begin));*/
+        System.out.println("Merge elipse: " + (System.currentTimeMillis() - begin));
         scan(args);
-        clear(args);
+        //clear(args);
     }
 
 }

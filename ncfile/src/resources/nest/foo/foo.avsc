@@ -4,9 +4,16 @@
 	 {"name": "bl", "type": {"type": "array",
 	  "items": {"type": "record", "name": "b",
 	   "fields": [
-	     {"name": "b1", "type": "int"}
-     ]
-	}
-  }}
+	     	 {"name": "b1", "type": "int"},
+			 {"name": "cl", "type": {"type": "array",
+			  "items": {"type": "record", "name": "c",
+			   "fields": [
+			     {"name": "c1", "type": "int"}
+		     ]
+			}
+		  }}
+	     ]
+		}
+	  }}
  ]
 }
