@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
 
 import io.BlockOutputBuffer;
 import metadata.FileColumnMetaData;
@@ -19,58 +17,6 @@ public class InsertColumnFileWriter extends BatchColumnFileWriter {
     private RandomAccessFile gapFile;
     //    private int[] nest;
     private RandomAccessFile nestFile;
-
-    public static class Blocks {
-        private List<BlockDescriptor> blocks;
-
-        Blocks() {
-            blocks = new ArrayList<BlockDescriptor>();
-        }
-
-        void add(BlockDescriptor b) {
-            blocks.add(b);
-        }
-
-        void clear() {
-            blocks.clear();
-        }
-
-        public int size() {
-            return blocks.size();
-        }
-
-        BlockDescriptor get(int i) {
-            return blocks.get(i);
-        }
-    }
-
-    public static class ListArr {
-        private List<Object> x;
-
-        public ListArr() {
-            this.x = new ArrayList<Object>();
-        }
-
-        public void add(Object o) {
-            this.x.add(o);
-        }
-
-        public void clear() {
-            x.clear();
-        }
-
-        public Object get(int i) {
-            return x.get(i);
-        }
-
-        public Object[] toArray() {
-            return x.toArray();
-        }
-
-        public int size() {
-            return x.size();
-        }
-    }
 
     // public static void MemPrint(){
     //     System.out.println("$$$$$$$$$\t"+(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));

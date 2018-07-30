@@ -8,13 +8,13 @@ import java.io.OutputStream;
 import org.apache.trevni.TrevniRuntimeException;
 
 import codec.Codec;
-import columnar.InsertColumnFileWriter.Blocks;
-import columnar.InsertColumnFileWriter.ListArr;
 import io.BlockOutputBuffer;
 import io.OutputBuffer;
 import io.UnionOutputBuffer;
 import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
+import misc.Blocks;
+import misc.ListArr;
 import misc.TranToValueType;
 import misc.ValueType;
 

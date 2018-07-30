@@ -13,9 +13,9 @@ import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BatchColumnFileWriter;
 import columnar.BlockManager;
-import columnar.InsertColumnFileWriter.ListArr;
 import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
+import misc.ListArr;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
@@ -89,6 +89,7 @@ public class BatchAvroColumnWriter<T> {
         }
     }
 
+    // Can only handle flat schemas.
     public void append(T value) throws IOException {
         values.add(value);
         //        if (fileIndex == 0) {
@@ -115,6 +116,7 @@ public class BatchAvroColumnWriter<T> {
         //    }
     }
 
+    // Can be used to do persistence on nested arrays.
     public void flush(T value) throws IOException {
         values.add(value);
         if (values.size() < max) {
@@ -240,7 +242,7 @@ public class BatchAvroColumnWriter<T> {
     }
 
     /*
-     * write array column incremently
+     * write array column incrementally
      */
     public void flushTo(File file) throws IOException {
         if (values.size() != 0) {

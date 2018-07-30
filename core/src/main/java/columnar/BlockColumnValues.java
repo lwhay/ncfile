@@ -338,7 +338,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     }
 
     /*
-     * while the array column is incremently stored, return the array Length and the first offset.
+     * while the array column is incrementally stored, return the array Length and the first offset.
      */
     public int[] nextLengthAndOffset() {
         if (!column.metaData.isArray())

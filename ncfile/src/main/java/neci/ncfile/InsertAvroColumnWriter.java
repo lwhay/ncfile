@@ -11,9 +11,9 @@ import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BlockManager;
 import columnar.InsertColumnFileWriter;
-import columnar.InsertColumnFileWriter.ListArr;
 import metadata.FileColumnMetaData;
 import metadata.FileMetaData;
+import misc.ListArr;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.generic.GenericData;
