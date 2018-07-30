@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.trevni.Input;
 import org.apache.trevni.InputFile;
@@ -26,6 +27,8 @@ public class BatchColumnFileReader implements Closeable {
     protected FileMetaData metaData;
     protected ColumnDescriptor[] columns;
     protected HashMap<String, Integer> columnsByName;
+    private InputBuffer headerBuffer;
+    private Set<String> validColumns;
 
     public BatchColumnFileReader() {
 
@@ -39,9 +42,9 @@ public class BatchColumnFileReader implements Closeable {
     public BatchColumnFileReader(Input data, Input head) throws IOException {
         this.dataFile = data;
         this.headFile = head;
-        InputBuffer headerBuffer = readHeader();
+        headerBuffer = readHeader();
         this.bm = new BlockManager(DEFAULT_BLOCK_SIZE, BlockManager.DEFAULT_SCALE, columnCount);
-        readColumns(headerBuffer);
+        //readColumns();
     }
 
     public BatchColumnFileReader(File file, int bs) throws IOException {
@@ -52,9 +55,14 @@ public class BatchColumnFileReader implements Closeable {
     public BatchColumnFileReader(Input data, Input head, int bs) throws IOException {
         this.dataFile = data;
         this.headFile = head;
-        InputBuffer headerBuffer = readHeader();
+        headerBuffer = readHeader();
         this.bm = new BlockManager(bs, BlockManager.DEFAULT_SCALE, columnCount);
-        readColumns(headerBuffer);
+        //readColumns();
+    }
+
+    public void readColumnInfo(Set<String> masks) throws IOException {
+        this.validColumns = masks;
+        readColumns();
     }
 
     public BlockManager getBlockManager() {
@@ -123,13 +131,13 @@ public class BatchColumnFileReader implements Closeable {
         return in;
     }
 
-    private void readColumns(InputBuffer in) throws IOException {
+    private void readColumns() throws IOException {
         long begin = System.nanoTime();
         columns = new ColumnDescriptor[columnCount];
-        readFileColumnMetaData(in);
+        readFileColumnMetaData(headerBuffer);
         bm.colBlockTime += (System.nanoTime() - begin);
         begin = System.nanoTime();
-        readColumnStarts(in);
+        readColumnStarts(headerBuffer);
         bm.colStartTime += (System.nanoTime() - begin);
     }
 
@@ -155,9 +163,15 @@ public class BatchColumnFileReader implements Closeable {
             meta.setDefaults(this.metaData);
             int blockCount = in.readFixed32();
             CompressedBlockDescriptor[] blocks = new CompressedBlockDescriptor[blockCount];
+            boolean valid = (validColumns == null || validColumns.contains(meta.getName()));
             for (int j = 0; j < blockCount; j++) {
-                blocks[j] = new CompressedBlockDescriptor();
-                blocks[j].read(in);
+                if (valid) {
+                    blocks[j] = new CompressedBlockDescriptor();
+                    blocks[j].read(in);
+                } else {
+                    //blocks[j].skip(in);
+                    in.skip(20);
+                }
                 //          if (meta.hasIndexValues())
                 //          firstValues[i] = in.<T>readValue(meta.getType());
             }
@@ -175,10 +189,16 @@ public class BatchColumnFileReader implements Closeable {
     }
 
     public <T extends Comparable> BlockColumnValues<T> getValues(String columnName) throws IOException {
+        if (columns == null) {
+            readColumns();
+        }
         return new BlockColumnValues<T>(getColumn(columnName));
     }
 
     public <T extends Comparable> BlockColumnValues<T> getValues(int column) throws IOException {
+        if (columns == null) {
+            readColumns();
+        }
         return new BlockColumnValues<T>(columns[column]);
     }
 

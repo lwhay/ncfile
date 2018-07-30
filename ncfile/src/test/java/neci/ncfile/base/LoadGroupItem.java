@@ -88,7 +88,9 @@ public class LoadGroupItem {
                 new BatchColumnReader<>(new File(args[1] + "/result.neci"), Integer.parseInt(args[9]));
         fr.createSchema(schema);
         fr.create();
-        System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(0));
+        String name = schema.getFields().get(0).name();
+        int columnNo = fr.getValidColumnNO(name);
+        System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(columnNo));
         while (fr.hasNext()) {
             Record record = fr.next();
             /*System.out.println(record.getSchema().getFields().size());
@@ -103,7 +105,8 @@ public class LoadGroupItem {
                 new FilterBatchColumnReader<>(new File(args[1] + "/result.neci"), Integer.parseInt(args[9]));
         fr.createSchema(schema);
         fr.createRead(Integer.parseInt(args[8]));
-        System.out.println("column: " + fr.getTypes().length + " row: " + fr.getRowCount(0));
+        System.out.println("column: " + fr.getTypes().length + " row: "
+                + fr.getRowCount(fr.getValidColumnNO(schema.getFields().get(0).name())));
         while (fr.hasNext()) {
             Record record = fr.next();
             /*System.out.println(record.getSchema().getFields().size());

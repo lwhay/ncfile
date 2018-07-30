@@ -40,10 +40,11 @@ public class NeciFilterRecordReader extends RecordReader<AvroKey<Record>, NullWr
                         context.getConfiguration()),
                 filters);
         //reader.createSchema(AvroJob.getInputKeySchema(context.getConfiguration()));
-        reader.createSchema(Schema.parse(context.getConfiguration().get(CONF_KEY_READER_SCHEMA)));
+        Schema schema = Schema.parse(context.getConfiguration().get(CONF_KEY_READER_SCHEMA));
+        reader.createSchema(schema);
         reader.filter();
         reader.createFilterRead();
-        rows = reader.getRowCount(0);
+        rows = reader.getRowCount(reader.getValidColumnNO(schema.getFields().get(0).name()));
     }
 
     @Override

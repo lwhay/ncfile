@@ -88,11 +88,13 @@ public class FilterScanThread extends Scanner {
         if (reader == null) {
             try {
                 reader = new FilterBatchColumnReader<>(new File(path), blockSize);
+                outline += " open: " + (System.currentTimeMillis() - begin) + " ";
+                reader.createSchema(schema);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            reader.createSchema(schema);
+            outline += " schema: " + (System.currentTimeMillis() - begin) + " ";
             try {
                 reader.createRead(batchSize);
             } catch (IOException e) {
@@ -103,12 +105,14 @@ public class FilterScanThread extends Scanner {
         outline += " prepared: " + (System.currentTimeMillis() - begin) + " ";
         begin = System.currentTimeMillis();
         int count = 0;
-        while (reader.hasNext()) {
+        /*while (reader.hasNext()) {
             reader.next();
             count++;
-        }
+        }*/
         outline += " elipse: " + (System.currentTimeMillis() - begin) + " for " + count;
-        System.out.println(outline + " reads: " + reader.getBlockManager().getTotalRead() + " iotime: "
+        System.out.println(outline + " reads: " + reader.getBlockManager().getTotalRead() + " cbtime: "
+                + reader.getBlockManager().getColumnBlockTime() + " cstime: "
+                + reader.getBlockManager().getColumnStartTime() + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());

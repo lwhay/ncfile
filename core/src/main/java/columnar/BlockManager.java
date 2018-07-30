@@ -93,11 +93,11 @@ public class BlockManager {
     }
 
     public long getColumnBlockTime() {
-        return colBlockTime;
+        return colBlockTime / 1000000000;
     }
 
     public long getColumnStartTime() {
-        return colStartTime;
+        return colStartTime / 1000000000;
     }
 
     public int getBufferSize() {

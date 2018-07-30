@@ -108,7 +108,7 @@ public class ScanTest {
         long start = System.currentTimeMillis();
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -132,7 +132,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 int st = sta;
                 int mm = 0;
                 while (mm < max) {
@@ -156,7 +156,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 i = set.nextSetBit(sta);
                 while (i != -1) {
                     xxx[nn[j]].put(j, reader.readValue(no, i));
@@ -179,7 +179,7 @@ public class ScanTest {
         long start = System.currentTimeMillis();
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         int mm = 0;
@@ -195,7 +195,7 @@ public class ScanTest {
         int[] nn = new int[fs.size()];
         for (int j = 0; j < fs.size(); j++) {
             Field f = fs.get(j);
-            int no = reader.getColumnNO(f.name());
+            int no = reader.getValidColumnNO(f.name());
 
             i = set.nextSetBit(0);
             while (i != -1) {
@@ -218,7 +218,7 @@ public class ScanTest {
         long start = System.currentTimeMillis();
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         int mm = 0;
@@ -234,7 +234,7 @@ public class ScanTest {
         int[] nn = new int[fs.size()];
         for (int j = 0; j < fs.size(); j++) {
             Field f = fs.get(j);
-            int no = reader.getColumnNO(f.name());
+            int no = reader.getValidColumnNO(f.name());
 
             i = set.nextSetBit(0);
             while (i != -1) {
@@ -259,7 +259,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -269,7 +269,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         BitSet set2 = new BitSet(reader.getRowCount(no2));
         i = 0;
         while (reader.hasNext(no2)) {
@@ -292,7 +292,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 int st = sta;
                 int mm = 0;
                 while (mm < max) {
@@ -316,7 +316,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 i = set.nextSetBit(sta);
                 while (i != -1) {
                     xxx[nn[j]].put(j, reader.readValue(no, i));
@@ -340,7 +340,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -350,7 +350,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         BitSet set2 = new BitSet(reader.getRowCount(no2));
         i = 0;
         while (reader.hasNext(no2)) {
@@ -365,7 +365,7 @@ public class ScanTest {
         int[] nn = new int[fs.size()];
         for (int j = 0; j < fs.size(); j++) {
             Field f = fs.get(j);
-            int no = reader.getColumnNO(f.name());
+            int no = reader.getValidColumnNO(f.name());
 
             i = set.nextSetBit(0);
             while (i != -1) {
@@ -390,7 +390,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -399,7 +399,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         i = set.nextSetBit(0);
         while (i != -1) {
             if (reader.readValue(no2, i).toString().compareTo(args2) >= 0)
@@ -422,7 +422,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 int st = sta;
                 int mm = 0;
                 while (mm < max) {
@@ -446,7 +446,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 i = set.nextSetBit(sta);
                 while (i != -1) {
                     xxx[nn[j]].put(j, reader.readValue(no, i));
@@ -470,7 +470,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -480,7 +480,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         i = set.nextSetBit(0);
         while (i != -1) {
             if (reader.readValue(no2, i).toString().compareTo(args2) >= 0)
@@ -494,7 +494,7 @@ public class ScanTest {
         int[] nn = new int[fs.size()];
         for (int j = 0; j < fs.size(); j++) {
             Field f = fs.get(j);
-            int no = reader.getColumnNO(f.name());
+            int no = reader.getValidColumnNO(f.name());
 
             i = set.nextSetBit(0);
             while (i != -1) {
@@ -519,7 +519,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -529,7 +529,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         BitSet set2 = new BitSet(reader.getRowCount(no2));
         i = 0;
         while (reader.hasNext(no2)) {
@@ -540,7 +540,7 @@ public class ScanTest {
         }
         set.and(set2);
 
-        int no3 = reader.getColumnNO("l_receiptdate");
+        int no3 = reader.getValidColumnNO("l_receiptdate");
         BitSet set3 = new BitSet(reader.getRowCount(no3));
         i = 0;
         while (reader.hasNext(no3)) {
@@ -564,7 +564,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 int st = sta;
                 int mm = 0;
                 while (mm < max) {
@@ -588,7 +588,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 i = set.nextSetBit(sta);
                 while (i != -1) {
                     xxx[nn[j]].put(j, reader.readValue(no, i));
@@ -613,7 +613,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -623,7 +623,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         BitSet set2 = new BitSet(reader.getRowCount(no2));
         i = 0;
         while (reader.hasNext(no2)) {
@@ -634,7 +634,7 @@ public class ScanTest {
         }
         set.and(set2);
 
-        int no3 = reader.getColumnNO("l_receiptdate");
+        int no3 = reader.getValidColumnNO("l_receiptdate");
         BitSet set3 = new BitSet(reader.getRowCount(no3));
         i = 0;
         while (reader.hasNext(no3)) {
@@ -650,7 +650,7 @@ public class ScanTest {
         int[] nn = new int[fs.size()];
         for (int j = 0; j < fs.size(); j++) {
             Field f = fs.get(j);
-            int no = reader.getColumnNO(f.name());
+            int no = reader.getValidColumnNO(f.name());
 
             i = set.nextSetBit(0);
             while (i != -1) {
@@ -675,7 +675,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -685,7 +685,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         i = set.nextSetBit(0);
         while (i != -1) {
             if (reader.readValue(no2, i).toString().compareTo(args2) >= 0)
@@ -695,7 +695,7 @@ public class ScanTest {
             i = set.nextSetBit(i);
         }
 
-        int no3 = reader.getColumnNO("l_receiptdate");
+        int no3 = reader.getValidColumnNO("l_receiptdate");
         i = set.nextSetBit(0);
         while (i != -1) {
             if (reader.readValue(no3, i).toString().compareTo(args3) >= 0)
@@ -718,7 +718,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 int st = sta;
                 int mm = 0;
                 while (mm < max) {
@@ -742,7 +742,7 @@ public class ScanTest {
             int[] nn = new int[fs.size()];
             for (int j = 0; j < fs.size(); j++) {
                 Field f = fs.get(j);
-                int no = reader.getColumnNO(f.name());
+                int no = reader.getValidColumnNO(f.name());
                 i = set.nextSetBit(sta);
                 while (i != -1) {
                     xxx[nn[j]].put(j, reader.readValue(no, i));
@@ -767,7 +767,7 @@ public class ScanTest {
         File result = new File(resultPath + "result.trv");
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
 
-        int no1 = reader.getColumnNO("l_shipdate");
+        int no1 = reader.getValidColumnNO("l_shipdate");
         BitSet set = new BitSet(reader.getRowCount(no1));
         int i = 0;
         while (reader.hasNext(no1)) {
@@ -777,7 +777,7 @@ public class ScanTest {
             i++;
         }
 
-        int no2 = reader.getColumnNO("l_commitdate");
+        int no2 = reader.getValidColumnNO("l_commitdate");
         i = set.nextSetBit(0);
         while (i != -1) {
             if (reader.readValue(no2, i).toString().compareTo(args2) >= 0)
@@ -787,7 +787,7 @@ public class ScanTest {
             i = set.nextSetBit(i);
         }
 
-        int no3 = reader.getColumnNO("l_receiptdate");
+        int no3 = reader.getValidColumnNO("l_receiptdate");
         i = set.nextSetBit(0);
         while (i != -1) {
             if (reader.readValue(no3, i).toString().compareTo(args3) >= 0)
@@ -802,7 +802,7 @@ public class ScanTest {
         int[] nn = new int[fs.size()];
         for (int j = 0; j < fs.size(); j++) {
             Field f = fs.get(j);
-            int no = reader.getColumnNO(f.name());
+            int no = reader.getValidColumnNO(f.name());
 
             i = set.nextSetBit(0);
             while (i != -1) {
@@ -827,10 +827,10 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
-        int n = reader.getColumnNO("l_shipdate");
+        int n = reader.getValidColumnNO("l_shipdate");
         while (reader.hasNext(n)) {
             if (reader.nextValue(n).toString().compareTo(args1) < 0) {
                 mm++;
@@ -852,10 +852,10 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
-        int n = reader.getColumnNO("l_shipdate");
+        int n = reader.getValidColumnNO("l_shipdate");
         while (reader.hasNext(n)) {
             if (reader.nextValue(n).toString().compareTo(args1) < 0) {
                 mm++;
@@ -877,11 +877,11 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
-        int n1 = reader.getColumnNO("l_shipdate");
-        int n2 = reader.getColumnNO("l_commitdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
+        int n2 = reader.getValidColumnNO("l_commitdate");
         while (reader.hasNext(n1)) {
             String s1 = reader.nextValue(n1).toString();
             String s2 = reader.nextValue(n2).toString();
@@ -906,12 +906,12 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
-        int n1 = reader.getColumnNO("l_shipdate");
-        int n2 = reader.getColumnNO("l_commitdate");
-        int n3 = reader.getColumnNO("l_receiptdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
+        int n2 = reader.getValidColumnNO("l_commitdate");
+        int n3 = reader.getValidColumnNO("l_receiptdate");
         while (reader.hasNext(n1)) {
             String s1 = reader.nextValue(n1).toString();
             String s2 = reader.nextValue(n2).toString();
@@ -997,11 +997,11 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
         int i = 0;
-        int n = reader.getColumnNO("l_shipdate");
+        int n = reader.getValidColumnNO("l_shipdate");
         while (reader.hasNext(n)) {
             if (reader.nextValue(n).toString().compareTo(args1) < 0) {
                 mm++;
@@ -1024,11 +1024,11 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
         int i = 0;
-        int n = reader.getColumnNO("l_shipdate");
+        int n = reader.getValidColumnNO("l_shipdate");
         while (reader.hasNext(n)) {
             if (reader.nextValue(n).toString().compareTo(args1) < 0) {
                 mm++;
@@ -1051,12 +1051,12 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
         int i = 0;
-        int n1 = reader.getColumnNO("l_shipdate");
-        int n2 = reader.getColumnNO("l_commitdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
+        int n2 = reader.getValidColumnNO("l_commitdate");
         while (reader.hasNext(n1)) {
             String s1 = reader.nextValue(n1).toString();
             String s2 = reader.nextValue(n2).toString();
@@ -1082,13 +1082,13 @@ public class ScanTest {
         BatchColumnReader<Record> reader = new BatchColumnReader<Record>(result);
         int[] no = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            no[i] = reader.getColumnNO(fs.get(i).name());
+            no[i] = reader.getValidColumnNO(fs.get(i).name());
         }
         int mm = 0;
         int i = 0;
-        int n1 = reader.getColumnNO("l_shipdate");
-        int n2 = reader.getColumnNO("l_commitdate");
-        int n3 = reader.getColumnNO("l_receiptdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
+        int n2 = reader.getValidColumnNO("l_commitdate");
+        int n3 = reader.getValidColumnNO("l_receiptdate");
         while (reader.hasNext(n1)) {
             String s1 = reader.nextValue(n1).toString();
             String s2 = reader.nextValue(n2).toString();
@@ -1115,7 +1115,7 @@ public class ScanTest {
         int mm = 0;
         int i = 0;
         reader.createSchema(s);
-        int n1 = reader.getColumnNO("l_shipdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
         while (reader.hasNext(n1)) {
             if (reader.nextValue(n1).toString().compareTo(args1) < 0) {
                 mm++;
@@ -1139,8 +1139,8 @@ public class ScanTest {
         int mm = 0;
         int i = 0;
         reader.createSchema(s);
-        int n1 = reader.getColumnNO("l_shipdate");
-        int n2 = reader.getColumnNO("l_commitdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
+        int n2 = reader.getValidColumnNO("l_commitdate");
         while (reader.hasNext(n1)) {
             String s1 = reader.nextValue(n1).toString();
             String s2 = reader.nextValue(n2).toString();
@@ -1166,9 +1166,9 @@ public class ScanTest {
         int mm = 0;
         int i = 0;
         reader.createSchema(s);
-        int n1 = reader.getColumnNO("l_shipdate");
-        int n2 = reader.getColumnNO("l_commitdate");
-        int n3 = reader.getColumnNO("l_receiptdate");
+        int n1 = reader.getValidColumnNO("l_shipdate");
+        int n2 = reader.getValidColumnNO("l_commitdate");
+        int n3 = reader.getValidColumnNO("l_receiptdate");
         while (reader.hasNext(n1)) {
             String s1 = reader.nextValue(n1).toString();
             String s2 = reader.nextValue(n2).toString();

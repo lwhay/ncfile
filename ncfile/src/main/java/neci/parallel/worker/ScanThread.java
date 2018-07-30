@@ -81,11 +81,11 @@ public class ScanThread extends Scanner {
         if (reader == null) {
             try {
                 reader = new BatchColumnReader<>(new File(path), blockSize);
+                reader.createSchema(schema);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            reader.createSchema(schema);
             try {
                 reader.create();
             } catch (IOException e) {

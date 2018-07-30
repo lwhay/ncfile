@@ -53,4 +53,7 @@ public class CompressedBlockDescriptor extends BlockDescriptor {
         this.lengthPayload = in.readFixed32();
     }
 
+    public void skip(InputBuffer in) throws IOException {
+        in.skip(20);
+    }
 }

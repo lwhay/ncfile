@@ -8,7 +8,6 @@ import neci.ncfile.FilterOperator;
 import neci.ncfile.base.Schema;
 import neci.ncfile.generic.GenericData.Record;
 
-
 public class Q06 {
     public static void main(String[] args) throws IOException {
         File file = new File(args[0]);
@@ -26,7 +25,7 @@ public class Q06 {
         long t2 = System.currentTimeMillis();
         reader.createFilterRead(max);
         int count = 0;
-        int sumC = reader.getRowCount(0);
+        int sumC = reader.getRowCount(reader.getValidColumnNO(readSchema.getFields().get(0).name()));
         double result = 0.00;
         while (reader.hasNext()) {
             Record r = reader.next();

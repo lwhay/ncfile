@@ -30,7 +30,8 @@ public class MergeThread extends BuildThread implements Merger {
 
     @Override
     public void build() {
-        System.out.println(path + " self translation: " + reader.getRowCount(0));
+        System.out.println(path + " self translation: "
+                + reader.getRowCount(reader.getValidColumnNO(schema.getFields().get(0).name())));
         while (reader.hasNext()) {
             Record record = (Record) reader.next();
             //System.out.println(record.toString());

@@ -9,9 +9,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.trevni.Input;
+import org.apache.trevni.InputFile;
 import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BatchColumnFileReader;
@@ -22,6 +26,7 @@ import misc.GroupCore;
 import misc.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
+import neci.ncfile.base.Schema.Type;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericGroupReader;
 
@@ -29,11 +34,12 @@ public class FilterBatchColumnReader<D> implements Closeable {
     BatchColumnFileReader reader;
     protected GenericData model;
     protected GenericGroupReader groupReader;
+    protected Set<String> validColumns;
     protected BlockColumnValues[] values;
     protected int[] readNO;
     protected int[] arrayWidths;
     protected int column;
-    protected int[] arrayValues;
+    /*protected int[] arrayValues;*/
     protected HashMap<String, Integer> columnsByName;
     protected Schema readSchema;
     protected FilterOperator[] filters; //ensure that the filters is sorted from small to big layer
@@ -107,20 +113,10 @@ public class FilterBatchColumnReader<D> implements Closeable {
     }
 
     public FilterBatchColumnReader(File file, FilterOperator[] filters, GenericData model, int bs) throws IOException {
-        this.reader = new BatchColumnFileReader(file, bs);
-        this.filters = filters;
-        columnsByName = reader.getColumnsByName();
-        this.model = model;
-        this.values = new BlockColumnValues[reader.getColumnCount()];
-        int le = 0;
-        for (int i = 0; i < values.length; i++) {
-            values[i] = reader.getValues(i);
-            //            if (values[i].isArray()) {
-            //                                arrayValues.put(values[i].getName(), i);
-            //                le++;
-            //            }
-        }
-        noFilters = (filters == null);
+        this(new InputFile(file),
+                new InputFile(new File(
+                        file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head")),
+                filters, model, bs);
     }
 
     public FilterBatchColumnReader(Input data, Input head, FilterOperator[] filters, GenericData model, int bs)
@@ -130,10 +126,6 @@ public class FilterBatchColumnReader<D> implements Closeable {
         columnsByName = reader.getColumnsByName();
         this.model = model;
         this.values = new BlockColumnValues[reader.getColumnCount()];
-        int le = 0;
-        for (int i = 0; i < values.length; i++) {
-            values[i] = reader.getValues(i);
-        }
         noFilters = (filters == null);
     }
 
@@ -239,6 +231,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
             String parent = new String(currentParent);
             while (parent != null) {
                 filterSetMap.remove(parent);
+                if (filterSetMap.isEmpty()) {
+                    break;
+                }
                 parent = values[columnsByName.get(parent)].getParentName();
             }
         }
@@ -331,6 +326,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
             String parent = new String(currentParent);
             while (parent != null) {
                 filterSetMap.remove(parent);
+                if (filterSetMap.isEmpty()) {
+                    break;
+                }
                 parent = values[columnsByName.get(parent)].getParentName();
             }
         }
@@ -522,7 +520,14 @@ public class FilterBatchColumnReader<D> implements Closeable {
 
     private void downTran(String array) throws IOException {
         int col = columnsByName.get(array);
-        BitSet set = new BitSet(values[col + 1].getLastRow());
+        int firstChildId = -1;
+        for (String childName : validColumns) {
+            if (values[columnsByName.get(childName)].getParentName() != null
+                    && values[columnsByName.get(childName)].getParentName().equals(array)) {
+                firstChildId = columnsByName.get(childName);
+            }
+        }
+        BitSet set = new BitSet(values[firstChildId].getLastRow());
         int p = filterSet.nextSetBit(0);
         int q = -1;
         //        values[col].createTime();
@@ -571,6 +576,22 @@ public class FilterBatchColumnReader<D> implements Closeable {
         //        blockCount += values[col].getBlockCount();
     }
 
+    public int getValidColumnNO(String name) {
+        if (readSchema.getField(name).schema().getType().equals(Type.ARRAY)) {
+            name += "[]";
+        }
+        Integer ctm = columnsByName.get(name);
+        int tm = 0;
+        for (; tm < readNO.length; tm++) {
+            if (readNO[tm] == ctm) {
+                break;
+            }
+        }
+        if (tm >= readNO.length)
+            throw new TrevniRuntimeException("No column named: " + name);
+        return ctm;
+    }
+
     public int getColumnNO(String name) {
         Integer tm = columnsByName.get(name);
         if (tm == null)
@@ -602,19 +623,38 @@ public class FilterBatchColumnReader<D> implements Closeable {
         return res;
     }
 
-    public void createSchema(Schema s) {
+    public void createSchema(Schema s) throws IOException {
         readSchema = s;
         AvroColumnator readColumnator = new AvroColumnator(s);
         FileColumnMetaData[] readColumns = readColumnator.getColumns();
         arrayWidths = readColumnator.getArrayWidths();
         readNO = new int[readColumns.length];
         //        int le = 0;
+        validColumns = new HashSet<>();
+        for (int i = 0; i < readColumns.length; i++) {
+            validColumns.add(readColumns[i].getName());
+            //            if (values[readNO[i]].getType() == ValueType.NULL) {
+            //                le++;
+            //            }
+            //            values[readNO[i]].createLength();
+        }
+
+        if (filters != null) {
+            for (FilterOperator filter : filters) {
+                validColumns.add(filter.getName());
+            }
+        }
+        reader.readColumnInfo(validColumns);
         for (int i = 0; i < readColumns.length; i++) {
             readNO[i] = reader.getColumnNumber(readColumns[i].getName());
             //            if (values[readNO[i]].getType() == ValueType.NULL) {
             //                le++;
             //            }
             //            values[readNO[i]].createLength();
+        }
+        for (Entry<String, Integer> pair : columnsByName.entrySet()) {
+            if (validColumns.contains(pair.getKey()))
+                values[pair.getValue()] = reader.getValues(pair.getValue());
         }
         readParent = values[readNO[0]].getParentName();
         //        if (le > 0) {
@@ -962,7 +1002,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
     }
 
     public int getRowCount(int columnNo) {
-        return values[readNO[columnNo]].getLastRow();
+        return values[columnNo].getLastRow();
     }
 
     @Override

@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.trevni.TrevniRuntimeException;
 
@@ -20,6 +23,7 @@ import misc.GroupCore;
 import misc.ValueType;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
+import neci.ncfile.base.Schema.Type;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericGroupReader;
 
@@ -27,10 +31,11 @@ public class BatchColumnReader<D> implements Closeable {
     BatchColumnFileReader reader;
     protected GenericData model;
     protected BlockColumnValues[] values;
+    protected boolean[] valids;
     protected int[] readNO;
     protected int[] arrayWidths;
     protected int column;
-    protected int[] arrayValues;
+    /*protected int[] arrayValues;*/
     protected GenericGroupReader groupReader;
     protected HashMap<String, Integer> columnsByName;
     protected Schema readSchema;
@@ -52,25 +57,26 @@ public class BatchColumnReader<D> implements Closeable {
         columnsByName = reader.getColumnsByName();
         this.model = model;
         this.values = new BlockColumnValues[reader.getColumnCount()];
-        int le = 0;
-        for (int i = 0; i < values.length; i++) {
-            values[i] = reader.getValues(i);
-            if (values[i].isArray()) {
-                le++;
-            }
-        }
-        int j = 0;
-        arrayValues = new int[le];
-        for (int i = 0; i < le; i++) {
-            while (values[j].getType() != ValueType.NULL)
-                j++;
-            arrayValues[i] = j;
-            j++;
-        }
     }
 
     public BlockManager getBlockManager() {
         return reader.getBlockManager();
+    }
+
+    public int getValidColumnNO(String name) {
+        if (readSchema.getField(name).schema().getType().equals(Type.ARRAY)) {
+            name += "[]";
+        }
+        Integer ctm = columnsByName.get(name);
+        int tm = 0;
+        for (; tm < readNO.length; tm++) {
+            if (readNO[tm] == ctm) {
+                break;
+            }
+        }
+        if (tm >= readNO.length)
+            throw new TrevniRuntimeException("No column named: " + name);
+        return ctm;
     }
 
     public int getColumnNO(String name) {
@@ -86,17 +92,47 @@ public class BatchColumnReader<D> implements Closeable {
     public ValueType[] getTypes() {
         ValueType[] res = new ValueType[values.length];
         for (int i = 0; i < res.length; i++) {
-            res[i] = values[i].getType();
+            if (valids[i])
+                res[i] = values[i].getType();
         }
         return res;
     }
 
-    public void createSchema(Schema s) {
+    public void createSchema(Schema s) throws IOException {
         readSchema = s;
         AvroColumnator readColumnator = new AvroColumnator(s);
         FileColumnMetaData[] readColumns = readColumnator.getColumns();
         arrayWidths = readColumnator.getArrayWidths();
         readNO = new int[readColumns.length];
+        Set<String> validColumns = new HashSet<>();
+        for (int i = 0; i < readColumns.length; i++) {
+            validColumns.add(readColumns[i].getName());
+        }
+        reader.readColumnInfo(validColumns);
+        valids = new boolean[columnsByName.size()];
+        for (Entry<String, Integer> pair : columnsByName.entrySet()) {
+            if (validColumns.contains(pair.getKey())) {
+                values[pair.getValue()] = reader.getValues(pair.getValue());
+                valids[pair.getValue()] = true;
+            } else {
+                valids[pair.getValue()] = false;
+            }
+        }
+        /*int le = 0;
+        for (int i = 0; i < values.length; i++) {
+            values[i] = reader.getValues(i);
+            if (values[i].isArray()) {
+                le++;
+            }
+        }
+        int j = 0;
+        arrayValues = new int[le];
+        for (int i = 0; i < le; i++) {
+            while (values[j].getType() != ValueType.NULL)
+                j++;
+            arrayValues[i] = j;
+            j++;
+        }*/
         for (int i = 0; i < readColumns.length; i++) {
             readNO[i] = reader.getColumnNumber(readColumns[i].getName());
         }
@@ -188,11 +224,11 @@ public class BatchColumnReader<D> implements Closeable {
         }
     }
 
-    public int searchArray(int row, int le) throws IOException {
+    /*public int searchArray(int row, int le) throws IOException {
         values[arrayValues[le]].seek(row);
         return nextArray(le);
     }
-
+    
     public int searchArray(int row, int le, int no) throws IOException {
         values[arrayValues[le]].seek(row);
         int res = 0;
@@ -201,11 +237,11 @@ public class BatchColumnReader<D> implements Closeable {
         }
         return res;
     }
-
+    
     public int nextArray(int le) throws IOException {
         values[arrayValues[le]].startRow();
         return values[arrayValues[le]].nextLength();
-    }
+    }*/
 
     public Object read(Schema s, int row) throws IOException {
         if (isSimple(s)) {
@@ -357,8 +393,10 @@ public class BatchColumnReader<D> implements Closeable {
     }
 
     public void create() throws IOException {
+        int i = 0;
         for (BlockColumnValues v : values) {
-            v.create();
+            if (valids[i++])
+                v.create();
         }
     }
 
@@ -366,14 +404,14 @@ public class BatchColumnReader<D> implements Closeable {
         values[no].create();
     }
 
-    public int getLevelRowCount(int level) {
+    /*public int getLevelRowCount(int level) {
         int column;
         if (level == 0)
             column = 0;
         else
             column = arrayValues[level - 1] + 1;
         return getRowCount(column);
-    }
+    }*/
 
     public int getRowCount(int columnNo) {
         return values[columnNo].getLastRow();

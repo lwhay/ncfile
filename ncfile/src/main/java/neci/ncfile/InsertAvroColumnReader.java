@@ -94,7 +94,6 @@ public class InsertAvroColumnReader<D> implements Iterator<D>, Iterable<D>, Clos
         //findDefaults(readSchema, fileSchema, true);
     }
 
-    //瀵规瘡涓湪璇籹chema涓�屼笉鍦ㄥ啓schema涓殑fields璁剧疆default鍊硷紝骞舵鏌ュ尮閰嶆��
     //  private void findDefaults(Schema read, Schema write, boolean m){
     //    switch(read.getType()){
     //      case NULL: case BOOLEAN:

@@ -64,6 +64,19 @@ public class ColumnReader<D> implements Closeable {
         }
     }
 
+    public int getValidColumnNO(String name) {
+        Integer ctm = columnsByName.get(name);
+        int tm = 0;
+        for (; tm < readNO.length; tm++) {
+            if (readNO[tm] == ctm) {
+                break;
+            }
+        }
+        if (tm >= readNO.length)
+            throw new TrevniRuntimeException("No column named: " + name);
+        return ctm;
+    }
+
     public int getColumnNO(String name) {
         if ((columnsByName.get(name)) == null)
             throw new TrevniRuntimeException("No column named: " + name);

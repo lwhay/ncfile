@@ -35,7 +35,7 @@ public class Q15 {
         long t2 = System.currentTimeMillis();
         reader.createFilterRead(max);
         int count = 0;
-        int sumC = reader.getRowCount(0);
+        int sumC = reader.getRowCount(reader.getValidColumnNO(readSchema.getFields().get(0).name()));
         double result = 0.00;
         while (reader.hasNext()) {
             Record r = reader.next();

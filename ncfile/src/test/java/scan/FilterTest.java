@@ -15,7 +15,7 @@ public class FilterTest {
         File result = new File(resultPath + "result.trv");
         ColumnReader<Record> reader = new ColumnReader<Record>(result);
         for (int i = 0; i < fs.size(); i++) {
-            int no = reader.getColumnNO(fs.get(i).name());
+            int no = reader.getValidColumnNO(fs.get(i).name());
             while (reader.hasNext(no)) {
                 String tt = reader.nextValue(no).toString();
             }
@@ -31,7 +31,7 @@ public class FilterTest {
         ColumnReader<Record> reader = new ColumnReader<Record>(result);
         int[] mm = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            int no = reader.getColumnNO(fs.get(i).name());
+            int no = reader.getValidColumnNO(fs.get(i).name());
             while (reader.hasNext(no)) {
                 String tt = reader.nextValue(no).toString();
                 if (tt.compareTo(args) < 0)
@@ -51,7 +51,7 @@ public class FilterTest {
         ColumnReader<Record> reader = new ColumnReader<Record>(result);
         int[] mm = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            int no = reader.getColumnNO(fs.get(i).name());
+            int no = reader.getValidColumnNO(fs.get(i).name());
             while (reader.hasNext(no)) {
                 String tt = reader.nextValue(no).toString();
                 if (tt.contains(args))
@@ -71,7 +71,7 @@ public class FilterTest {
         ColumnReader<Record> reader = new ColumnReader<Record>(result);
         int[] mm = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            int no = reader.getColumnNO(fs.get(i).name());
+            int no = reader.getValidColumnNO(fs.get(i).name());
             while (reader.hasNext(no)) {
                 String tt = reader.nextValue(no).toString();
                 String[] tmp = tt.split(" ");
@@ -95,7 +95,7 @@ public class FilterTest {
         ColumnReader<Record> reader = new ColumnReader<Record>(result);
         int[] mm = new int[fs.size()];
         for (int i = 0; i < fs.size(); i++) {
-            int no = reader.getColumnNO(fs.get(i).name());
+            int no = reader.getValidColumnNO(fs.get(i).name());
             while (reader.hasNext(no)) {
                 String tt = reader.nextValue(no).toString();
                 if (tt.matches(args))

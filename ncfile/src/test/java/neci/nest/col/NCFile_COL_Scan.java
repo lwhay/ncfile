@@ -1,10 +1,11 @@
 /**
  * 
  */
-package scan;
+package neci.nest.col;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
@@ -20,15 +21,16 @@ import neci.ncfile.FilterBatchColumnReader;
  * @author lwh
  *
  */
-public class NCFileCOL_L {
+public class NCFile_COL_Scan {
 
     public static void scanNCFile(String[] args) throws IOException {
         File file = new File(args[0]);
         neci.ncfile.base.Schema readSchema = new neci.ncfile.base.Schema.Parser().parse(new File(args[1]));
         int max = Integer.parseInt(args[2]);
+        int blockSize = Integer.parseInt(args[4]);
         long start = System.currentTimeMillis();
         FilterBatchColumnReader<neci.ncfile.generic.GenericData.Record> reader =
-                new FilterBatchColumnReader<neci.ncfile.generic.GenericData.Record>(file, 32);
+                new FilterBatchColumnReader<neci.ncfile.generic.GenericData.Record>(file, blockSize);
         reader.createSchema(readSchema);
         reader.createRead(max);
         int count = 0;
@@ -38,25 +40,30 @@ public class NCFileCOL_L {
         while (reader.hasNext()) {
             neci.ncfile.generic.GenericData.Record r = reader.next();
             //System.out.println(r);
-            /*List<neci.ncfile.generic.GenericData.Record> orders =
+            List<neci.ncfile.generic.GenericData.Record> orders =
                     (List<neci.ncfile.generic.GenericData.Record>) r.get(8);
             for (neci.ncfile.generic.GenericData.Record order : orders) {
                 List<neci.ncfile.generic.GenericData.Record> lines =
                         (List<neci.ncfile.generic.GenericData.Record>) order.get(9);
-                count += lines.size();
+                //count += lines.size();
                 for (neci.ncfile.generic.GenericData.Record line : lines) {
                     double res = (float) line.get(5) * (1 - (float) line.get(6));
                     sum += res;
                     result += res;
+                    count++;
                 }
-            }*/
+            }
             //System.out.println(result);
         }
         reader.close();
         result = result / sum * 100;
         long end = System.currentTimeMillis();
         System.out.println(count);
-        System.out.println("NCFile time: " + (end - start) + " result: " + result);
+        System.out.println("NCFile time: " + (end - start) + " result: " + result + " ios: "
+                + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalTime() / 1000000 + " created: "
+                + reader.getBlockManager().getCreated() + " read: "
+                + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance();
         nf.setGroupingUsed(false);
         System.out.println("revenue: " + nf.format(result));
@@ -139,7 +146,7 @@ public class NCFileCOL_L {
      */
     public static void main(String[] args) throws IOException {
 
-        if (args.length != 4) {
+        if (args.length != 5) {
             System.out.println("Command: file schema max");
             System.exit(-1);
         }

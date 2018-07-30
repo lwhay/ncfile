@@ -1,0 +1,8 @@
+{"type": "record", "name": "Lineitem",
+ "fields": [
+     {"name": "l_orderkey", "type": "long", "order": "ignore"},
+     {"name": "l_partkey", "type": "long"},
+     {"name": "l_suppkey", "type": "long"},
+     {"name": "l_linenumber", "type": "int"}
+ ]
+}
