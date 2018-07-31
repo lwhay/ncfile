@@ -33,6 +33,7 @@
     <hadoop2.version>2.5.1</hadoop2.version>
     <jackson.version>1.9.13</jackson.version>
     <avro.version>1.8.2</avro.version>
+    <parquet.version>1.9.0</parquet.version>
     <jetty.version>6.1.26</jetty.version>
     <jetty-servlet-api.version>2.5-20081211</jetty-servlet-api.version>
     <jopt-simple.version>4.7</jopt-simple.version>
