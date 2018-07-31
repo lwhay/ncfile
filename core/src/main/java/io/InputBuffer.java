@@ -70,6 +70,7 @@ public class InputBuffer {
                 this.buf = new byte[BatchColumnFileReader.DEFAULT_BLOCK_SIZE * BlockManager.DEFAULT_SCALE * 1024];
             } else {
                 this.buf = new byte[bm.getBlockSize()]; // big enough for primitives
+                bm.blockAdd();
             }
         }
     }

@@ -28,6 +28,7 @@ public class BlockManager {
     public long colBlockTime = 0;
     public long colStartTime = 0;
     public int headerIOs = 0;
+    private int totalBlockCreation = 0;
 
     public BlockManager(int bs, int cs) {
         this(bs, cs, 0);
@@ -47,6 +48,14 @@ public class BlockManager {
             //columnBuffer[i] = new byte[bufferSize];
         }
         GlobalInformation.totalBlockManagerCreated++;
+    }
+
+    public void blockAdd() {
+        this.totalBlockCreation++;
+    }
+
+    public int getBlockCreation() {
+        return this.totalBlockCreation;
     }
 
     public int fetch(final Input in, long offset, byte[] b, int start, int len) throws IOException {

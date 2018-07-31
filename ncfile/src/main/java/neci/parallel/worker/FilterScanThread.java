@@ -105,16 +105,17 @@ public class FilterScanThread extends Scanner {
         outline += " prepared: " + (System.currentTimeMillis() - begin) + " ";
         begin = System.currentTimeMillis();
         int count = 0;
-        /*while (reader.hasNext()) {
+        while (reader.hasNext()) {
             reader.next();
             count++;
-        }*/
+        }
         outline += " elipse: " + (System.currentTimeMillis() - begin) + " for " + count;
         System.out.println(outline + " reads: " + reader.getBlockManager().getTotalRead() + " cbtime: "
                 + reader.getBlockManager().getColumnBlockTime() + " cstime: "
                 + reader.getBlockManager().getColumnStartTime() + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
-                + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
+                + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead() + " bc: "
+                + reader.getBlockManager().getBlockCreation());
     }
 }
