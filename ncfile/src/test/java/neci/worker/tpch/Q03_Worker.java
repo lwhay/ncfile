@@ -5,7 +5,6 @@ package neci.worker.tpch;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,35 +16,37 @@ import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.FilterOperator;
 import neci.ncfile.generic.GenericData.Record;
 import neci.parallel.worker.FilteringScanner;
-import tpch.single.Q10_OrderdateFilter;
-import tpch.single.Q10_ReturnflagFilter;
+import tpch.single.Q03_MktsegmentFilter;
+import tpch.single.Q03_OrderdateFilter;
+import tpch.single.Q03_ShipdateFilter;
 
 /**
  * @author Michael
  *
  */
-public class Q10_Worker extends FilteringScanner {
-    String begin;
-    String end;
-    ByteBuffer returnflag;
+public class Q03_Worker extends FilteringScanner {
+    String mktsegment;
+    String orderdate;
+    String shipdate;
 
     @Override
     public void config(JsonNode query) throws JsonParseException, IOException {
+        mktsegment = query.path("c_mktsegment").asText();
         JsonNode order = query.path("Order");
         JsonNode o_orderdate = order.path("o_orderdate");
-        begin = o_orderdate.path("begin").asText();
-        end = o_orderdate.path("end").asText();
+        orderdate = o_orderdate.path("end").asText();
         JsonNode lineitem = order.path("LineItem");
-        returnflag = ByteBuffer.wrap(lineitem.path("l_returnflag").asText().getBytes());
+        shipdate = lineitem.path("begin").asText();
     }
 
     @Override
     public void run() {
         File file = new File(path);
         //The schema is only used for fetching operation as filters have been contained by query.
-        FilterOperator[] filters = new FilterOperator[2];
-        filters[0] = new Q10_OrderdateFilter(begin, end);
-        filters[1] = new Q10_ReturnflagFilter(returnflag);
+        FilterOperator[] filters = new FilterOperator[3];
+        filters[0] = new Q03_MktsegmentFilter(mktsegment);
+        filters[1] = new Q03_OrderdateFilter(orderdate);
+        filters[2] = new Q03_ShipdateFilter(shipdate); //l_shipdate
         long start = System.currentTimeMillis();
         try {
             reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
@@ -73,30 +74,31 @@ public class Q10_Worker extends FilteringScanner {
         Map<String, Map<Long, Float>> values = new HashMap<>();
         while (reader.hasNext()) {
             Record r = reader.next();
-            long ck = (long) r.get("c_custkey");
-            String ckey = r.get("c_acctbal").toString().trim() + "|" + r.get("c_address").toString().trim() + "|"
-                    + r.get("c_nationkey").toString().trim() + "|" + r.get("c_comment").toString().trim();
-            if (!values.containsKey(ckey)) {
-                values.put(ckey, new HashMap<Long, Float>());
-            }
             List<Record> orders = (List<Record>) r.get(schema.getFields().size() - 1);
-            float value = .0f;
             for (Record order : orders) {
+                Long orderkey = (long) order.get("o_orderkey");
+                String dateship =
+                        order.get("o_orderkey").toString().trim() + "|" + order.get("o_shippriority").toString().trim();
+                if (!values.containsKey(dateship)) {
+                    values.put(dateship, new HashMap<Long, Float>());
+                }
                 List<Record> lines = (List<Record>) order.get("LineitemList");
+                float value = .0f;
                 for (Record line : lines) {
                     value += (float) line.get("l_extendedprice") * (1 - (float) line.get("l_discount"));
                     count++;
                 }
+                if (!values.get(dateship).containsKey(orderkey)) {
+                    values.get(dateship).put(orderkey, .0f);
+                }
+                values.get(dateship).put(orderkey, value);
             }
-            if (!values.get(ckey).containsKey(ck)) {
-                values.get(ckey).put(ck, value);
-            } else {
-                values.get(ckey).put(ck, values.get(ckey).get(ck) + value);
-            }
+            //result += (float) r.get(1) * (float) r.get(2);
         }
         try {
             reader.close();
         } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         long end = System.currentTimeMillis();

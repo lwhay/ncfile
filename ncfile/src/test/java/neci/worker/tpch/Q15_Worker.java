@@ -72,7 +72,7 @@ public class Q15_Worker extends FilteringScanner {
         int count = 0;
         while (reader.hasNext()) {
             Record r = reader.next();
-            result += (float) r.get(1) * (float) r.get(2);
+            //result += (float) r.get(1) * (float) r.get(2);
             count++;
         }
         try {
@@ -82,7 +82,10 @@ public class Q15_Worker extends FilteringScanner {
             e.printStackTrace();
         }
         long end = System.currentTimeMillis();
-        System.out.println("total: " + (end - start) + "s filter: " + (t2 - t1) + "s result: " + result + " count: "
-                + count + " reads: " + reader.getBlockManager().getTotalRead());
+        System.out.println("total: " + (end - start) + "ms filter: " + (t2 - t1) + "ms result: " + result + " count: "
+                + count + " reads: " + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalTime() / 1000000 + " created: "
+                + reader.getBlockManager().getCreated() + " read: "
+                + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
     }
 }
