@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -125,6 +126,10 @@ public class NestManager {
     public Integer getOffset(Record r) {
         int le = getLevel(r);
         return tree[le].findOffset(new KeyofBTree(r, keyFields[le]));
+    }
+
+    public Iterator<btree.Btree.Entry<KeyofBTree, String>> createIterator(int le) {
+        return tree[le].createIterator();
     }
 
     public KeyofBTree getUpperKey(Record r) {
@@ -719,6 +724,7 @@ public class NestManager {
             for (Record r : rs)
                 updateTree(le + 1, k, index, r);
         } else {
+            //System.out.println("\t" + k.toString() + ":" + backKey.toString());
             tree[le].put(k, index[le]++, backKey, null);
         }
     }
@@ -1613,8 +1619,9 @@ public class NestManager {
                 Record record = reader.next();
                 updateTree(0, null, in, record);
             }
-            for (int i = 0; i < layer; i++)
+            for (int i = 0; i < layer; i++) {
                 tree[i].write();
+            }
         } else {
             merge(files);
             writer.mergeFiles(files, tmpPath);

@@ -231,8 +231,8 @@ public class BatchColumnFileWriter {
         }
     }
 
+    // Comments: there potentially exists bugs when massive compressed files are merged to a global array.
     private void mergeArrayColumn(OutputStream out, int column) throws IOException {
-        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
         //        gapFile.seek(4);
         //        nestFile.seek(0);
         int row = 0;
@@ -240,7 +240,11 @@ public class BatchColumnFileWriter {
         int tmp = 0;
         for (int i = 0; i < readers.length; i++) {
             values[i] = readers[i].getValues(column);
+        }
+        BlockOutputBuffer buf = new BlockOutputBuffer(bm.getBlockSize());
+        for (int i = 0; i < readers.length; i++) {
             int length = 0;
+            int localtick = 0;
             while (values[i].hasNext()) {
                 if (buf.isFull()) {
                     CompressedBlockDescriptor b = applyCodingWithBlockDesc(row, buf);
@@ -251,9 +255,16 @@ public class BatchColumnFileWriter {
                 }
                 values[i].startRow();
                 length = values[i].nextLength();
-                buf.writeLength(tmp + length); //stored the array column incremently.
+                buf.writeLength(tmp + length); //stored the array column incrementally.
                 row++;
+                localtick++;
             }
+            if (localtick > 0)
+                System.out.println(
+                        "global endOff: " + tmp + " " + localtick + "th local endOff: " + length + " row: " + row);
+            else
+                System.out.println(
+                        "Only global endOff: " + tmp + " " + localtick + "th local endOff: " + length + " row: " + row);
             tmp += length;
         }
         //        RandomAccessFile tmpNestFile = new RandomAccessFile(path + "tmpnest", "rw");

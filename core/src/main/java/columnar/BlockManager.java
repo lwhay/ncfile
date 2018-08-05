@@ -24,6 +24,7 @@ public class BlockManager {
     //private Input in; // Need to be encapsulated.
     private int totalRead = 0;
     private long ioTime = 0;
+    private long compressionTime = 0;
     private long readLength = 0;
     public long colBlockTime = 0;
     public long colStartTime = 0;
@@ -56,6 +57,14 @@ public class BlockManager {
 
     public int getBlockCreation() {
         return this.totalBlockCreation;
+    }
+
+    public void compressionTimeAdd(long tick) {
+        this.compressionTime += tick;
+    }
+
+    public long getCompressionTime() {
+        return this.compressionTime;
     }
 
     public int fetch(final Input in, long offset, byte[] b, int start, int len) throws IOException {

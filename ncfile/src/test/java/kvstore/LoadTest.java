@@ -6,8 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import btree.Btree.Entry;
 import neci.ncfile.KeyofBTree;
 import neci.ncfile.NestManager;
 import neci.ncfile.NestSchema;
@@ -315,6 +317,12 @@ public class LoadTest {
         }
         reader.close();
         System.out.println("orders\nexists: " + t + "\tnot exists: " + f);
+        
+        Iterator<Entry<KeyofBTree, String>> iter = load.createIterator(2);
+        while (iter.hasNext()) {
+            Entry<KeyofBTree, String> kv = iter.next();
+            System.out.println(kv.getKey().toString());
+        }
 
         File l = new File(path + "lineitem.tbl");
         reader = new BufferedReader(new FileReader(l));
@@ -323,7 +331,7 @@ public class LoadTest {
         while ((line = reader.readLine()) != null) {
             String[] tmp = line.split("\\|", 5);
             Record data = new Record(lSchema);
-            data.put(0, Integer.parseInt(tmp[0]));
+            data.put(0, Long.parseLong(tmp[0]));
             data.put(3, Integer.parseInt(tmp[3]));
             if (load.exists(data))
                 t++;

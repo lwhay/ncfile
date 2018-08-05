@@ -5,7 +5,7 @@
 			"end": "1994-01-01"
 		},
 		"LineItem": {
-			"l_returnflat": "R"
+			"l_returnflag": "R"
 		}
 	}
 }

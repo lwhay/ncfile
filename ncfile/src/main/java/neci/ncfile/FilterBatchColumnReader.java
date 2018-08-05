@@ -642,6 +642,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
         if (filters != null) {
             for (FilterOperator filter : filters) {
                 validColumns.add(filter.getName());
+                if (filter instanceof HavingOperator) {
+                    validColumns.add(((HavingOperator<?>) filter).getHavingName());
+                }
             }
         }
         reader.readColumnInfo(validColumns);

@@ -108,6 +108,10 @@ public class LayerTree {
         create(cachesize);
     }
 
+    public Iterator<btree.Btree.Entry<KeyofBTree, String>> createIterator() {
+        return btree.iterator();
+    }
+
     /*
      * if the btree exists, create a new btree
      * else, read the btree file
@@ -167,6 +171,7 @@ public class LayerTree {
         if (hasForwardTree)
             value.append(listTransToString(forwardKey));
         //        Entry v = new MyEntry<KeyofBTree, String>(key, value.toString());
+        //System.out.println(key.toString());
         cache.add(new MyEntry<KeyofBTree, String>(key, value.toString()));
         index++;
     }
@@ -206,10 +211,19 @@ public class LayerTree {
         Entry<KeyofBTree, String> a1;
         while (it.hasNext()) {
             a1 = it.next();
+            //System.out.println("<" + a1.getKey().toString());
             btree.insert(a1.getKey(), a1.getValue());
+            //System.out.println(a1.getKey().toString() + "\t" + btree.find(a1.getKey()));
         }
         cache.clear();
         close();
+
+        /*create();
+        Iterator<Entry<KeyofBTree, String>> iter = cache.iterator();
+        while (iter.hasNext()) {
+            Entry<KeyofBTree, String> kv = iter.next();
+            System.out.println(kv.getKey().toString() + "\t" + btree.find(kv.getKey()));
+        }*/
     }
 
     public void mergeFilesAndCache() {

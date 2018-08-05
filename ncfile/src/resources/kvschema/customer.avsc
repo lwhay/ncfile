@@ -1,6 +1,6 @@
 {"type": "record", "name": "Customer",
  "fields": [
-     {"name": "c_custkey", "type": "int", "order": "ignore"},
+     {"name": "c_custkey", "type": "long", "order": "ignore"},
      {"name": "c_name", "type": "string"},
      {"name": "c_address", "type": "string"},
      {"name": "c_nationkey", "type": "int"},

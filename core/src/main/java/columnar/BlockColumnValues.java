@@ -215,6 +215,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         /*ByteBuffer data = codec.decompress(ByteBuffer.wrap(raw, 0, end));
         if (!checksum.compute(data).equals(ByteBuffer.wrap(raw, end, checksum.size())))
             throw new IOException("Checksums mismatch.");*/
+        long beginCompression = System.nanoTime();
         if (isUnion) {
             if (column.getCodecName().equals("null")) {
                 values = new UnionInputBuffer(ByteBuffer.wrap(raw, 0, end), column.blocks[block].rowCount, unionBits,
@@ -273,6 +274,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
                 values = new BlockInputBuffer(ByteBuffer.wrap(buf2), column.blocks[block].rowCount);
             }
         }
+        column.getBlockManager().compressionTimeAdd(System.nanoTime() - beginCompression);
         //long e = System.nanoTime();
         //        blockTime.add((e - s));
         //        blockStart.add(s);

@@ -1,0 +1,15 @@
+{
+	"c_mktsegment": "BUILDING",
+	"Order": {
+		"o_orderdate": {
+			"begin": "",
+			"end": "1995-03-15"
+		},
+		"LineItem": {
+			"o_orderdate": {
+				"begin": "1995-03-15",
+				"end": ""
+			}
+		}
+	}
+}

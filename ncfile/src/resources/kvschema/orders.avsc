@@ -1,7 +1,7 @@
 {"type": "record", "name": "Orders",
  "fields": [
-     {"name": "o_orderkey", "type": "int", "order": "descending"},
-     {"name": "o_custkey", "type": "int"},
+     {"name": "o_orderkey", "type": "long", "order": "descending"},
+     {"name": "o_custkey", "type": "long"},
      {"name": "o_orderstatus", "type": "bytes"},
      {"name": "o_totalprice", "type": "float"},
      {"name": "o_orderdate", "type": "string"},

@@ -23,7 +23,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         int len = fs.size();
         this.values = new long[len];
         for (int i = 0; i < len; i++) {
-            values[i] = Integer.parseInt(record.get(i).toString());
+            values[i] = Long.parseLong(record.get(i).toString());
         }
     }
 
@@ -34,7 +34,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     public KeyofBTree(String[] keys) {
         values = new long[keys.length];
         for (int i = 0; i < keys.length; i++)
-            values[i] = Integer.parseInt(keys[i]);
+            values[i] = Long.parseLong(keys[i]);
     }
 
     public KeyofBTree(long[] keys) {
@@ -44,14 +44,14 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     public KeyofBTree(String[] keys, int len) {
         values = new long[len];
         for (int i = 0; i < len; i++)
-            values[i] = Integer.parseInt(keys[i]);
+            values[i] = Long.parseLong(keys[i]);
     }
 
     public KeyofBTree(Record record, int len) {
         this.values = new long[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
-            values[i] = Integer.parseInt(record.get(i).toString());
+            values[i] = Long.parseLong(record.get(i).toString());
         }
     }
 
@@ -60,7 +60,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
         this.values = new long[len];
         List<Field> fs = record.getSchema().getFields();
         for (int i = 0; i < len; i++) {
-            values[i] = Integer.parseInt(record.get(keyFields[i]).toString());
+            values[i] = Long.parseLong(record.get(keyFields[i]).toString());
         }
     }
 
@@ -128,7 +128,7 @@ public class KeyofBTree implements Comparable<KeyofBTree>, Serializable {
     @Override
     public void deseriablize(byte[] data) {
         int index = 0;
-        int len = data.length / 4;
+        int len = data.length / 8;
         values = new long[len];
         int in = 0;
         while (in < len) {

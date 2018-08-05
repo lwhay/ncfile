@@ -25,32 +25,37 @@ import neci.translation.NCFileTranToTrevCodec;
  *
  */
 public class MultiThreadMergeTest {
-    private static final boolean NESTED = false;
+    private static final boolean NESTED = true;
 
     public static void create(String[] args) throws IOException {
         NestManager.shDelete(args[1]);
         NestManager.shDelete(args[2]);
         neci.ncfile.base.Schema schema = new neci.ncfile.base.Schema.Parser().parse(new File(args[0]));
         BatchAvroColumnWriter<neci.ncfile.generic.GenericData.Record> writer =
-                new BatchAvroColumnWriter<>(schema, args[1], 2, 2, 1, "null");
-        for (int i = 0; i < 1000; i++) {
+                new BatchAvroColumnWriter<>(schema, args[1], 2000, 2000, 1, "snappy");
+        for (int i = 0; i < 100000; i++) {
             neci.ncfile.generic.GenericData.Record r1 = new neci.ncfile.generic.GenericData.Record(schema);
             r1.put(0, i);
             if (NESTED) {
                 List<neci.ncfile.generic.GenericData.Record> f1 = new ArrayList<>();
-                neci.ncfile.generic.GenericData.Record r11 =
-                        new neci.ncfile.generic.GenericData.Record(schema.getFields().get(1).schema().getElementType());
-                r11.put(0, i);
-                neci.ncfile.generic.GenericData.Record r12 = new neci.ncfile.generic.GenericData.Record(schema
-                        .getFields().get(1).schema().getElementType().getFields().get(1).schema().getElementType());
-                r12.put(0, i);
-                List<neci.ncfile.generic.GenericData.Record> f2 = new ArrayList<>();
-                f2.add(r12);
-                r11.put(1, f2);
-                f1.add(r11);
+                for (int j = 0; j < 5; j++) {
+                    neci.ncfile.generic.GenericData.Record r11 = new neci.ncfile.generic.GenericData.Record(
+                            schema.getFields().get(1).schema().getElementType());
+                    r11.put(0, i);
+                    List<neci.ncfile.generic.GenericData.Record> f2 = new ArrayList<>();
+                    for (int k = 0; k < 10; k++) {
+                        neci.ncfile.generic.GenericData.Record r12 =
+                                new neci.ncfile.generic.GenericData.Record(schema.getFields().get(1).schema()
+                                        .getElementType().getFields().get(1).schema().getElementType());
+                        r12.put(0, i);
+                        f2.add(r12);
+                    }
+                    r11.put(1, f2);
+                    f1.add(r11);
+                }
                 r1.put(1, f1);
             }
-            System.out.println(r1);
+            //System.out.println(r1);
             writer.flush(r1);
         }
         writer.flush();
@@ -64,9 +69,10 @@ public class MultiThreadMergeTest {
                     new BatchColumnReader<>(new File(args[2] + i + "/result.neci"), 1);
             reader.createSchema(schema);
             reader.create();
+            int count = 0;
             while (reader.hasNext()) {
                 neci.ncfile.generic.GenericData.Record record = reader.next();
-                System.out.println(record);
+                System.out.println(count++ + "@" + record);
             }
             reader.close();
         }
@@ -122,14 +128,15 @@ public class MultiThreadMergeTest {
                     "Command: String sPath, String dPath, String tPath, int wc, int mul, int dg, int gran, String codec, int blockSize");
             System.exit(0);
         }
+        long begin = System.currentTimeMillis();
         MultiThreadMerge<MergeThread> builder = new MultiThreadMerge<>(MergeThread.class, args[0], args[1], args[2],
                 Integer.parseInt(args[8]), Integer.parseInt(args[3]), Integer.parseInt(args[4]),
                 Integer.parseInt(args[5]), Integer.parseInt(args[6]), args[7]);
-        long begin = System.currentTimeMillis();
         builder.build();
         System.out.println("Merge elipse: " + (System.currentTimeMillis() - begin));
         scan(args);
         trev(args);
+        //NestManager.shDelete(args[1]);
         //clear(args);
     }
 

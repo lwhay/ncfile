@@ -10,11 +10,13 @@
 	 {"name": "OrderList", "type":{"type": "array",
 	  "items":{"type": "record", "name": "Order",
 	   "fields": [
+		 {"name": "o_orderdate", "type": "string"},
 		 {"name": "LineitemList", "type":{"type": "array",
 		  "items": {"type": "record", "name": "Lineitem",
 		   "fields": [
 			 {"name": "l_extendedprice", "type": "float"},
-			 {"name": "l_discount", "type": "float"}
+			 {"name": "l_discount", "type": "float"},
+			 {"name": "l_returnflag", "type": "bytes"}
          ]
         }
        }}
