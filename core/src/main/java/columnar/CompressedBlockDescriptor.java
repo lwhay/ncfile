@@ -56,4 +56,20 @@ public class CompressedBlockDescriptor extends BlockDescriptor {
     public void skip(InputBuffer in) throws IOException {
         in.skip(20);
     }
+
+    public int getRowCount() {
+        return rowCount;
+    }
+
+    public int getLengthUnion() {
+        return lengthUnion;
+    }
+
+    public int getLengthOffset() {
+        return lengthOffset;
+    }
+
+    public int getLengthPayload() {
+        return lengthPayload;
+    }
 }

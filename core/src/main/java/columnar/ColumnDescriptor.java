@@ -43,6 +43,10 @@ public class ColumnDescriptor<T extends Comparable> {
         this.bm = bm;
     }
 
+    public Input getDataFile() {
+        return dataFile;
+    }
+
     public BlockManager getBlockManager() {
         return bm;
     }

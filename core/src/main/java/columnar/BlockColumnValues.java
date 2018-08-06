@@ -74,6 +74,18 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         column.ensureBlocksRead();
     }
 
+    public ColumnDescriptor getColumnDescriptor() {
+        return this.column;
+    }
+
+    public Checksum getChecksum() {
+        return this.checksum;
+    }
+
+    public Codec getCodec() {
+        return this.codec;
+    }
+
     /**
      * Return the current row number within this file.
      */
