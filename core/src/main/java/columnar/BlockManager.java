@@ -14,7 +14,8 @@ import org.apache.trevni.Input;
 public class BlockManager {
     public final boolean AIO_OPEN = false;
     public static final boolean TRACE_IO = true;
-    public static final int DEFAULT_SCALE = 32;
+    public static final int QUEUE_LENGTH_LOW_THRESHOLD = 16;
+    public static final int QUEUE_LENGTH_HIGH_THRESHOLD = 32;
     public static final int MAX_FETCH_SIZE = 256 * 1024;
     private final int blockSize;
     private final int cacheScale;
@@ -36,7 +37,7 @@ public class BlockManager {
     }
 
     public BlockManager(int bs) {
-        this(bs, DEFAULT_SCALE);
+        this(bs, QUEUE_LENGTH_HIGH_THRESHOLD);
     }
 
     public BlockManager(int bs, int cs, int col) {

@@ -18,7 +18,7 @@ public class MidInsertColumnFileReader extends InsertColumnFileReader {
         headFile = new InputFile(
                 new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".")) + ".head"));
         InputBuffer headerBuffer = readHeader();
-        this.bm = new BlockManager(BatchColumnFileReader.DEFAULT_BLOCK_SIZE, BlockManager.DEFAULT_SCALE, columnCount);
+        this.bm = new BlockManager(BatchColumnFileReader.DEFAULT_BLOCK_SIZE, BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD, columnCount);
         readColumns(headerBuffer);
     }
 

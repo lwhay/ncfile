@@ -72,7 +72,7 @@ public class AvroColumnWriter {
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         meta = columnator.getColumns();
-        this.bm = new BlockManager(blockSize, BlockManager.DEFAULT_SCALE, meta.length);
+        this.bm = new BlockManager(blockSize, BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD, meta.length);
         this.columncount = meta.length;
         this.columnStart = new long[columncount];
         this.blocks = new Blocks[columncount];

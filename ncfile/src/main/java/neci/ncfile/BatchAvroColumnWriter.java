@@ -54,7 +54,7 @@ public class BatchAvroColumnWriter<T> {
         filemeta = new FileMetaData();
         filemeta.set(SCHEMA_KEY, schema.toString());
         this.meta = columnator.getColumns();
-        this.bm = new BlockManager(bs, BlockManager.DEFAULT_SCALE, meta.length);
+        this.bm = new BlockManager(bs, BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD, meta.length);
         this.writer = new BatchColumnFileWriter(filemeta.setCodec(codec), meta, bm);
         this.arrayWidths = columnator.getArrayWidths();
         this.model = GenericData.get();

@@ -91,7 +91,6 @@ public class AsyncIOWorker implements Runnable {
                             .decompress(ByteBuffer.wrap(raws[i], 0, columns[cidx].blocks[block].getLengthUnion()));
                     int pos0 = 0;
                     int len0 = buf3.limit();
-                    //System.out.println("\t" + pos0 + ":" + len0 + " with:" + column.blocks[block].lengthUnion);
                     System.arraycopy(buf3.array(), 0, data.array(), pos0, len0);
                     ByteBuffer buf1 = columnValues[cidx].getCodec()
                             .decompress(ByteBuffer.wrap(raws[i], columns[cidx].blocks[block].getLengthUnion(),
@@ -146,8 +145,6 @@ public class AsyncIOWorker implements Runnable {
         return values;
     }
 
-    private static final int QUEUE_LENGTH_LOW_THRESHOLD = BlockManager.DEFAULT_SCALE / 2;
-
     @Override
     public void run() {
         while (!Thread.interrupted()) {
@@ -161,9 +158,9 @@ public class AsyncIOWorker implements Runnable {
                         continue;
                     }
                     completed = false;
-                    if (queues[i].size() < QUEUE_LENGTH_LOW_THRESHOLD) {
-                        int count =
-                                Math.min(columnValues[i].getBlockCount() - blocks[i], queues[i].remainingCapacity());
+                    if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
+                        int count = Math.min(columnValues[i].getBlockCount() - blocks[i],
+                                BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD - queues[i].size());
                         BlockInputBuffer[] bufs = startBlock(i, count);
                         for (int j = 0; j < count; j++) {
                             queues[i].put(new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + j, bufs[j]));

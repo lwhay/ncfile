@@ -43,7 +43,7 @@ public class BatchColumnFileReader implements Closeable {
         this.dataFile = data;
         this.headFile = head;
         headerBuffer = readHeader();
-        this.bm = new BlockManager(DEFAULT_BLOCK_SIZE, BlockManager.DEFAULT_SCALE, columnCount);
+        this.bm = new BlockManager(DEFAULT_BLOCK_SIZE, BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD, columnCount);
         //readColumns();
     }
 
@@ -56,7 +56,7 @@ public class BatchColumnFileReader implements Closeable {
         this.dataFile = data;
         this.headFile = head;
         headerBuffer = readHeader();
-        this.bm = new BlockManager(bs, BlockManager.DEFAULT_SCALE, columnCount);
+        this.bm = new BlockManager(bs, BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD, columnCount);
         //readColumns();
     }
 
