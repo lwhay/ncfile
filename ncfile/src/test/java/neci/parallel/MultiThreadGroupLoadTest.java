@@ -5,7 +5,7 @@ package neci.parallel;
 
 import java.io.IOException;
 
-import neci.worker.GroupBuilder;
+import neci.parallel.worker.GroupBuilder;
 
 /**
  * @author Michael

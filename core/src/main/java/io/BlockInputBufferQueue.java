@@ -9,7 +9,7 @@ import java.util.concurrent.ArrayBlockingQueue;
  * @author Michael
  *
  */
-public class BlockInputBufferQueue extends ArrayBlockingQueue<PositionalBlock<Long, BlockInputBuffer>> {
+public class BlockInputBufferQueue extends ArrayBlockingQueue<PositionalBlock<Integer, BlockInputBuffer>> {
 
     public BlockInputBufferQueue(int size) {
         super(size);

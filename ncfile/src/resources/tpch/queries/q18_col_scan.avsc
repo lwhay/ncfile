@@ -1,0 +1,22 @@
+{"type": "record", "name": "Customer",
+ "fields": [
+     {"name": "c_custkey", "type": "long"},
+     {"name": "c_name", "type": "string"},
+	 {"name": "OrderList", "type":{"type": "array",
+	  "items":{"type": "record", "name": "Order",
+	   "fields": [
+         {"name": "o_orderkey", "type": "long"},
+         {"name": "o_orderdate", "type": "string"},
+         {"name": "o_totalprice", "type": "float"},
+		 {"name": "LineitemList", "type":{"type": "array",
+		  "items": {"type": "record", "name": "Lineitem",
+		   "fields": [
+			 {"name": "l_quantity", "type": "float"}
+         ]
+        }
+       }}
+     ]
+    }
+   }}
+ ]
+}

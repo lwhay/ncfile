@@ -165,7 +165,7 @@ public class NCFile_COL_Codec extends NCFile_COL_Load {
         end = System.currentTimeMillis();
         System.out.println("+++++++customer&&orders&&lineitem time+++++++" + (end - start) + " index: " + index);
 
-        /*String resultPath = result + "/";
+        String resultPath = result + "/";
         Schema s = new Schema.Parser().parse(new File(schema + "3/" + "nest.avsc"));
         BatchAvroColumnWriter<Record> writer =
                 new BatchAvroColumnWriter<Record>(s, resultPath, max, mul, blockSize, codec);
@@ -173,7 +173,7 @@ public class NCFile_COL_Codec extends NCFile_COL_Load {
         for (int i = 0; i < index; i++)
             files[i] = new File(resultPath + "file" + String.valueOf(i) + ".neci");
         writer.mergeFiles(files);
-        System.out.println("merge completed!");*/
+        System.out.println("merge completed!");
     }
 
 }

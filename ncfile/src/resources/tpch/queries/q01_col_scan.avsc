@@ -1,0 +1,23 @@
+{"type": "record", "name": "Customer",
+ "fields": [
+	 {"name": "OrderList", "type":{"type": "array",
+	  "items":{"type": "record", "name": "Order",
+	   "fields": [
+		 {"name": "LineitemList", "type":{"type": "array",
+		  "items": {"type": "record", "name": "Lineitem",
+		   "fields": [
+			 {"name": "l_quantity", "type": "float"},
+			 {"name": "l_extendedprice", "type": "float"},
+			 {"name": "l_discount", "type": "float"},
+			 {"name": "l_tax", "type": "float"},
+			 {"name": "l_returnflag", "type": "bytes"},
+			 {"name": "l_linestatus", "type": "bytes"},
+			 {"name": "l_shipdate", "type": "string"}
+         ]
+        }
+       }}
+      ]
+	 }
+   }}
+ ]
+}

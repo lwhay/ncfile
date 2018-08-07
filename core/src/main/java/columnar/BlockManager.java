@@ -12,8 +12,8 @@ import org.apache.trevni.Input;
  *
  */
 public class BlockManager {
+    public final boolean AIO_OPEN = false;
     public static final boolean TRACE_IO = true;
-    public static final boolean AIO_OPEN = true;
     public static final int DEFAULT_SCALE = 32;
     public static final int MAX_FETCH_SIZE = 256 * 1024;
     private final int blockSize;

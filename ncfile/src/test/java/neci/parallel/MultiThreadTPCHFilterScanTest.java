@@ -6,9 +6,9 @@ package neci.parallel;
 import java.io.IOException;
 
 import neci.parallel.worker.FilteringScanner;
-import neci.worker.tpch.Q03_Worker;
-import neci.worker.tpch.Q10_Worker;
-import neci.worker.tpch.Q15_Worker;
+import neci.parallel.worker.tpch.Q03_Worker;
+import neci.parallel.worker.tpch.Q10_Worker;
+import neci.parallel.worker.tpch.Q15_Worker;
 
 /**
  * @author Michael

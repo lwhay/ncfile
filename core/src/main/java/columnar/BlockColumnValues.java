@@ -216,77 +216,81 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         //            skipLength.add(column.blockStarts[block] - column.blockStarts[this.block]
         //                    - column.blocks[this.block].compressedSize - checksum.size());
         //                }
-        this.block = block;
-        this.row = column.firstRows[block];
+        if (column.getBlockManager().AIO_OPEN) {
 
-        in.seek(column.blockStarts[block]);
-        int end = column.blocks[block].getCompressedSize();
-        //System.out.println(column.metaData.getName() + "\t:" + block + "\t" + column.blockStarts[block] + "\t" + end);
-        byte[] raw = new byte[end + checksum.size()];
-        in.readFully(raw);
-        /*ByteBuffer data = codec.decompress(ByteBuffer.wrap(raw, 0, end));
-        if (!checksum.compute(data).equals(ByteBuffer.wrap(raw, end, checksum.size())))
+        } else {
+            this.block = block;
+            this.row = column.firstRows[block];
+
+            in.seek(column.blockStarts[block]);
+            int end = column.blocks[block].getCompressedSize();
+            //System.out.println(column.metaData.getName() + "\t:" + block + "\t" + column.blockStarts[block] + "\t" + end);
+            byte[] raw = new byte[end + checksum.size()];
+            in.readFully(raw);
+            /*ByteBuffer data = codec.decompress(ByteBuffer.wrap(raw, 0, end));
+            if (!checksum.compute(data).equals(ByteBuffer.wrap(raw, end, checksum.size())))
             throw new IOException("Checksums mismatch.");*/
-        long beginCompression = System.nanoTime();
-        if (isUnion) {
-            if (column.getCodecName().equals("null")) {
-                values = new UnionInputBuffer(ByteBuffer.wrap(raw, 0, end), column.blocks[block].rowCount, unionBits,
-                        unionArray);
-            } else {
-                ByteBuffer data = null;
-                if (column.blocks[block].getUncompressedSize() >= column.blocks[block].getCompressedSize()) {
-                    data = ByteBuffer.allocate(column.blocks[block].getUncompressedSize());
+            long beginCompression = System.nanoTime();
+            if (isUnion) {
+                if (column.getCodecName().equals("null")) {
+                    values = new UnionInputBuffer(ByteBuffer.wrap(raw, 0, end), column.blocks[block].rowCount,
+                            unionBits, unionArray);
                 } else {
-                    data = ByteBuffer.allocate(column.blocks[block].getCompressedSize());
-                }
-                /*System.out.println("\t" + column.blocks[block].lengthUnion + ":" + column.blocks[block].lengthOffset + ":"
+                    ByteBuffer data = null;
+                    if (column.blocks[block].getUncompressedSize() >= column.blocks[block].getCompressedSize()) {
+                        data = ByteBuffer.allocate(column.blocks[block].getUncompressedSize());
+                    } else {
+                        data = ByteBuffer.allocate(column.blocks[block].getCompressedSize());
+                    }
+                    /*System.out.println("\t" + column.blocks[block].lengthUnion + ":" + column.blocks[block].lengthOffset + ":"
                     + column.blocks[block].lengthPayload + ":" + column.blocks[block].getCompressedSize() + ":"
                     + column.blocks[block].getUncompressedSize());*/
-                ByteBuffer buf3 = codec.decompress(ByteBuffer.wrap(raw, 0, column.blocks[block].lengthUnion));
-                int pos0 = 0;
-                int len0 = buf3.limit();
-                //System.out.println("\t" + pos0 + ":" + len0 + " with:" + column.blocks[block].lengthUnion);
-                System.arraycopy(buf3.array(), 0, data.array(), pos0, len0);
-                ByteBuffer buf1 = codec.decompress(
-                        ByteBuffer.wrap(raw, column.blocks[block].lengthUnion, column.blocks[block].lengthOffset));
-                int pos1 = buf3.remaining();
-                int len1 = buf1.remaining();
-                System.arraycopy(buf1.array(), buf1.position(), data.array(), pos1, len1);
-                int pos2 = -1;
-                int len2 = -1;
-                if (column.blocks[block].lengthPayload != 0) {
+                    ByteBuffer buf3 = codec.decompress(ByteBuffer.wrap(raw, 0, column.blocks[block].lengthUnion));
+                    int pos0 = 0;
+                    int len0 = buf3.limit();
+                    //System.out.println("\t" + pos0 + ":" + len0 + " with:" + column.blocks[block].lengthUnion);
+                    System.arraycopy(buf3.array(), 0, data.array(), pos0, len0);
+                    ByteBuffer buf1 = codec.decompress(
+                            ByteBuffer.wrap(raw, column.blocks[block].lengthUnion, column.blocks[block].lengthOffset));
+                    int pos1 = buf3.remaining();
+                    int len1 = buf1.remaining();
+                    System.arraycopy(buf1.array(), buf1.position(), data.array(), pos1, len1);
+                    int pos2 = -1;
+                    int len2 = -1;
+                    if (column.blocks[block].lengthPayload != 0) {
+                        ByteBuffer buf2 = codec.decompress(ByteBuffer.wrap(raw,
+                                column.blocks[block].lengthUnion + column.blocks[block].lengthOffset,
+                                column.blocks[block].lengthPayload));
+                        pos2 = buf3.remaining() + buf1.remaining();
+                        len2 = buf2.remaining();
+                        System.arraycopy(buf2.array(), buf2.position(), data.array(), pos2, len2);
+                    }
+                    //System.out.println(pos0 + ":" + len0 + "-" + pos1 + ":" + len1 + "-" + pos2 + ":" + len2);
+                    values = new UnionInputBuffer(data, column.blocks[block].rowCount, unionBits, unionArray);
+                }
+            } else {
+                if (column.getCodecName().equals("null")) {
+                    values = new BlockInputBuffer(ByteBuffer.wrap(raw, 0, end), column.blocks[block].rowCount);
+                } else if (column.blocks[block].lengthOffset != 0) {
+                    ByteBuffer data = ByteBuffer.allocate(column.blocks[block].getUncompressedSize());
+                    ByteBuffer buf1 = codec.decompress(
+                            ByteBuffer.wrap(raw, column.blocks[block].lengthUnion, column.blocks[block].lengthOffset));
+                    System.arraycopy(buf1.array(), 0, data.array(), 0, buf1.limit());
                     ByteBuffer buf2 = codec.decompress(
                             ByteBuffer.wrap(raw, column.blocks[block].lengthUnion + column.blocks[block].lengthOffset,
                                     column.blocks[block].lengthPayload));
-                    pos2 = buf3.remaining() + buf1.remaining();
-                    len2 = buf2.remaining();
-                    System.arraycopy(buf2.array(), buf2.position(), data.array(), pos2, len2);
+                    System.arraycopy(buf2.array(), buf2.position(), data.array(), buf1.limit(), buf2.remaining());
+                    values = new BlockInputBuffer(data, column.blocks[block].rowCount);
+                } else {
+                    byte[] buf2 = codec.decompress(
+                            ByteBuffer.wrap(raw, column.blocks[block].lengthUnion + column.blocks[block].lengthOffset,
+                                    column.blocks[block].lengthPayload))
+                            .array();
+                    values = new BlockInputBuffer(ByteBuffer.wrap(buf2), column.blocks[block].rowCount);
                 }
-                //System.out.println(pos0 + ":" + len0 + "-" + pos1 + ":" + len1 + "-" + pos2 + ":" + len2);
-                values = new UnionInputBuffer(data, column.blocks[block].rowCount, unionBits, unionArray);
             }
-        } else {
-            if (column.getCodecName().equals("null")) {
-                values = new BlockInputBuffer(ByteBuffer.wrap(raw, 0, end), column.blocks[block].rowCount);
-            } else if (column.blocks[block].lengthOffset != 0) {
-                ByteBuffer data = ByteBuffer.allocate(column.blocks[block].getUncompressedSize());
-                ByteBuffer buf1 = codec.decompress(
-                        ByteBuffer.wrap(raw, column.blocks[block].lengthUnion, column.blocks[block].lengthOffset));
-                System.arraycopy(buf1.array(), 0, data.array(), 0, buf1.limit());
-                ByteBuffer buf2 = codec.decompress(
-                        ByteBuffer.wrap(raw, column.blocks[block].lengthUnion + column.blocks[block].lengthOffset,
-                                column.blocks[block].lengthPayload));
-                System.arraycopy(buf2.array(), buf2.position(), data.array(), buf1.limit(), buf2.remaining());
-                values = new BlockInputBuffer(data, column.blocks[block].rowCount);
-            } else {
-                byte[] buf2 = codec.decompress(
-                        ByteBuffer.wrap(raw, column.blocks[block].lengthUnion + column.blocks[block].lengthOffset,
-                                column.blocks[block].lengthPayload))
-                        .array();
-                values = new BlockInputBuffer(ByteBuffer.wrap(buf2), column.blocks[block].rowCount);
-            }
+            column.getBlockManager().compressionTimeAdd(System.nanoTime() - beginCompression);
         }
-        column.getBlockManager().compressionTimeAdd(System.nanoTime() - beginCompression);
         //long e = System.nanoTime();
         //        blockTime.add((e - s));
         //        blockStart.add(s);

@@ -10,12 +10,12 @@ import java.util.List;
 
 import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.FilterOperator;
-import tpch.single.Q03_MktsegmentFilter;
-import tpch.single.Q03_OrderdateFilter;
-import tpch.single.Q03_ShipdateFilter;
-import tpch.single.Q10_OrderdateFilter;
-import tpch.single.Q10_ReturnflagFilter;
-import tpch.single.Q15_ShipdateFilter;
+import neci.parallel.tpch.filter.Q03_MktsegmentFilter;
+import neci.parallel.tpch.filter.Q03_OrderdateFilter;
+import neci.parallel.tpch.filter.Q03_ShipdateFilter;
+import neci.parallel.tpch.filter.Q10_OrderdateFilter;
+import neci.parallel.tpch.filter.Q10_ReturnflagFilter;
+import neci.parallel.tpch.filter.Q15_ShipdateFilter;
 
 /**
  * @author lwh

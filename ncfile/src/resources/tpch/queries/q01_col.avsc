@@ -1,0 +1,10 @@
+{"type": "record", "name": "Lineitem",
+		   "fields": [
+			 {"name": "l_quantity", "type": "float"},
+			 {"name": "l_extendedprice", "type": "float"},
+			 {"name": "l_discount", "type": "float"},
+			 {"name": "l_tax", "type": "float"},
+			 {"name": "l_returnflag", "type": "bytes"},
+			 {"name": "l_linestatus", "type": "bytes"}
+         ]
+}
