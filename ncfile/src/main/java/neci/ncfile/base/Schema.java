@@ -46,6 +46,9 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.DoubleNode;
 
+import exceptions.NeciRuntimeException;
+import exceptions.NeciTypeException;
+
 /**
  * An abstract data type.
  * <p>

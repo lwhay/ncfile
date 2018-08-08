@@ -20,7 +20,7 @@ package neci.ncfile.io;
 import java.io.IOException;
 import java.util.Arrays;
 
-import neci.ncfile.base.NeciTypeException;
+import exceptions.NeciTypeException;
 
 /**
  * Parser is the class that maintains the stack for parsing. This class

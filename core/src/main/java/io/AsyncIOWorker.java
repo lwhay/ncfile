@@ -18,6 +18,7 @@ import misc.ValueType;
 public class AsyncIOWorker implements Runnable {
     private final BlockColumnValues[] columnValues;
     private final BlockInputBufferQueue[] queues;
+    private final Short ioPending;
     private final int[] blocks;
     private final int[] rows;
     private final ColumnDescriptor[] columns;
@@ -28,9 +29,11 @@ public class AsyncIOWorker implements Runnable {
     private boolean terminate = false;
     private boolean[] intended;
 
-    public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues) throws IOException {
+    public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues, Short ioPending)
+            throws IOException {
         this.columnValues = columnValues;
         this.blocks = new int[columnValues.length];
+        this.ioPending = ioPending;
         this.rows = new int[columnValues.length];
         this.queues = queues;
         this.inBuffers = new InputBuffer[columnValues.length];
@@ -38,15 +41,18 @@ public class AsyncIOWorker implements Runnable {
         this.unionBits = new int[columnValues.length];
         this.unionArray = new ValueType[columnValues.length][];
         this.columns = new ColumnDescriptor[columnValues.length];
+        intended = new boolean[columnValues.length];
         for (int i = 0; i < columnValues.length; i++) {
-            this.columns[i] = columnValues[i].getColumnDescriptor();
-            inBuffers[i] = new InputBuffer(columns[i].getBlockManager(), columns[i].getDataFile());
-            if (columnValues[i].getType().equals(ValueType.UNION)) {
-                isUnion[i] = true;
-                unionBits[i] = columns[i].metaData.getUnionBits();
-                unionArray[i] = columns[i].metaData.getUnionArray();
-            } else {
-                isUnion[i] = false;
+            if (columnValues[i] != null) {
+                this.columns[i] = columnValues[i].getColumnDescriptor();
+                inBuffers[i] = new InputBuffer(columns[i].getBlockManager(), columns[i].getDataFile());
+                if (columnValues[i].getType().equals(ValueType.UNION)) {
+                    isUnion[i] = true;
+                    unionBits[i] = columns[i].metaData.getUnionBits();
+                    unionArray[i] = columns[i].metaData.getUnionArray();
+                } else {
+                    isUnion[i] = false;
+                }
             }
         }
     }
@@ -173,8 +179,8 @@ public class AsyncIOWorker implements Runnable {
                 }
                 if (completed) {
                     while (!terminate) {
-                        synchronized (queues) {
-                            queues.wait();
+                        synchronized (ioPending) {
+                            ioPending.wait();
                         }
                     }
                 }

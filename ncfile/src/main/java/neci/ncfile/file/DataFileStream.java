@@ -36,7 +36,7 @@ import org.apache.avro.file.DataFileConstants;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.BinaryEncoder;
 
-import neci.ncfile.base.NeciRuntimeException;
+import exceptions.NeciRuntimeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.io.BinaryDecoder;
 import neci.ncfile.io.DatumReader;

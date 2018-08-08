@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
+import exceptions.NeciTypeException;
 import misc.GroupCore;
-import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 

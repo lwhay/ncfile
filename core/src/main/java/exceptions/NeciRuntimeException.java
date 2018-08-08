@@ -16,31 +16,22 @@
  * limitations under the License.
  */
 
-package neci.ncfile.base;
+package exceptions;
 
-import java.io.IOException;
+/** Base Neci exception. */
+public class NeciRuntimeException extends RuntimeException {
 
-/** Base class for exceptions thrown to client by server. */
-public class NeciRemoteException extends IOException {
-  private Object value;
+    private static final long serialVersionUID = 1L;
 
-  protected NeciRemoteException() {}
+    public NeciRuntimeException(Throwable cause) {
+        super(cause);
+    }
 
-  public NeciRemoteException(Throwable value) {
-    this(value.toString());
-    initCause(value);
-  }
+    public NeciRuntimeException(String message) {
+        super(message);
+    }
 
-  public NeciRemoteException(Object value) {
-    super(value != null ? value.toString() : null);
-    this.value = value;
-  }
-
-  public NeciRemoteException(Object value, Throwable cause) {
-    super(value != null ? value.toString() : null, cause);
-    this.value = value;
-  }
-
-  public Object getValue() { return value; }
+    public NeciRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
-

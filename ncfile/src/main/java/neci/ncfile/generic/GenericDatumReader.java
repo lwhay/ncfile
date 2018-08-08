@@ -30,7 +30,7 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.util.Utf8;
 import org.apache.avro.util.WeakIdentityHashMap;
 
-import neci.ncfile.base.NeciRuntimeException;
+import exceptions.NeciRuntimeException;
 import neci.ncfile.base.Conversion;
 import neci.ncfile.base.Conversions;
 import neci.ncfile.base.LogicalType;

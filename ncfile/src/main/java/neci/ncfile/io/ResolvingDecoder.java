@@ -25,7 +25,7 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.util.Utf8;
 
-import neci.ncfile.base.NeciTypeException;
+import exceptions.NeciTypeException;
 import neci.ncfile.base.Schema;
 
 /**

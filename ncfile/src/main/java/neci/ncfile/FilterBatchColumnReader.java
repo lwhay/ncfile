@@ -16,11 +16,11 @@ import java.util.Set;
 
 import org.apache.trevni.Input;
 import org.apache.trevni.InputFile;
-import org.apache.trevni.TrevniRuntimeException;
 
 import columnar.BatchColumnFileReader;
 import columnar.BlockColumnValues;
 import columnar.BlockManager;
+import exceptions.NeciRuntimeException;
 import metadata.FileColumnMetaData;
 import misc.GroupCore;
 import misc.ValueType;
@@ -194,7 +194,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         String column = filters[0].getName();
         Integer tm = columnsByName.get(column);
         if (tm == null)
-            throw new TrevniRuntimeException("No filter column named: " + column);
+            throw new NeciRuntimeException("No filter column named: " + column);
         filterSet = new BitSet(values[tm].getLastRow());
         currentParent = values[tm].getParentName();
         currentLayer = values[tm].getLayer();
@@ -247,7 +247,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         String column = filters[c].getName();
         Integer tm = columnsByName.get(column);
         if (tm == null)
-            throw new TrevniRuntimeException("No filter column named: " + column);
+            throw new NeciRuntimeException("No filter column named: " + column);
         String parent = values[tm].getParentName();
         int layer = values[tm].getLayer();
         if (layer != currentLayer || (parent != null && !currentParent.equals(parent))) {
@@ -289,7 +289,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         String column = filters[0].getName();
         Integer tm = columnsByName.get(column);
         if (tm == null)
-            throw new TrevniRuntimeException("No filter column named: " + column);
+            throw new NeciRuntimeException("No filter column named: " + column);
         filterSet = new BitSet(values[tm].getLastRow());
         currentParent = values[tm].getParentName();
         currentLayer = values[tm].getLayer();
@@ -343,7 +343,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         String column = filters[0].getName();
         Integer tm = columnsByName.get(column);
         if (tm == null)
-            throw new TrevniRuntimeException("No filter column named: " + column);
+            throw new NeciRuntimeException("No filter column named: " + column);
         currentParent = values[tm].getParentName();
         currentLayer = values[tm].getLayer();
         values[tm].readIO();
@@ -352,7 +352,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
             column = filters[c].getName();
             tm = columnsByName.get(column);
             if (tm == null)
-                throw new TrevniRuntimeException("No filter column named: " + column);
+                throw new NeciRuntimeException("No filter column named: " + column);
             String parent = values[tm].getParentName();
             int layer = values[tm].getLayer();
             if (layer != currentLayer || (parent != null && !currentParent.equals(parent))) {
@@ -406,7 +406,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         String column = filters[c].getName();
         Integer tm = columnsByName.get(column);
         if (tm == null)
-            throw new TrevniRuntimeException("No filter column named: " + column);
+            throw new NeciRuntimeException("No filter column named: " + column);
         String parent = values[tm].getParentName();
         int layer = values[tm].getLayer();
         if (layer != currentLayer || (parent != null && !currentParent.equals(parent))) {
@@ -588,14 +588,14 @@ public class FilterBatchColumnReader<D> implements Closeable {
             }
         }
         if (tm >= readNO.length)
-            throw new TrevniRuntimeException("No column named: " + name);
+            throw new NeciRuntimeException("No column named: " + name);
         return ctm;
     }
 
     public int getColumnNO(String name) {
         Integer tm = columnsByName.get(name);
         if (tm == null)
-            throw new TrevniRuntimeException("No column named: " + name);
+            throw new NeciRuntimeException("No column named: " + name);
         return tm;
     }
 
@@ -663,6 +663,11 @@ public class FilterBatchColumnReader<D> implements Closeable {
         //        if (le > 0) {
         //            arrayValues = new int[le];
         //        }
+        try {
+            reader.getBlockManager().openAio(values);
+        } catch (InterruptedException e) {
+            throw new NeciRuntimeException("Error on Aio openning.");
+        }
     }
 
     private void readSetTran(int c) throws IOException {
@@ -921,7 +926,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
             column = 0;
             return (D) read(readSchema);
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -964,7 +969,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
                 column = startColumn + arrayWidths[startColumn];
                 return elements;
             default:
-                throw new TrevniRuntimeException("Unknown schema: " + s);
+                throw new NeciRuntimeException("Unknown schema: " + s);
         }
     }
 

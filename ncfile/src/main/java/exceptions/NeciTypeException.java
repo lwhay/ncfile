@@ -16,24 +16,15 @@
  * limitations under the License.
  */
 
-package neci.ncfile.base;
+package exceptions;
 
-/** Thrown when the expected contents of a union cannot be resolved. */
-public class UnresolvedUnionException extends NeciRuntimeException {
-  private Object unresolvedDatum;
-  private Schema unionSchema;
+/** Thrown when an illegal type is used. */
+public class NeciTypeException extends NeciRuntimeException {
+    public NeciTypeException(String message) {
+        super(message);
+    }
 
-  public UnresolvedUnionException(Schema unionSchema, Object unresolvedDatum) {
-    super("Not in union "+unionSchema+": "+unresolvedDatum);
-    this.unionSchema = unionSchema;
-    this.unresolvedDatum = unresolvedDatum;
-  }
-
-  public Object getUnresolvedDatum() {
-    return unresolvedDatum;
-  }
-
-  public Schema getUnionSchema() {
-    return unionSchema;
-  }
+    public NeciTypeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

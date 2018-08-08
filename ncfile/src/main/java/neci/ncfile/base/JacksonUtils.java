@@ -31,6 +31,8 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.TokenBuffer;
 
+import exceptions.NeciRuntimeException;
+
 public class JacksonUtils {
     static final String BYTES_CHARSET = "ISO-8859-1";
 

@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+import exceptions.NeciRuntimeException;
+import exceptions.NeciTypeException;
 import neci.ncfile.generic.GenericData;
 import neci.ncfile.generic.GenericEnumSymbol;
 import neci.ncfile.generic.GenericFixed;

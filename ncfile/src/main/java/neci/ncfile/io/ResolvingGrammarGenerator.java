@@ -29,7 +29,7 @@ import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 import org.codehaus.jackson.JsonNode;
 
-import neci.ncfile.base.NeciTypeException;
+import exceptions.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 

@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.util.Utf8;
 
-import neci.ncfile.base.NeciRuntimeException;
+import exceptions.NeciRuntimeException;
 
 /**
  * An {@link Decoder} for binary-format data.

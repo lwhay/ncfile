@@ -41,7 +41,7 @@ import org.apache.avro.file.SyncableFileOutputStream;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.EncoderFactory;
 
-import neci.ncfile.base.NeciRuntimeException;
+import exceptions.NeciRuntimeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.file.DataFileStream.DataBlock;
 import neci.ncfile.generic.GenericDatumReader;

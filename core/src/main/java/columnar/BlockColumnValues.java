@@ -23,6 +23,7 @@ import org.apache.trevni.TrevniRuntimeException;
 
 import codec.Checksum;
 import codec.Codec;
+import exceptions.NeciRuntimeException;
 import io.BlockInputBuffer;
 import io.InputBuffer;
 import io.UnionInputBuffer;
@@ -217,7 +218,12 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         //                    - column.blocks[this.block].compressedSize - checksum.size());
         //                }
         if (column.getBlockManager().AIO_OPEN) {
-
+            try {
+                values = column.getBlockManager().fetch(column.metaData.getNumber(), block).getValue();
+            } catch (InterruptedException e) {
+                throw new NeciRuntimeException("Aio fetch error on: " + column.metaData.getName() + " idx: "
+                        + column.metaData.getNumber() + " block: " + block);
+            }
         } else {
             this.block = block;
             this.row = column.firstRows[block];

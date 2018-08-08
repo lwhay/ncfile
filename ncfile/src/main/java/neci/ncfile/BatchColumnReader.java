@@ -13,11 +13,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.trevni.TrevniRuntimeException;
-
 import columnar.BatchColumnFileReader;
 import columnar.BlockColumnValues;
 import columnar.BlockManager;
+import exceptions.NeciRuntimeException;
 import metadata.FileColumnMetaData;
 import misc.GroupCore;
 import misc.ValueType;
@@ -75,13 +74,13 @@ public class BatchColumnReader<D> implements Closeable {
             }
         }
         if (tm >= readNO.length)
-            throw new TrevniRuntimeException("No column named: " + name);
+            throw new NeciRuntimeException("No column named: " + name);
         return ctm;
     }
 
     public int getColumnNO(String name) {
         if ((columnsByName.get(name)) == null)
-            throw new TrevniRuntimeException("No column named: " + name);
+            throw new NeciRuntimeException("No column named: " + name);
         return columnsByName.get(name);
     }
 
@@ -136,6 +135,11 @@ public class BatchColumnReader<D> implements Closeable {
         for (int i = 0; i < readColumns.length; i++) {
             readNO[i] = reader.getColumnNumber(readColumns[i].getName());
         }
+        try {
+            reader.getBlockManager().openAio(values);
+        } catch (InterruptedException e) {
+            throw new NeciRuntimeException("Error on Aio openning.");
+        }
     }
 
     public D next() {
@@ -143,7 +147,7 @@ public class BatchColumnReader<D> implements Closeable {
             column = 0;
             return (D) read(readSchema);
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -181,7 +185,7 @@ public class BatchColumnReader<D> implements Closeable {
             }
             return (D[]) res.toArray();
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -195,7 +199,7 @@ public class BatchColumnReader<D> implements Closeable {
             }
             return (D[]) res.toArray();
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -211,7 +215,7 @@ public class BatchColumnReader<D> implements Closeable {
             column = 0;
             return (D) read(readSchema, row);
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -220,7 +224,7 @@ public class BatchColumnReader<D> implements Closeable {
             column = 0;
             return (D) read(readSchema, row);
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -307,7 +311,7 @@ public class BatchColumnReader<D> implements Closeable {
             //                column = startColumn + arrayWidths[startColumn];
             //                return elements;
             default:
-                throw new TrevniRuntimeException("Unknown schema: " + s);
+                throw new NeciRuntimeException("Unknown schema: " + s);
         }
     }
 
@@ -348,7 +352,7 @@ public class BatchColumnReader<D> implements Closeable {
                 column = startColumn + arrayWidths[startColumn];
                 return elements;
             default:
-                throw new TrevniRuntimeException("Unknown schema: " + s);
+                throw new NeciRuntimeException("Unknown schema: " + s);
         }
     }
 

@@ -42,16 +42,16 @@ import org.codehaus.jackson.JsonNode;
 
 import com.google.common.collect.MapMaker;
 
+import exceptions.NeciRuntimeException;
+import exceptions.NeciTypeException;
+import exceptions.UnresolvedUnionException;
 import neci.ncfile.base.Conversion;
 import neci.ncfile.base.Conversions;
 import neci.ncfile.base.JsonProperties;
 import neci.ncfile.base.LogicalType;
-import neci.ncfile.base.NeciRuntimeException;
-import neci.ncfile.base.NeciTypeException;
 import neci.ncfile.base.Schema;
 import neci.ncfile.base.Schema.Field;
 import neci.ncfile.base.Schema.Type;
-import neci.ncfile.base.UnresolvedUnionException;
 import neci.ncfile.io.DatumReader;
 import neci.ncfile.io.DatumWriter;
 import neci.ncfile.io.ResolvingGrammarGenerator;

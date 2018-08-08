@@ -38,7 +38,7 @@ import org.codehaus.jackson.JsonStreamContext;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.ObjectCodec;
 
-import neci.ncfile.base.NeciTypeException;
+import exceptions.NeciTypeException;
 import neci.ncfile.base.Schema;
 
 /**

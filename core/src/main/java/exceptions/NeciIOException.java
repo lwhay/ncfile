@@ -16,14 +16,24 @@
  * limitations under the License.
  */
 
-package neci.ncfile.base;
+package exceptions;
 
+import java.io.IOException;
 
-/** Thrown when an illegal type is used. */
-public class NeciTypeException extends NeciRuntimeException {
-  public NeciTypeException(String message) { super(message); }
-  public NeciTypeException(String message, Throwable cause) {
-    super(message, cause);
-  }
+/** Base Neci exception. */
+public class NeciIOException extends IOException {
+
+    private static final long serialVersionUID = 1L;
+
+    public NeciIOException(Throwable cause) {
+        super(cause);
+    }
+
+    public NeciIOException(String message) {
+        super(message);
+    }
+
+    public NeciIOException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
-

@@ -23,7 +23,7 @@ import java.util.zip.Deflater;
 
 import org.tukaani.xz.LZMA2Options;
 
-import neci.ncfile.base.NeciRuntimeException;
+import exceptions.NeciRuntimeException;
 
 /**
  * Encapsulates the ability to specify and configure a compression codec.

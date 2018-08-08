@@ -28,6 +28,8 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.node.TextNode;
 
+import exceptions.NeciRuntimeException;
+
 /**
  * Base class for objects that have JSON-valued properties. Avro and JSON values are
  * represented in Java using the following mapping:
