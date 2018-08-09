@@ -5,10 +5,12 @@ package io;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import columnar.BlockColumnValues;
 import columnar.BlockManager;
 import columnar.ColumnDescriptor;
+import exceptions.NeciRuntimeException;
 import misc.ValueType;
 
 /**
@@ -28,6 +30,10 @@ public class AsyncIOWorker implements Runnable {
     private final InputBuffer[] inBuffers;
     private boolean terminate = false;
     private boolean[] intended;
+    private boolean[] handled;
+    private boolean isReady = true;
+    private final Short ioReady;
+    private int triggeredRound = 0;
 
     public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues, Short ioPending)
             throws IOException {
@@ -41,7 +47,9 @@ public class AsyncIOWorker implements Runnable {
         this.unionBits = new int[columnValues.length];
         this.unionArray = new ValueType[columnValues.length][];
         this.columns = new ColumnDescriptor[columnValues.length];
+        this.ioReady = 0;
         intended = new boolean[columnValues.length];
+        handled = new boolean[columnValues.length];
         for (int i = 0; i < columnValues.length; i++) {
             if (columnValues[i] != null) {
                 this.columns[i] = columnValues[i].getColumnDescriptor();
@@ -57,12 +65,195 @@ public class AsyncIOWorker implements Runnable {
         }
     }
 
+    public BlockColumnValues getColumnValue(int cidx) {
+        return columnValues[cidx];
+    }
+
     public void trigger(boolean[] intends) {
+        while (!isReady) {
+            synchronized (ioReady) {
+                try {
+                    ioReady.wait();
+                } catch (InterruptedException e) {
+                    throw new NeciRuntimeException("Cannot trigger when fetching");
+                }
+            }
+        }
         this.intended = intends;
+        Arrays.fill(handled, false);
+        for (int i = 0; i < intended.length; i++) {
+            if (intended[i]) {
+                /*System.out.print(i + ":" + columnValues[i].getName() + " ");*/
+                blocks[i] = 0;
+                rows[i] = 0;
+            }
+        }
+        /*System.out.println();*/
+        synchronized (ioPending) {
+            ioPending.notify();
+        }
+        isReady = false;
+        triggeredRound++;
+    }
+
+    public void trigger(int cidx) {
+        while (intended[cidx]) {
+            try {
+                System.out.println("@");
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        if (handled[cidx]) {
+            intended[cidx] = true;
+            handled[cidx] = false;
+            blocks[cidx] = 0;
+            rows[cidx] = 0;
+            synchronized (ioPending) {
+                ioPending.notify();
+            }
+            isReady = false;
+            /*System.out.println("Appending: " + cidx + " name: " + columnValues[cidx].getName());*/
+            return;
+        }
+        if (intended[cidx]) {
+            throw new NeciRuntimeException("Duplicated intended " + cidx + columnValues[cidx].getName());
+        }
+
+        while (!isReady) {
+            synchronized (ioReady) {
+                try {
+                    ioReady.wait();
+                } catch (InterruptedException e) {
+                    throw new NeciRuntimeException("Cannot trigger: " + cidx);
+                }
+            }
+        }
+
+        blocks[cidx] = 0;
+        rows[cidx] = 0;
+        intended[cidx] = true;
+        Arrays.fill(handled, false);
+
+        synchronized (ioPending) {
+            ioPending.notify();
+        }
+        isReady = false;
+        triggeredRound++;
+        /*System.out.println("Triggeried: " + cidx + " name: " + columnValues[cidx].getName());*/
     }
 
     public void terminate() {
+        while (!isReady) {
+            synchronized (ioReady) {
+                try {
+                    ioReady.wait();
+                } catch (InterruptedException e) {
+                    throw new NeciRuntimeException("Cannot terminate");
+                }
+            }
+        }
         terminate = true;
+        synchronized (ioPending) {
+            ioPending.notify();
+        }
+        isReady = false;
+    }
+
+    private int period = 10;
+
+    @Override
+    public void run() {
+        while (!Thread.interrupted()) {
+            if (terminate) {
+                System.exit(0);
+            }
+            try {
+                boolean idle = true;
+                boolean completed = true;
+                for (int i = 0; i < queues.length; i++) {
+                    if (!intended[i]) {
+                        continue;
+                    }
+                    completed = false;
+                    if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
+                        idle = false;
+                        int total = Math.min(columnValues[i].getBlockCount() - blocks[i],
+                                (BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD - queues[i].size())
+                                        * BlockManager.QUEUE_SLOT_DEFAULT_SIZE);
+                        BlockInputBuffer[] bufs = startBlock(i, total);
+                        int regular = 0;
+                        for (int j = 0; j < total / BlockManager.QUEUE_SLOT_DEFAULT_SIZE; j++) {
+                            @SuppressWarnings("unchecked")
+                            PositionalBlock<Integer, BlockInputBuffer>[] list =
+                                    new PositionalBlock[BlockManager.QUEUE_SLOT_DEFAULT_SIZE];
+                            for (int k = 0; k < BlockManager.QUEUE_SLOT_DEFAULT_SIZE; k++) {
+                                list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular,
+                                        bufs[regular]);
+                                /*System.out.println("\tEnqueue: " + regular + " block: " + (blocks[i] + regular)
+                                        + " cidx: " + i + " name: " + columnValues[i].getName() + " total: "
+                                        + columnValues[i].getBlockCount());*/
+                                regular++;
+                            }
+                            queues[i].put(list);
+                        }
+                        if (regular < total) {
+                            @SuppressWarnings("unchecked")
+                            PositionalBlock<Integer, BlockInputBuffer>[] list = new PositionalBlock[total - regular];
+                            for (int k = 0; regular < total; k++) {
+                                list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular,
+                                        bufs[regular]);
+                                /*System.out.println("\tEnqueue: " + regular + " block: " + (blocks[i] + regular)
+                                        + " cidx: " + i + " name: " + columnValues[i].getName() + " total: "
+                                        + columnValues[i].getBlockCount());*/
+                                regular++;
+                            }
+                            queues[i].put(list);
+                        }
+                        this.blocks[i] += total;
+                        if (this.blocks[i] == columnValues[i].getBlockCount()) {
+                            /*System.out.println("Completed: " + i + " name: " + columnValues[i].getName());*/
+                            intended[i] = false;
+                            handled[i] = true;
+                        }
+                        /*BlockInputBuffer[] bufs = startBlock(i, count);
+                        for (int j = 0; j < count; j++) {
+                            queues[i].put(new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + j, bufs[j]));
+                        }
+                        this.blocks[i] += count;
+                        if (this.blocks[i] == columnValues[i].getBlockCount()) {
+                            intended[i] = false;
+                            handled[i] = true;
+                        }*/
+                    }
+                }
+                if (completed) {
+                    isReady = true;
+                    synchronized (ioReady) {
+                        ioReady.notify();
+                    }
+                    while (isReady) {
+                        synchronized (ioPending) {
+                            ioPending.wait();
+                        }
+                    }
+                    /*System.out.println("Active");*/
+                }
+                if (idle) {
+                    period += 20;
+                } else {
+                    period /= 2;
+                }
+                if (period > 10) {
+                    Thread.sleep(period);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private BlockInputBuffer[] startBlock(int cidx, int num) throws IOException {
@@ -77,6 +268,24 @@ public class AsyncIOWorker implements Runnable {
             raws[i] = new byte[ends[i] + columnValues[cidx].getChecksum().size()];
             inBuffers[cidx].readFully(raws[i]);
         }
+        /*int total = 0;
+        int[] ends = new int[num];
+        for (int i = 0; i < num; i++) {
+            int block = this.blocks[cidx] + i;
+            ends[i] = columns[cidx].blocks[block].getCompressedSize();
+            total += ends[i] + columnValues[cidx].getChecksum().size();
+        }
+        byte[] longrun = new byte[total];
+        inBuffers[cidx].readFully(longrun);
+        byte[][] raws = new byte[num][];
+        int offset = 0;
+        for (int i = 0; i < num; i++) {
+            if (i > 0) {
+                offset += ends[i - 1];
+            }
+            raws[i] = ByteBuffer.wrap(longrun, offset, ends[i]).array();
+        }*/
+
         BlockInputBuffer[] values = new BlockInputBuffer[num];
         long beginCompression = System.nanoTime();
         for (int i = 0; i < num; i++) {
@@ -149,46 +358,5 @@ public class AsyncIOWorker implements Runnable {
         }
         columns[cidx].getBlockManager().compressionTimeAdd(System.nanoTime() - beginCompression);
         return values;
-    }
-
-    @Override
-    public void run() {
-        while (!Thread.interrupted()) {
-            if (terminate) {
-                System.exit(0);
-            }
-            try {
-                boolean completed = true;
-                for (int i = 0; i < queues.length; i++) {
-                    if (!intended[i]) {
-                        continue;
-                    }
-                    completed = false;
-                    if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
-                        int count = Math.min(columnValues[i].getBlockCount() - blocks[i],
-                                BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD - queues[i].size());
-                        BlockInputBuffer[] bufs = startBlock(i, count);
-                        for (int j = 0; j < count; j++) {
-                            queues[i].put(new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + j, bufs[j]));
-                        }
-                        this.blocks[i] += count;
-                        if (this.blocks[i] == columnValues[i].getBlockCount()) {
-                            intended[i] = false;
-                        }
-                    }
-                }
-                if (completed) {
-                    while (!terminate) {
-                        synchronized (ioPending) {
-                            ioPending.wait();
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

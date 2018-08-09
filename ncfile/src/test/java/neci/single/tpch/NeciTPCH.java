@@ -78,7 +78,6 @@ public class NeciTPCH extends ScanCompare {
             values.get(rf).put(ls, aggs);
             count++;
         }
-        reader.close();
         long end = System.currentTimeMillis();
         System.out.println(valuecount);
         /*for (Byte d : flag) {
@@ -86,11 +85,13 @@ public class NeciTPCH extends ScanCompare {
         }*/
         System.out.println(count);
         System.out.println("NCFile time: " + (end - start) + " result: " + values.size() + " ios: "
-                + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalRead() + " aiotime: "
+                + reader.getBlockManager().getAioTime() / 1000000 + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " compressiontime: "
                 + reader.getBlockManager().getCompressionTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
+        reader.close();
     }
 
     public static void Q03_FilteringScan(String[] args) throws IOException {
@@ -140,7 +141,6 @@ public class NeciTPCH extends ScanCompare {
             }
             //result += (float) r.get(1) * (float) r.get(2);
         }
-        reader.close();
         result = result / sum * 100;
         long end = System.currentTimeMillis();
         System.out.println(values.size());
@@ -149,11 +149,13 @@ public class NeciTPCH extends ScanCompare {
         }*/
         System.out.println(count);
         System.out.println("NCFile time: " + (end - start) + " result: " + result + " ios: "
-                + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalRead() + " aiotime: "
+                + reader.getBlockManager().getAioTime() / 1000000 + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " compressiontime: "
                 + reader.getBlockManager().getCompressionTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
+        reader.close();
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance();
         nf.setGroupingUsed(false);
         System.out.println("revenue: " + nf.format(result));
@@ -206,7 +208,6 @@ public class NeciTPCH extends ScanCompare {
                 values.get(ckey).put(ck, values.get(ckey).get(ck) + value);
             }
         }
-        reader.close();
         result = result / sum * 100;
         long end = System.currentTimeMillis();
         System.out.println(values.size());
@@ -215,11 +216,13 @@ public class NeciTPCH extends ScanCompare {
         }*/
         System.out.println(count);
         System.out.println("NCFile time: " + (end - start) + " result: " + result + " ios: "
-                + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalRead() + " aiotime: "
+                + reader.getBlockManager().getAioTime() / 1000000 + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " compressiontime: "
                 + reader.getBlockManager().getCompressionTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
+        reader.close();
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance();
         nf.setGroupingUsed(false);
         System.out.println("revenue: " + nf.format(result));
@@ -256,7 +259,6 @@ public class NeciTPCH extends ScanCompare {
             count++;
             //System.out.println(result);
         }
-        reader.close();
         result = result / sum * 100;
         long end = System.currentTimeMillis();
         /*for (Byte d : flag) {
@@ -264,11 +266,13 @@ public class NeciTPCH extends ScanCompare {
         }*/
         System.out.println(count);
         System.out.println("NCFile time: " + (end - start) + " result: " + result + " ios: "
-                + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalRead() + " aiotime: "
+                + reader.getBlockManager().getAioTime() / 1000000 + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " compressiontime: "
                 + reader.getBlockManager().getCompressionTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
+        reader.close();
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance();
         nf.setGroupingUsed(false);
         System.out.println("revenue: " + nf.format(result));
@@ -319,7 +323,6 @@ public class NeciTPCH extends ScanCompare {
                 }
             }
         }
-        reader.close();
         result = result / sum * 100;
         long end = System.currentTimeMillis();
         System.out.println(results.size());
@@ -328,11 +331,13 @@ public class NeciTPCH extends ScanCompare {
         }*/
         System.out.println(count);
         System.out.println("NCFile time: " + (end - start) + " result: " + result + " ios: "
-                + reader.getBlockManager().getTotalRead() + " iotime: "
+                + reader.getBlockManager().getTotalRead() + " aiotime: "
+                + reader.getBlockManager().getAioTime() / 1000000 + " iotime: "
                 + reader.getBlockManager().getTotalTime() / 1000000 + " compressiontime: "
                 + reader.getBlockManager().getCompressionTime() / 1000000 + " created: "
                 + reader.getBlockManager().getCreated() + " read: "
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
+        reader.close();
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance();
         nf.setGroupingUsed(false);
         System.out.println("revenue: " + nf.format(result));

@@ -4,12 +4,12 @@
 package columnar;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.trevni.Input;
 
-import exceptions.NeciRuntimeException;
 import io.AsyncIOWorker;
 import io.BlockInputBuffer;
 import io.BlockInputBufferQueue;
@@ -20,8 +20,9 @@ import io.PositionalBlock;
  *
  */
 public class BlockManager {
-    public final boolean AIO_OPEN = false;
+    public final boolean AIO_OPEN = true;
     public static final boolean TRACE_IO = true;
+    public static final int QUEUE_SLOT_DEFAULT_SIZE = 16;
     public static final int QUEUE_LENGTH_LOW_THRESHOLD = 16;
     public static final int QUEUE_LENGTH_HIGH_THRESHOLD = 32;
     public static final int MAX_FETCH_SIZE = 256 * 1024;
@@ -29,16 +30,21 @@ public class BlockManager {
     private final int cacheScale;
     private final int columnNumber;
     private final int bufferSize;
+
+    public long colBlockTime = 0;
+    public long colStartTime = 0;
+    public int headerIOs = 0;
+
     private BlockInputBufferQueue[] bufferQueues;
     //private Input in; // Need to be encapsulated.
     private int totalRead = 0;
     private long ioTime = 0;
     private long compressionTime = 0;
     private long readLength = 0;
-    public long colBlockTime = 0;
-    public long colStartTime = 0;
-    public int headerIOs = 0;
+    private long aioTime = 0;
     private int totalBlockCreation = 0;
+    private final PositionalBlock<Integer, BlockInputBuffer>[][] currentBlocks;
+    private final int cursors[];
     private ExecutorService ioService;
     private AsyncIOWorker ioWorker;
     private Short ioPending = 0;
@@ -51,15 +57,19 @@ public class BlockManager {
         this(bs, QUEUE_LENGTH_HIGH_THRESHOLD);
     }
 
+    @SuppressWarnings("unchecked")
     public BlockManager(int bs, int cs, int col) {
         this.blockSize = bs * 1024;
         this.cacheScale = cs;
         this.columnNumber = col;
         this.bufferSize = (blockSize * cacheScale > MAX_FETCH_SIZE) ? MAX_FETCH_SIZE : blockSize * cacheScale;
+        this.currentBlocks = new PositionalBlock[columnNumber][];
+        this.cursors = new int[columnNumber];
+        Arrays.fill(cursors, BlockManager.QUEUE_SLOT_DEFAULT_SIZE);
         if (AIO_OPEN) {
             this.bufferQueues = new BlockInputBufferQueue[columnNumber];
             for (int i = 0; i < columnNumber; i++) {
-                bufferQueues[i] = new BlockInputBufferQueue(MAX_FETCH_SIZE);
+                bufferQueues[i] = new BlockInputBufferQueue(QUEUE_LENGTH_HIGH_THRESHOLD);
             }
         }
         GlobalInformation.totalBlockManagerCreated++;
@@ -89,21 +99,53 @@ public class BlockManager {
         }
     }
 
+    public void trigger(int cidx) {
+        if (AIO_OPEN) {
+            ioWorker.trigger(cidx);
+            currentBlocks[cidx] = null;
+            cursors[cidx] = BlockManager.QUEUE_SLOT_DEFAULT_SIZE;
+        }
+    }
+
     public BlockInputBufferQueue[] getBufferQueues() {
         return this.bufferQueues;
     }
 
     public PositionalBlock<Integer, BlockInputBuffer> fetch(int cidx, int block) throws InterruptedException {
+        int found = -1;
+        /*System.out.println("\t\t>Dequeue: " + cursors[cidx] + " block: " + block + " cidx: " + cidx + " total: "
+                + ioWorker.getColumnValue(cidx).getBlockCount() + " name: " + ioWorker.getColumnValue(cidx).getName());*/
+        while (found < 0) {
+            if (cursors[cidx] < BlockManager.QUEUE_SLOT_DEFAULT_SIZE) {
+                while (cursors[cidx] < currentBlocks[cidx].length) {
+                    if (currentBlocks[cidx][cursors[cidx]].getKey() == block) {
+                        found = cursors[cidx]++;
+                        /*System.out.println("\t\t<Dequeue: " + cursors[cidx] + " block: " + block + " cidx: " + cidx
+                                + " total: " + ioWorker.getColumnValue(cidx).getBlockCount());*/
+                        break;
+                    }
+                    ++cursors[cidx];
+                }
+            }
+            if (found < 0) {
+                currentBlocks[cidx] = bufferQueues[cidx].take();
+                cursors[cidx] = 0;
+            }
+        }
+        return currentBlocks[cidx][found];
+    }
+
+    /*public PositionalBlock<Integer, BlockInputBuffer> fetch(int cidx, int block) throws InterruptedException {
         PositionalBlock<Integer, BlockInputBuffer> intendedBlock;
         do {
             intendedBlock = bufferQueues[cidx].take();
         } while (intendedBlock.getKey() < block);
-
+    
         if (intendedBlock.getKey() != block) {
-            throw new NeciRuntimeException("Loose blocks: " + block + " at: " + cidx);
+            throw new NeciRuntimeException("Lose block: " + block + " by: " + intendedBlock.getKey() + " at: " + cidx);
         }
         return intendedBlock;
-    }
+    }*/
 
     public void blockAdd() {
         this.totalBlockCreation++;
@@ -111,6 +153,14 @@ public class BlockManager {
 
     public int getBlockCreation() {
         return this.totalBlockCreation;
+    }
+
+    public void aioTimeAdd(long tick) {
+        this.aioTime += tick;
+    }
+
+    public long getAioTime() {
+        return this.aioTime;
     }
 
     public void compressionTimeAdd(long tick) {
@@ -126,7 +176,6 @@ public class BlockManager {
     }
 
     public int read(final Input in, long offset, byte[] b, int start, int len) throws IOException {
-        //System.out.println(offset + "+" + len + "=" + (offset + len));
         int readlen;
         if (TRACE_IO) {
             long begin = System.nanoTime();

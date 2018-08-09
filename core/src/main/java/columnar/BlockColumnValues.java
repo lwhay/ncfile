@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 
-import org.apache.trevni.TrevniRuntimeException;
-
 import codec.Checksum;
 import codec.Codec;
 import exceptions.NeciRuntimeException;
@@ -126,6 +124,10 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         seek(0);
     }
 
+    public void triger() throws IOException {
+        seek(0);
+    }
+
     //    public void createTime() {
     //        time = 0;
     //        blockTime = new ArrayList<Long>();
@@ -217,17 +219,20 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         //            skipLength.add(column.blockStarts[block] - column.blockStarts[this.block]
         //                    - column.blocks[this.block].compressedSize - checksum.size());
         //                }
+        this.block = block;
+        this.row = column.firstRows[block];
         if (column.getBlockManager().AIO_OPEN) {
+            long begin = System.nanoTime();
             try {
+                /*System.out.println("\t<Fetch " + block + " cidx: " + column.metaData.getNumber());*/
                 values = column.getBlockManager().fetch(column.metaData.getNumber(), block).getValue();
+                /*System.out.println("\t>Fetch " + block + " cidx: " + column.metaData.getNumber());*/
             } catch (InterruptedException e) {
                 throw new NeciRuntimeException("Aio fetch error on: " + column.metaData.getName() + " idx: "
                         + column.metaData.getNumber() + " block: " + block);
             }
+            column.getBlockManager().aioTimeAdd(System.nanoTime() - begin);
         } else {
-            this.block = block;
-            this.row = column.firstRows[block];
-
             in.seek(column.blockStarts[block]);
             int end = column.blocks[block].getCompressedSize();
             //System.out.println(column.metaData.getName() + "\t:" + block + "\t" + column.blockStarts[block] + "\t" + end);
@@ -318,12 +323,12 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     @Override
     public T next() {
         if (column.metaData.isArray())
-            throw new TrevniRuntimeException("Column is array: " + column.metaData.getName());
+            throw new NeciRuntimeException("Column is array: " + column.metaData.getName());
         try {
             startRow();
             return nextValue();
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
     }
 
@@ -340,7 +345,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     public void startRow() throws IOException {
         if (row >= column.lastRow(block)) {
             if (block >= column.blockCount())
-                throw new TrevniRuntimeException("Read past end of column.");
+                throw new NeciRuntimeException("Read past end of column.");
             startBlock(block + 1);
         }
         row++;
@@ -351,12 +356,12 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
      */
     public int nextLength() {
         if (!column.metaData.isArray())
-            throw new TrevniRuntimeException("Column is not array: " + column.metaData.getName());
+            throw new NeciRuntimeException("Column is not array: " + column.metaData.getName());
         assert arrayLength == 0;
         try {
             offset = arrayLength = values.readLength();
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
         return arrayLength;
     }
@@ -366,14 +371,14 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
      */
     public int[] nextLengthAndOffset() {
         if (!column.metaData.isArray())
-            throw new TrevniRuntimeException("Column is not array: " + column.metaData.getName());
+            throw new NeciRuntimeException("Column is not array: " + column.metaData.getName());
         assert arrayLength == 0;
         int[] res = new int[2];
         res[1] = offset;
         try {
             offset = values.readLength();
         } catch (IOException e) {
-            throw new TrevniRuntimeException(e);
+            throw new NeciRuntimeException(e);
         }
         res[0] = arrayLength = offset - res[1];
         return res;

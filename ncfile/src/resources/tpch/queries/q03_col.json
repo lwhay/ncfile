@@ -6,7 +6,7 @@
 			"end": "1995-03-15"
 		},
 		"LineItem": {
-			"o_orderdate": {
+			"l_shipdate": {
 				"begin": "1995-03-15",
 				"end": ""
 			}
