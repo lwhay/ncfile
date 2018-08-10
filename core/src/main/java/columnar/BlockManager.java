@@ -3,6 +3,7 @@
  */
 package columnar;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -10,27 +11,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.trevni.Input;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import io.AsyncIOWorker;
 import io.BlockInputBuffer;
-import io.BlockInputBufferQueue;
-import io.PositionalBlock;
+import misc.BlockInputBufferQueue;
+import misc.PositionalBlock;
 
 /**
  * @author Michael
  *
  */
 public class BlockManager {
-    public final boolean AIO_OPEN = true;
-    public static final boolean TRACE_IO = true;
-    public static final int QUEUE_SLOT_DEFAULT_SIZE = 32;
-    public static final int QUEUE_LENGTH_LOW_THRESHOLD = 96;
-    public static final int QUEUE_LENGTH_HIGH_THRESHOLD = 128;
-    public static final int MAX_FETCH_SIZE = 256 * 1024;
     private final int blockSize;
     private final int cacheScale;
     private final int columnNumber;
     private final int bufferSize;
+
+    public static final String dbconf = "./dbconf.json";
+    public static boolean AIO_OPEN = true;
+    public static boolean TRACE_IO = true;
+    public static int QUEUE_SLOT_DEFAULT_SIZE = 32;
+    public static int QUEUE_LENGTH_LOW_THRESHOLD = 192;
+    public static int QUEUE_LENGTH_HIGH_THRESHOLD = 256;
+    public static int MAX_FETCH_SIZE = 256 * 1024;
 
     public long colBlockTime = 0;
     public long colStartTime = 0;
@@ -43,6 +49,7 @@ public class BlockManager {
     private long compressionTime = 0;
     private long readLength = 0;
     private long aioTime = 0;
+    private long aioFetchTime = 0;
     private int totalBlockCreation = 0;
     private final PositionalBlock<Integer, BlockInputBuffer>[][] currentBlocks;
     private final int cursors[];
@@ -67,6 +74,20 @@ public class BlockManager {
         this.bufferSize = (blockSize * cacheScale > MAX_FETCH_SIZE) ? MAX_FETCH_SIZE : blockSize * cacheScale;
         this.currentBlocks = new PositionalBlock[columnNumber][];
         this.cursors = new int[columnNumber];
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode conf = mapper.readTree(new File(dbconf));
+            AIO_OPEN = conf.path("AIO_OPEN").asBoolean();
+            TRACE_IO = conf.path("TRACE_IO").asBoolean();
+            QUEUE_SLOT_DEFAULT_SIZE = conf.path("QUEUE_SLOT_DEFAULT_SIZE").asInt();
+            QUEUE_LENGTH_LOW_THRESHOLD = conf.path("QUEUE_LENGTH_LOW_THRESHOLD").asInt();
+            QUEUE_LENGTH_HIGH_THRESHOLD = conf.path("QUEUE_LENGTH_HIGH_THRESHOLD").asInt();
+            MAX_FETCH_SIZE = conf.path("MAX_FETCH_SIZE").asInt() * 1024;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         Arrays.fill(cursors, BlockManager.QUEUE_SLOT_DEFAULT_SIZE);
         if (AIO_OPEN) {
             this.bufferQueues = new BlockInputBufferQueue[columnNumber];
@@ -143,6 +164,10 @@ public class BlockManager {
                 }
             }
             if (found < 0) {
+                /*if (bufferQueues[cidx].size() == 0) {
+                    System.out.println("fetch: " + " " + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
+                            + ioWorker.getColumnValue(cidx).getBlockCount());
+                }*/
                 /*boolean wantEmpty = false;
                 if (bufferQueues[cidx].size() == 0) {
                     System.out.println("<path: " + Thread.currentThread().getId() + " " + block + " "
@@ -150,7 +175,9 @@ public class BlockManager {
                             + ioWorker.getColumnValue(cidx).getBlockCount());
                     wantEmpty = true;
                 }*/
+                long begin = System.nanoTime();
                 currentBlocks[cidx] = bufferQueues[cidx].take();
+                aioFetchTime += (System.nanoTime() - begin);
                 /*if (wantEmpty) {
                     System.out.println(">path: " + Thread.currentThread().getId() + " " + block + " "
                             + ioWorker.getColumnValue(cidx).getName() + " "
@@ -188,6 +215,10 @@ public class BlockManager {
 
     public long getAioTime() {
         return this.aioTime;
+    }
+
+    public long getAioFetchTime() {
+        return this.aioFetchTime;
     }
 
     public void compressionTimeAdd(long tick) {

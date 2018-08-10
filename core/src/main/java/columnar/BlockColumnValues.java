@@ -37,6 +37,8 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
     protected final Codec codec;
     protected final Checksum checksum;
     protected final InputBuffer in;
+    protected final BlockManager bm;
+    protected final int cidx;
 
     protected BlockInputBuffer values;
     protected int block = -1;
@@ -63,6 +65,8 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         this.codec = Codec.get(column.metaData);
         this.checksum = Checksum.get(column.metaData);
         this.in = new InputBuffer(column.getBlockManager(), column.dataFile);
+        this.bm = column.getBlockManager();
+        this.cidx = column.metaData.getNumber();
 
         if (type.equals(ValueType.UNION)) {
             isUnion = true;
@@ -208,6 +212,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         startBlock(block);
     }
 
+    @SuppressWarnings("static-access")
     public void startBlock(int block) throws IOException {
         //long s = System.nanoTime();
         //        readBlockSize++;
@@ -226,7 +231,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
             long begin = System.nanoTime();
             try {
                 /*System.out.println("\t<Fetch " + block + " cidx: " + column.metaData.getNumber());*/
-                values = column.getBlockManager().fetch(column.metaData.getNumber(), block).getValue();
+                values = bm.fetch(cidx, block).getValue();
                 /*System.out.println("\t>Fetch " + block + " cidx: " + column.metaData.getNumber());*/
             } catch (InterruptedException e) {
                 throw new NeciRuntimeException("Aio fetch error on: " + column.metaData.getName() + " idx: "

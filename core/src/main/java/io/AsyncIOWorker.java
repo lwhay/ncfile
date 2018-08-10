@@ -11,6 +11,8 @@ import columnar.BlockColumnValues;
 import columnar.BlockManager;
 import columnar.ColumnDescriptor;
 import exceptions.NeciRuntimeException;
+import misc.BlockInputBufferQueue;
+import misc.PositionalBlock;
 import misc.ValueType;
 
 /**
@@ -165,6 +167,7 @@ public class AsyncIOWorker implements Runnable {
     }
 
     public void terminate() {
+        terminate = true;
         while (!isReady) {
             synchronized (ioReady) {
                 try {
@@ -174,11 +177,16 @@ public class AsyncIOWorker implements Runnable {
                 }
             }
         }
-        terminate = true;
+        /*for (int i = 0; i < queues.length; i++) {
+            if (queues[i] != null) {
+                queues[i].clear();
+            }
+        }*/
         synchronized (ioPending) {
             ioPending.notify();
         }
         isReady = false;
+        System.exit(0);
     }
 
     private int period = 10;
@@ -263,7 +271,7 @@ public class AsyncIOWorker implements Runnable {
                 if (idle) {
                     period += 20;
                 } else {
-                    period /= 2;
+                    period = 0;
                 }
                 if (period > 10) {
                     Thread.sleep(period);

@@ -1,9 +1,11 @@
 /**
  * 
  */
-package io;
+package misc;
 
 import java.util.concurrent.ArrayBlockingQueue;
+
+import io.BlockInputBuffer;
 
 /**
  * @author Michael
