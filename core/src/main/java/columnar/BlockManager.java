@@ -145,14 +145,14 @@ public class BlockManager {
             if (found < 0) {
                 /*boolean wantEmpty = false;
                 if (bufferQueues[cidx].size() == 0) {
-                    System.out.println("<pid: " + Thread.currentThread().getId() + " " + block + " "
+                    System.out.println("<path: " + Thread.currentThread().getId() + " " + block + " "
                             + ioWorker.getColumnValue(cidx).getName() + " "
                             + ioWorker.getColumnValue(cidx).getBlockCount());
                     wantEmpty = true;
                 }*/
                 currentBlocks[cidx] = bufferQueues[cidx].take();
                 /*if (wantEmpty) {
-                    System.out.println(">pid: " + Thread.currentThread().getId() + " " + block + " "
+                    System.out.println(">path: " + Thread.currentThread().getId() + " " + block + " "
                             + ioWorker.getColumnValue(cidx).getName() + " "
                             + ioWorker.getColumnValue(cidx).getBlockCount());
                 }*/

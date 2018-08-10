@@ -80,6 +80,7 @@ public class AsyncIOWorker implements Runnable {
                 }
             }
         }
+        isReady = false;
         this.intended = intends;
         this.valids = valids;
         /*Arrays.fill(handled, false);*/
@@ -94,7 +95,6 @@ public class AsyncIOWorker implements Runnable {
         synchronized (ioPending) {
             ioPending.notify();
         }
-        isReady = false;
     }
 
     public void invalid(int cidx) {
@@ -125,8 +125,8 @@ public class AsyncIOWorker implements Runnable {
             synchronized (ioPending) {
                 ioPending.notify();
             }
-            isReady = false;
-            System.out.println("Appending: " + cidx + " name: " + columnValues[cidx].getName());*/
+            isReady = false;*/
+            System.out.println("Appending: " + cidx + " name: " + columnValues[cidx].getName());
             if (columnValues[cidx].isArray()) {
                 return false;
             } else {
@@ -138,7 +138,9 @@ public class AsyncIOWorker implements Runnable {
             throw new NeciRuntimeException("Duplicated intended " + cidx + columnValues[cidx].getName());
         }
 
+        /*System.out.println("<Trigger: " + cidx + " name: " + columnValues[cidx].getName());*/
         while (!isReady) {
+            /*System.out.println("-Trigger: " + cidx + " name: " + columnValues[cidx].getName());*/
             synchronized (ioReady) {
                 try {
                     ioReady.wait();
@@ -147,6 +149,7 @@ public class AsyncIOWorker implements Runnable {
                 }
             }
         }
+        isReady = false;
 
         blocks[cidx] = 0;
         rows[cidx] = 0;
@@ -157,8 +160,7 @@ public class AsyncIOWorker implements Runnable {
         synchronized (ioPending) {
             ioPending.notify();
         }
-        isReady = false;
-        /*System.out.println("Triggered: " + cidx + " name: " + columnValues[cidx].getName());*/
+        /*System.out.println(">Trigger: " + cidx + " name: " + columnValues[cidx].getName());*/
         return true;
     }
 
