@@ -5,6 +5,7 @@ package columnar;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,9 +23,9 @@ import io.PositionalBlock;
 public class BlockManager {
     public final boolean AIO_OPEN = true;
     public static final boolean TRACE_IO = true;
-    public static final int QUEUE_SLOT_DEFAULT_SIZE = 16;
-    public static final int QUEUE_LENGTH_LOW_THRESHOLD = 16;
-    public static final int QUEUE_LENGTH_HIGH_THRESHOLD = 32;
+    public static final int QUEUE_SLOT_DEFAULT_SIZE = 32;
+    public static final int QUEUE_LENGTH_LOW_THRESHOLD = 96;
+    public static final int QUEUE_LENGTH_HIGH_THRESHOLD = 128;
     public static final int MAX_FETCH_SIZE = 256 * 1024;
     private final int blockSize;
     private final int cacheScale;
@@ -48,6 +49,7 @@ public class BlockManager {
     private ExecutorService ioService;
     private AsyncIOWorker ioWorker;
     private Short ioPending = 0;
+    private boolean isFetching = false;
 
     public BlockManager(int bs, int cs) {
         this(bs, cs, 0);
@@ -90,21 +92,34 @@ public class BlockManager {
         }
     }
 
-    public void trigger(boolean[] intends) {
+    public void trigger(boolean[] intends, BitSet[] valids) {
         if (AIO_OPEN) {
-            ioWorker.trigger(intends);
-            synchronized (ioPending) {
-                ioPending.notify();
-            }
+            ioWorker.trigger(intends, valids);
+            isFetching = true;
         }
     }
 
-    public void trigger(int cidx) {
+    public boolean isFetchingStage() {
+        return isFetching;
+    }
+
+    public void invalid(int cidx) {
         if (AIO_OPEN) {
-            ioWorker.trigger(cidx);
+            ioWorker.invalid(cidx);
             currentBlocks[cidx] = null;
             cursors[cidx] = BlockManager.QUEUE_SLOT_DEFAULT_SIZE;
         }
+    }
+
+    public boolean trigger(int cidx, BitSet valid) {
+        if (AIO_OPEN) {
+            if (ioWorker.trigger(cidx, valid)) {
+                currentBlocks[cidx] = null;
+                cursors[cidx] = BlockManager.QUEUE_SLOT_DEFAULT_SIZE;
+                return true;
+            }
+        }
+        return false;
     }
 
     public BlockInputBufferQueue[] getBufferQueues() {
@@ -128,7 +143,19 @@ public class BlockManager {
                 }
             }
             if (found < 0) {
+                /*boolean wantEmpty = false;
+                if (bufferQueues[cidx].size() == 0) {
+                    System.out.println("<pid: " + Thread.currentThread().getId() + " " + block + " "
+                            + ioWorker.getColumnValue(cidx).getName() + " "
+                            + ioWorker.getColumnValue(cidx).getBlockCount());
+                    wantEmpty = true;
+                }*/
                 currentBlocks[cidx] = bufferQueues[cidx].take();
+                /*if (wantEmpty) {
+                    System.out.println(">pid: " + Thread.currentThread().getId() + " " + block + " "
+                            + ioWorker.getColumnValue(cidx).getName() + " "
+                            + ioWorker.getColumnValue(cidx).getBlockCount());
+                }*/
                 cursors[cidx] = 0;
             }
         }

@@ -124,7 +124,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         seek(0);
     }
 
-    public void triger() throws IOException {
+    public void trigger() throws IOException {
         seek(0);
     }
 
@@ -221,7 +221,8 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         //                }
         this.block = block;
         this.row = column.firstRows[block];
-        if (column.getBlockManager().AIO_OPEN) {
+        if (column.getBlockManager().AIO_OPEN && (!column.getBlockManager().isFetchingStage()
+                || (column.getBlockManager().isFetchingStage() && !column.metaData.isArray()))) {
             long begin = System.nanoTime();
             try {
                 /*System.out.println("\t<Fetch " + block + " cidx: " + column.metaData.getNumber());*/

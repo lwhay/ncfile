@@ -201,7 +201,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int i = 0;
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
-        reader.getBlockManager().trigger(tm);
+        reader.getBlockManager().trigger(tm, filterSet);
         values[tm].create();
         while (values[tm].hasNext()) {
             if (filters[0].isMatch(values[tm].next())) {
@@ -257,7 +257,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int m = filterSet.nextSetBit(0);
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
-        reader.getBlockManager().trigger(tm);
+        reader.getBlockManager().trigger(tm, filterSet);
         values[tm].create();
         while (m != -1) {
             values[tm].seek(m);
@@ -298,7 +298,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int i = 0;
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
-        reader.getBlockManager().trigger(tm);
+        reader.getBlockManager().trigger(tm, filterSet);
         values[tm].create();
         while (values[tm].hasNext()) {
             if (filters[0].isMatch(values[tm].next())) {
@@ -349,7 +349,8 @@ public class FilterBatchColumnReader<D> implements Closeable {
             throw new NeciRuntimeException("No filter column named: " + column);
         currentParent = values[tm].getParentName();
         currentLayer = values[tm].getLayer();
-        reader.getBlockManager().trigger(tm);
+        // Need to be checked.
+        reader.getBlockManager().trigger(tm, filterSet);
         values[tm].readIO();
         values[tm].create();
         for (int c = 1; c < filters.length; c++) {
@@ -390,7 +391,8 @@ public class FilterBatchColumnReader<D> implements Closeable {
                 for (int i = 0; i < left.size(); i++) {
                     String array = left.get(i);
                     int col = columnsByName.get(array);
-                    reader.getBlockManager().trigger(col);
+                    // Need to be checked.
+                    reader.getBlockManager().trigger(col, filterSet);
                     values[col].readIO();
                     values[col].create();
                 }
@@ -398,7 +400,8 @@ public class FilterBatchColumnReader<D> implements Closeable {
                 for (int i = right.size() - 1; i >= 0; i--) {
                     String array = right.get(i);
                     int col = columnsByName.get(array);
-                    reader.getBlockManager().trigger(col);
+                    // Need to be checked.
+                    reader.getBlockManager().trigger(col, filterSet);
                     values[col].readIO();
                     values[col].create();
                 }
@@ -421,7 +424,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         BitSet set = new BitSet(values[tm].getLastRow());
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
-        reader.getBlockManager().trigger(tm);
+        reader.getBlockManager().trigger(tm, set);
         values[tm].create();
         int n = 0;
         while (values[tm].hasNext()) {
@@ -498,7 +501,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int n = 0;
         //        values[col].createTime();
         //        values[col].createSeekBlock();
-        reader.getBlockManager().trigger(col);
+        reader.getBlockManager().trigger(col, filterSet);
         values[col].create();
         while (m != -1 && values[col].hasNext()) {
             values[col].startRow();
@@ -515,6 +518,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
             }
             n++;
         }
+        /*reader.getBlockManager().invalid(col);*/
         filterSet = set;
         //        timeIO += values[col].getTime();
         //        blockTime.addAll(values[col].getBlockTime());
@@ -540,7 +544,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int q = -1;
         //        values[col].createTime();
         //        values[col].createSeekBlock();
-        reader.getBlockManager().trigger(col);
+        reader.getBlockManager().trigger(col, filterSet);
         values[col].create();
         if (p == 0) {
             values[col].startRow();
@@ -574,6 +578,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
                 break;
             p = filterSet.nextSetBit(p);
         }
+        /*reader.getBlockManager().invalid(col);*/
         filterSet = set;
         //        timeIO += values[col].getTime();
         //        blockTime.addAll(values[col].getBlockTime());
@@ -741,16 +746,19 @@ public class FilterBatchColumnReader<D> implements Closeable {
     public void createFilterRead(int max) throws IOException {
         assert (!noFilters);
         this.defaultMax = max;
-        boolean[] intended = new boolean[values.length];
+        // We move the triggers after the bitsets have been generated for each column.
+        /*boolean[] intended = new boolean[values.length];
         for (int i = 0; i < readNO.length; i++) {
-            intended[readNO[i]] = true;
+            if (!values[readNO[i]].isArray()) {
+                intended[readNO[i]] = true;
+            }
         }
         reader.getBlockManager().trigger(intended);
         for (int i = 0; i < readNO.length; i++) {
             //            values[readNO[i]].createTime();
             //            values[readNO[i]].createSeekBlock();
             values[readNO[i]].create();
-        }
+        }*/
         //column.getBlockManager().trigger(column.metaData.getNumber());
         readValue = new Object[readNO.length][];
         readLength = new HashMap<String, Integer>();
@@ -818,8 +826,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
         readSet = new int[readNO.length];
         int layer = values[readNO[0]].getLayer();
         String parent = values[readNO[0]].getParentName();
-        if (layer != currentLayer || (parent != null && !currentParent.equals(parent)))
+        if (layer != currentLayer || (parent != null && !currentParent.equals(parent))) {
             readSetTran(readNO[0]);
+        }
         all = filterSet.cardinality();
         if (all > defaultMax) {
             readLength.put(readParent, defaultMax);
@@ -845,12 +854,28 @@ public class FilterBatchColumnReader<D> implements Closeable {
         long end = System.currentTimeMillis();
         System.out.println("read set tran time: " + (end - start));
 
+        boolean[] intended = new boolean[values.length];
+        BitSet[] masksets = new BitSet[values.length];
+        for (int i = 0; i < readNO.length; i++) {
+            if (!values[readNO[i]].isArray()) {
+                intended[readNO[i]] = true;
+                masksets[readNO[i]] = chooseSet.get(readSet[i]);
+            }
+        }
+        reader.getBlockManager().trigger(intended, masksets);
+        for (int i = 0; i < readNO.length; i++) {
+            //            values[readNO[i]].createTime();
+            //            values[readNO[i]].createSeekBlock();
+            values[readNO[i]].create();
+        }
+
         for (int i = 0; i < readNO.length; i++) {
             filterSet = chooseSet.get(readSet[i]);
             currentParent = values[readNO[i]].getParentName();
             currentLayer = values[readNO[i]].getLayer();
             readPri(i);
         }
+
         all -= readLength.get(readParent);
         readIndex = new int[readNO.length];
     }
@@ -1030,11 +1055,11 @@ public class FilterBatchColumnReader<D> implements Closeable {
 
     @Override
     public void close() throws IOException {
-        reader.close();
         try {
             reader.getBlockManager().closeAio();
         } catch (InterruptedException e) {
             throw new NeciRuntimeException("Cannot close aio after " + readIndex[0] + " out of " + readValue[0].length);
         }
+        reader.close();
     }
 }

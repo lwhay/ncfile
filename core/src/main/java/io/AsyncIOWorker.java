@@ -5,7 +5,7 @@ package io;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.BitSet;
 
 import columnar.BlockColumnValues;
 import columnar.BlockManager;
@@ -30,10 +30,10 @@ public class AsyncIOWorker implements Runnable {
     private final InputBuffer[] inBuffers;
     private boolean terminate = false;
     private boolean[] intended;
-    private boolean[] handled;
+    private BitSet[] valids;
+    /*private boolean[] handled;*/
     private boolean isReady = true;
     private final Short ioReady;
-    private int triggeredRound = 0;
 
     public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues, Short ioPending)
             throws IOException {
@@ -49,7 +49,8 @@ public class AsyncIOWorker implements Runnable {
         this.columns = new ColumnDescriptor[columnValues.length];
         this.ioReady = 0;
         intended = new boolean[columnValues.length];
-        handled = new boolean[columnValues.length];
+        valids = new BitSet[columnValues.length];
+        /*handled = new boolean[columnValues.length];*/
         for (int i = 0; i < columnValues.length; i++) {
             if (columnValues[i] != null) {
                 this.columns[i] = columnValues[i].getColumnDescriptor();
@@ -69,7 +70,7 @@ public class AsyncIOWorker implements Runnable {
         return columnValues[cidx];
     }
 
-    public void trigger(boolean[] intends) {
+    public void trigger(boolean[] intends, BitSet[] valids) {
         while (!isReady) {
             synchronized (ioReady) {
                 try {
@@ -80,7 +81,8 @@ public class AsyncIOWorker implements Runnable {
             }
         }
         this.intended = intends;
-        Arrays.fill(handled, false);
+        this.valids = valids;
+        /*Arrays.fill(handled, false);*/
         for (int i = 0; i < intended.length; i++) {
             if (intended[i]) {
                 /*System.out.print(i + ":" + columnValues[i].getName() + " ");*/
@@ -93,10 +95,20 @@ public class AsyncIOWorker implements Runnable {
             ioPending.notify();
         }
         isReady = false;
-        triggeredRound++;
     }
 
-    public void trigger(int cidx) {
+    public void invalid(int cidx) {
+        intended[cidx] = false;
+        /*handled[cidx] = false;*/
+        blocks[cidx] = 0;
+        rows[cidx] = 0;
+        synchronized (ioPending) {
+            ioPending.notify();
+        }
+        isReady = false;
+    }
+
+    public boolean trigger(int cidx, BitSet valid) {
         while (intended[cidx]) {
             try {
                 System.out.println("@");
@@ -105,8 +117,8 @@ public class AsyncIOWorker implements Runnable {
                 e.printStackTrace();
             }
         }
-        if (handled[cidx]) {
-            intended[cidx] = true;
+        if (columns[cidx].getBlockManager().isFetchingStage()) {
+            /*intended[cidx] = true;
             handled[cidx] = false;
             blocks[cidx] = 0;
             rows[cidx] = 0;
@@ -114,9 +126,14 @@ public class AsyncIOWorker implements Runnable {
                 ioPending.notify();
             }
             isReady = false;
-            /*System.out.println("Appending: " + cidx + " name: " + columnValues[cidx].getName());*/
-            return;
+            System.out.println("Appending: " + cidx + " name: " + columnValues[cidx].getName());*/
+            if (columnValues[cidx].isArray()) {
+                return false;
+            } else {
+                throw new NeciRuntimeException("Duplicated intended " + cidx + columnValues[cidx].getName());
+            }
         }
+
         if (intended[cidx]) {
             throw new NeciRuntimeException("Duplicated intended " + cidx + columnValues[cidx].getName());
         }
@@ -134,14 +151,15 @@ public class AsyncIOWorker implements Runnable {
         blocks[cidx] = 0;
         rows[cidx] = 0;
         intended[cidx] = true;
-        Arrays.fill(handled, false);
+        valids[cidx] = valid;
+        /*Arrays.fill(handled, false);*/
 
         synchronized (ioPending) {
             ioPending.notify();
         }
         isReady = false;
-        triggeredRound++;
-        /*System.out.println("Triggeried: " + cidx + " name: " + columnValues[cidx].getName());*/
+        /*System.out.println("Triggered: " + cidx + " name: " + columnValues[cidx].getName());*/
+        return true;
     }
 
     public void terminate() {
@@ -215,7 +233,7 @@ public class AsyncIOWorker implements Runnable {
                         if (this.blocks[i] == columnValues[i].getBlockCount()) {
                             /*System.out.println("Completed: " + i + " name: " + columnValues[i].getName());*/
                             intended[i] = false;
-                            handled[i] = true;
+                            /*handled[i] = true;*/
                         }
                         /*BlockInputBuffer[] bufs = startBlock(i, count);
                         for (int j = 0; j < count; j++) {
@@ -259,15 +277,26 @@ public class AsyncIOWorker implements Runnable {
     private BlockInputBuffer[] startBlock(int cidx, int num) throws IOException {
         byte[][] raws = new byte[num][];
         int[] ends = new int[num];
+        /*String hint = "";*/
         for (int i = 0; i < num; i++) {
             int block = this.blocks[cidx] + i;
             this.rows[cidx] = columns[cidx].firstRows[block];
-
+            /*int m = valids[cidx].nextSetBit(this.rows[cidx]);
+            if (m <= columns[cidx].lastRow(block)) {
+                hint += "1";
+            } else {
+                hint += "0";
+            }*/
+            /*if (valids[cidx].size() != columns[cidx].lastRow()) {
+                throw new NeciRuntimeException(valids[cidx].size() + ":" + columns[cidx].lastRow());
+            }*/
             inBuffers[cidx].seek(columns[cidx].blockStarts[block]);
             ends[i] = columns[cidx].blocks[block].getCompressedSize();
             raws[i] = new byte[ends[i] + columnValues[cidx].getChecksum().size()];
             inBuffers[cidx].readFully(raws[i]);
         }
+        /*System.out.println(columnValues[cidx].getName() + " from " + this.blocks[cidx] + " to "
+                + (this.blocks[cidx] + num) + " hint " + hint);*/
         /*int total = 0;
         int[] ends = new int[num];
         for (int i = 0; i < num; i++) {
