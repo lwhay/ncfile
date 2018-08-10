@@ -3,8 +3,12 @@
  */
 package io;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.util.BitSet;
 
 import columnar.BlockColumnValues;
@@ -36,7 +40,10 @@ public class AsyncIOWorker implements Runnable {
     /*private boolean[] handled;*/
     private boolean isReady = true;
     private final Short ioReady;
+    private FileChannel mmc = null;
+    private FileLock serialReadLock = null;
 
+    @SuppressWarnings("static-access")
     public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues, Short ioPending)
             throws IOException {
         this.columnValues = columnValues;
@@ -63,6 +70,14 @@ public class AsyncIOWorker implements Runnable {
                     unionArray[i] = columns[i].metaData.getUnionArray();
                 } else {
                     isUnion[i] = false;
+                }
+                if (mmc == null && columns[i].getBlockManager().FILE_LOCK) {
+                    try {
+                        mmc = new RandomAccessFile(columns[i].getBlockManager().swapmm, "rw").getChannel();
+                    } catch (FileNotFoundException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -168,6 +183,13 @@ public class AsyncIOWorker implements Runnable {
 
     public void terminate() {
         terminate = true;
+        if (mmc != null) {
+            try {
+                mmc.close();
+            } catch (IOException e) {
+                throw new NeciRuntimeException("Cannot close lockfile");
+            }
+        }
         while (!isReady) {
             synchronized (ioReady) {
                 try {
@@ -284,10 +306,23 @@ public class AsyncIOWorker implements Runnable {
         }
     }
 
+    private void lock() throws IOException {
+        if (mmc != null) {
+            serialReadLock = mmc.lock();
+        }
+    }
+
+    private void release() throws IOException {
+        if (serialReadLock != null) {
+            serialReadLock.release();
+        }
+    }
+
     private BlockInputBuffer[] startBlock(int cidx, int num) throws IOException {
         byte[][] raws = new byte[num][];
         int[] ends = new int[num];
         /*String hint = "";*/
+        lock();
         for (int i = 0; i < num; i++) {
             int block = this.blocks[cidx] + i;
             this.rows[cidx] = columns[cidx].firstRows[block];
@@ -305,6 +340,7 @@ public class AsyncIOWorker implements Runnable {
             raws[i] = new byte[ends[i] + columnValues[cidx].getChecksum().size()];
             inBuffers[cidx].readFully(raws[i]);
         }
+        release();
         /*System.out.println(columnValues[cidx].getName() + " from " + this.blocks[cidx] + " to "
                 + (this.blocks[cidx] + num) + " hint " + hint);*/
         /*int total = 0;
