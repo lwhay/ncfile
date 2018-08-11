@@ -42,8 +42,9 @@ public class AsyncIOWorker implements Runnable {
     private final Short ioReady;
     private FileChannel mmc = null;
     private FileLock serialReadLock = null;
+    private boolean skippingMode = false;
 
-    @SuppressWarnings("static-access")
+    @SuppressWarnings({ "static-access", "resource" })
     public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues, Short ioPending)
             throws IOException {
         this.columnValues = columnValues;
@@ -78,6 +79,9 @@ public class AsyncIOWorker implements Runnable {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
+                }
+                if (!skippingMode && columns[i].getBlockManager().SKIPPING_MODE) {
+                    skippingMode = true;
                 }
             }
         }
@@ -213,6 +217,132 @@ public class AsyncIOWorker implements Runnable {
 
     private int period = 10;
 
+    private boolean sequentialRead() throws IOException, InterruptedException {
+        boolean idle = true;
+        boolean completed = true;
+        for (int i = 0; i < queues.length; i++) {
+            if (!intended[i]) {
+                continue;
+            }
+            completed = false;
+            if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
+                idle = false;
+                int total = Math.min(columnValues[i].getBlockCount() - blocks[i],
+                        (BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD - queues[i].size())
+                                * BlockManager.QUEUE_SLOT_DEFAULT_SIZE);
+                BlockInputBuffer[] bufs = startBlock(i, total);
+                int regular = 0;
+                for (int j = 0; j < total / BlockManager.QUEUE_SLOT_DEFAULT_SIZE; j++) {
+                    @SuppressWarnings("unchecked")
+                    PositionalBlock<Integer, BlockInputBuffer>[] list =
+                            new PositionalBlock[BlockManager.QUEUE_SLOT_DEFAULT_SIZE];
+                    for (int k = 0; k < BlockManager.QUEUE_SLOT_DEFAULT_SIZE; k++) {
+                        list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular, bufs[regular]);
+                        /*System.out.println("\tEnqueue: " + regular + " block: " + (blocks[i] + regular)
+                                + " cidx: " + i + " name: " + columnValues[i].getName() + " total: "
+                                + columnValues[i].getBlockCount());*/
+                        regular++;
+                    }
+                    queues[i].put(list);
+                }
+                if (regular < total) {
+                    @SuppressWarnings("unchecked")
+                    PositionalBlock<Integer, BlockInputBuffer>[] list = new PositionalBlock[total - regular];
+                    for (int k = 0; regular < total; k++) {
+                        list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular, bufs[regular]);
+                        /*System.out.println("\tEnqueue: " + regular + " block: " + (blocks[i] + regular)
+                                + " cidx: " + i + " name: " + columnValues[i].getName() + " total: "
+                                + columnValues[i].getBlockCount());*/
+                        regular++;
+                    }
+                    queues[i].put(list);
+                }
+                this.blocks[i] += total;
+                if (this.blocks[i] == columnValues[i].getBlockCount()) {
+                    /*System.out.println("Completed: " + i + " name: " + columnValues[i].getName());*/
+                    intended[i] = false;
+                    /*handled[i] = true;*/
+                }
+                /*BlockInputBuffer[] bufs = startBlock(i, count);
+                for (int j = 0; j < count; j++) {
+                    queues[i].put(new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + j, bufs[j]));
+                }
+                this.blocks[i] += count;
+                if (this.blocks[i] == columnValues[i].getBlockCount()) {
+                    intended[i] = false;
+                    handled[i] = true;
+                }*/
+            }
+        }
+        if (completed) {
+            isReady = true;
+            synchronized (ioReady) {
+                ioReady.notify();
+            }
+            while (isReady) {
+                synchronized (ioPending) {
+                    ioPending.wait();
+                }
+            }
+            /*System.out.println("Active");*/
+        }
+        return idle;
+    }
+
+    private boolean skippingRead() throws IOException, InterruptedException {
+        boolean idle = true;
+        boolean completed = true;
+        for (int i = 0; i < queues.length; i++) {
+            if (!intended[i]) {
+                continue;
+            }
+            completed = false;
+            if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
+                idle = false;
+                int total = Math.min(columnValues[i].getBlockCount() - blocks[i],
+                        (BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD - queues[i].size())
+                                * BlockManager.QUEUE_SLOT_DEFAULT_SIZE);
+                BlockInputBuffer[] bufs = skippingBlock(i, total);
+                int regular = 0;
+                for (int j = 0; j < total / BlockManager.QUEUE_SLOT_DEFAULT_SIZE; j++) {
+                    @SuppressWarnings("unchecked")
+                    PositionalBlock<Integer, BlockInputBuffer>[] list =
+                            new PositionalBlock[BlockManager.QUEUE_SLOT_DEFAULT_SIZE];
+                    for (int k = 0; k < BlockManager.QUEUE_SLOT_DEFAULT_SIZE; k++) {
+                        list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular, bufs[regular]);
+                        regular++;
+                    }
+                    queues[i].put(list);
+                }
+                if (regular < total) {
+                    @SuppressWarnings("unchecked")
+                    PositionalBlock<Integer, BlockInputBuffer>[] list = new PositionalBlock[total - regular];
+                    for (int k = 0; regular < total; k++) {
+                        list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular, bufs[regular]);
+                        regular++;
+                    }
+                    queues[i].put(list);
+                }
+                this.blocks[i] += total;
+                if (this.blocks[i] == columnValues[i].getBlockCount()) {
+                    intended[i] = false;
+                }
+            }
+        }
+        if (completed) {
+            isReady = true;
+            synchronized (ioReady) {
+                ioReady.notify();
+            }
+            while (isReady) {
+                synchronized (ioPending) {
+                    ioPending.wait();
+                }
+            }
+        }
+        return idle;
+    }
+
     @Override
     public void run() {
         while (!Thread.interrupted()) {
@@ -221,74 +351,10 @@ public class AsyncIOWorker implements Runnable {
             }
             try {
                 boolean idle = true;
-                boolean completed = true;
-                for (int i = 0; i < queues.length; i++) {
-                    if (!intended[i]) {
-                        continue;
-                    }
-                    completed = false;
-                    if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
-                        idle = false;
-                        int total = Math.min(columnValues[i].getBlockCount() - blocks[i],
-                                (BlockManager.QUEUE_LENGTH_HIGH_THRESHOLD - queues[i].size())
-                                        * BlockManager.QUEUE_SLOT_DEFAULT_SIZE);
-                        BlockInputBuffer[] bufs = startBlock(i, total);
-                        int regular = 0;
-                        for (int j = 0; j < total / BlockManager.QUEUE_SLOT_DEFAULT_SIZE; j++) {
-                            @SuppressWarnings("unchecked")
-                            PositionalBlock<Integer, BlockInputBuffer>[] list =
-                                    new PositionalBlock[BlockManager.QUEUE_SLOT_DEFAULT_SIZE];
-                            for (int k = 0; k < BlockManager.QUEUE_SLOT_DEFAULT_SIZE; k++) {
-                                list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular,
-                                        bufs[regular]);
-                                /*System.out.println("\tEnqueue: " + regular + " block: " + (blocks[i] + regular)
-                                        + " cidx: " + i + " name: " + columnValues[i].getName() + " total: "
-                                        + columnValues[i].getBlockCount());*/
-                                regular++;
-                            }
-                            queues[i].put(list);
-                        }
-                        if (regular < total) {
-                            @SuppressWarnings("unchecked")
-                            PositionalBlock<Integer, BlockInputBuffer>[] list = new PositionalBlock[total - regular];
-                            for (int k = 0; regular < total; k++) {
-                                list[k] = new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + regular,
-                                        bufs[regular]);
-                                /*System.out.println("\tEnqueue: " + regular + " block: " + (blocks[i] + regular)
-                                        + " cidx: " + i + " name: " + columnValues[i].getName() + " total: "
-                                        + columnValues[i].getBlockCount());*/
-                                regular++;
-                            }
-                            queues[i].put(list);
-                        }
-                        this.blocks[i] += total;
-                        if (this.blocks[i] == columnValues[i].getBlockCount()) {
-                            /*System.out.println("Completed: " + i + " name: " + columnValues[i].getName());*/
-                            intended[i] = false;
-                            /*handled[i] = true;*/
-                        }
-                        /*BlockInputBuffer[] bufs = startBlock(i, count);
-                        for (int j = 0; j < count; j++) {
-                            queues[i].put(new PositionalBlock<Integer, BlockInputBuffer>(blocks[i] + j, bufs[j]));
-                        }
-                        this.blocks[i] += count;
-                        if (this.blocks[i] == columnValues[i].getBlockCount()) {
-                            intended[i] = false;
-                            handled[i] = true;
-                        }*/
-                    }
-                }
-                if (completed) {
-                    isReady = true;
-                    synchronized (ioReady) {
-                        ioReady.notify();
-                    }
-                    while (isReady) {
-                        synchronized (ioPending) {
-                            ioPending.wait();
-                        }
-                    }
-                    /*System.out.println("Active");*/
+                if (skippingMode) {
+                    idle = skippingRead();
+                } else {
+                    idle = sequentialRead();
                 }
                 if (idle) {
                     period += 20;
@@ -318,20 +384,109 @@ public class AsyncIOWorker implements Runnable {
         }
     }
 
-    private BlockInputBuffer[] startBlock(int cidx, int num) throws IOException {
+    private BlockInputBuffer[] skippingBlock(int cidx, int num) throws IOException {
         byte[][] raws = new byte[num][];
         int[] ends = new int[num];
-        /*String hint = "";*/
         lock();
         for (int i = 0; i < num; i++) {
             int block = this.blocks[cidx] + i;
             this.rows[cidx] = columns[cidx].firstRows[block];
-            /*int m = valids[cidx].nextSetBit(this.rows[cidx]);
-            if (m <= columns[cidx].lastRow(block)) {
+            int m = valids[cidx].nextSetBit(this.rows[cidx]);
+            inBuffers[cidx].seek(columns[cidx].blockStarts[block]);
+            ends[i] = columns[cidx].blocks[block].getCompressedSize();
+            raws[i] = new byte[ends[i] + columnValues[cidx].getChecksum().size()];
+            inBuffers[cidx].readFully(raws[i]);
+        }
+        release();
+
+        BlockInputBuffer[] values = new BlockInputBuffer[num];
+        long beginCompression = System.nanoTime();
+        for (int i = 0; i < num; i++) {
+            int block = this.blocks[cidx] + i;
+            if (isUnion[cidx]) {
+                if (columns[cidx].getCodecName().equals("null")) {
+                    values[i] = new UnionInputBuffer(ByteBuffer.wrap(raws[i], 0, ends[i]),
+                            columns[cidx].blocks[block].getRowCount(), unionBits[cidx], unionArray[cidx]);
+                } else {
+                    ByteBuffer data = null;
+                    if (columns[cidx].blocks[block].getUncompressedSize() >= columns[cidx].blocks[block]
+                            .getCompressedSize()) {
+                        data = ByteBuffer.allocate(columns[cidx].blocks[block].getUncompressedSize());
+                    } else {
+                        data = ByteBuffer.allocate(columns[cidx].blocks[block].getCompressedSize());
+                    }
+                    ByteBuffer buf3 = columnValues[cidx].getCodec()
+                            .decompress(ByteBuffer.wrap(raws[i], 0, columns[cidx].blocks[block].getLengthUnion()));
+                    int pos0 = 0;
+                    int len0 = buf3.limit();
+                    System.arraycopy(buf3.array(), 0, data.array(), pos0, len0);
+                    ByteBuffer buf1 = columnValues[cidx].getCodec()
+                            .decompress(ByteBuffer.wrap(raws[i], columns[cidx].blocks[block].getLengthUnion(),
+                                    columns[cidx].blocks[block].getLengthOffset()));
+                    int pos1 = buf3.remaining();
+                    int len1 = buf1.remaining();
+                    System.arraycopy(buf1.array(), buf1.position(), data.array(), pos1, len1);
+                    int pos2 = -1;
+                    int len2 = -1;
+                    if (columns[cidx].blocks[block].getLengthPayload() != 0) {
+                        ByteBuffer buf2 = columnValues[cidx].getCodec()
+                                .decompress(ByteBuffer.wrap(raws[i],
+                                        columns[cidx].blocks[block].getLengthUnion()
+                                                + columns[cidx].blocks[block].getLengthOffset(),
+                                        columns[cidx].blocks[block].getLengthPayload()));
+                        pos2 = buf3.remaining() + buf1.remaining();
+                        len2 = buf2.remaining();
+                        System.arraycopy(buf2.array(), buf2.position(), data.array(), pos2, len2);
+                    }
+                    values[i] = new UnionInputBuffer(data, columns[cidx].blocks[block].getRowCount(), unionBits[cidx],
+                            unionArray[cidx]);
+                }
+            } else {
+                if (columns[cidx].getCodecName().equals("null")) {
+                    values[i] = new BlockInputBuffer(ByteBuffer.wrap(raws[i], 0, ends[i]),
+                            columns[cidx].blocks[block].getRowCount());
+                } else if (columns[cidx].blocks[block].getLengthOffset() != 0) {
+                    ByteBuffer data = ByteBuffer.allocate(columns[cidx].blocks[block].getUncompressedSize());
+                    ByteBuffer buf1 = columnValues[cidx].getCodec()
+                            .decompress(ByteBuffer.wrap(raws[i], columns[cidx].blocks[block].getLengthUnion(),
+                                    columns[cidx].blocks[block].getLengthOffset()));
+                    System.arraycopy(buf1.array(), 0, data.array(), 0, buf1.limit());
+                    ByteBuffer buf2 = columnValues[cidx].getCodec()
+                            .decompress(ByteBuffer.wrap(raws[i],
+                                    columns[cidx].blocks[block].getLengthUnion()
+                                            + columns[cidx].blocks[block].getLengthOffset(),
+                                    columns[cidx].blocks[block].getLengthPayload()));
+                    System.arraycopy(buf2.array(), buf2.position(), data.array(), buf1.limit(), buf2.remaining());
+                    values[i] = new BlockInputBuffer(data, columns[cidx].blocks[block].getRowCount());
+                } else {
+                    byte[] buf2 = columnValues[cidx].getCodec()
+                            .decompress(ByteBuffer.wrap(raws[i],
+                                    columns[cidx].blocks[block].getLengthUnion()
+                                            + columns[cidx].blocks[block].getLengthOffset(),
+                                    columns[cidx].blocks[block].getLengthPayload()))
+                            .array();
+                    values[i] = new BlockInputBuffer(ByteBuffer.wrap(buf2), columns[cidx].blocks[block].getRowCount());
+                }
+            }
+        }
+        columns[cidx].getBlockManager().compressionTimeAdd(System.nanoTime() - beginCompression);
+        return values;
+    }
+
+    private BlockInputBuffer[] startBlock(int cidx, int num) throws IOException {
+        byte[][] raws = new byte[num][];
+        int[] ends = new int[num];
+        String hint = "";
+        lock();
+        for (int i = 0; i < num; i++) {
+            int block = this.blocks[cidx] + i;
+            this.rows[cidx] = columns[cidx].firstRows[block];
+            int m = valids[cidx].nextSetBit(this.rows[cidx]);
+            if (m >= 0 && m <= columns[cidx].lastRow(block)) {
                 hint += "1";
             } else {
                 hint += "0";
-            }*/
+            }
             /*if (valids[cidx].size() != columns[cidx].lastRow()) {
                 throw new NeciRuntimeException(valids[cidx].size() + ":" + columns[cidx].lastRow());
             }*/
@@ -341,8 +496,8 @@ public class AsyncIOWorker implements Runnable {
             inBuffers[cidx].readFully(raws[i]);
         }
         release();
-        /*System.out.println(columnValues[cidx].getName() + " from " + this.blocks[cidx] + " to "
-                + (this.blocks[cidx] + num) + " hint " + hint);*/
+        System.out.println(columnValues[cidx].getName() + " from " + this.blocks[cidx] + " to "
+                + (this.blocks[cidx] + num) + " hint " + hint);
         /*int total = 0;
         int[] ends = new int[num];
         for (int i = 0; i < num; i++) {

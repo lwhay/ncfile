@@ -35,6 +35,7 @@ public class BlockManager {
     public static boolean AIO_OPEN = true;
     public static boolean TRACE_IO = true;
     public static boolean FILE_LOCK = false;
+    public static boolean SKIPPING_MODE = true;
     public static int QUEUE_SLOT_DEFAULT_SIZE = 32;
     public static int QUEUE_LENGTH_LOW_THRESHOLD = 192;
     public static int QUEUE_LENGTH_HIGH_THRESHOLD = 256;
@@ -82,6 +83,7 @@ public class BlockManager {
             AIO_OPEN = conf.path("AIO_OPEN").asBoolean();
             TRACE_IO = conf.path("TRACE_IO").asBoolean();
             FILE_LOCK = conf.path("FILE_LOCK").asBoolean();
+            SKIPPING_MODE = conf.path("SKIPPING_MODE").asBoolean();
             QUEUE_SLOT_DEFAULT_SIZE = conf.path("QUEUE_SLOT_DEFAULT_SIZE").asInt();
             QUEUE_LENGTH_LOW_THRESHOLD = conf.path("QUEUE_LENGTH_LOW_THRESHOLD").asInt();
             QUEUE_LENGTH_HIGH_THRESHOLD = conf.path("QUEUE_LENGTH_HIGH_THRESHOLD").asInt();

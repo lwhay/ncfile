@@ -201,7 +201,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int i = 0;
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
-        reader.getBlockManager().trigger(tm, filterSet);
+        BitSet initialSet = new BitSet(values[tm].getLastRow());
+        initialSet.set(0, values[tm].getLastRow());
+        reader.getBlockManager().trigger(tm, initialSet);
         values[tm].create();
         while (values[tm].hasNext()) {
             if (filters[0].isMatch(values[tm].next())) {
