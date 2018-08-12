@@ -300,6 +300,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         int i = 0;
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
+        reader.getBlockManager().setSkip(false);
         reader.getBlockManager().trigger(tm, filterSet);
         values[tm].create();
         while (values[tm].hasNext()) {
@@ -426,6 +427,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         BitSet set = new BitSet(values[tm].getLastRow());
         //        values[tm].createTime();
         //        values[tm].createSeekBlock();
+        reader.getBlockManager().setSkip(false);
         reader.getBlockManager().trigger(tm, set);
         values[tm].create();
         int n = 0;
@@ -745,9 +747,11 @@ public class FilterBatchColumnReader<D> implements Closeable {
             createFilterRead(defaultMax);
     }
 
+    @SuppressWarnings("static-access")
     public void createFilterRead(int max) throws IOException {
         assert (!noFilters);
         this.defaultMax = max;
+        reader.getBlockManager().setSkip(reader.getBlockManager().SKIPPING_MODE);
         // We move the triggers after the bitsets have been generated for each column.
         /*boolean[] intended = new boolean[values.length];
         for (int i = 0; i < readNO.length; i++) {
@@ -770,6 +774,15 @@ public class FilterBatchColumnReader<D> implements Closeable {
     public void createRead(int max) throws IOException {
         assert (noFilters);
         this.defaultMax = max;
+        this.getBlockManager().setSkip(false);
+        boolean[] intended = new boolean[values.length];
+        for (int i = 0; i < readNO.length; i++) {
+            if (!values[readNO[i]].isArray()) {
+                intended[readNO[i]] = true;
+            }
+        }
+        reader.getBlockManager().trigger(intended, null);
+        System.out.println(reader.getBlockManager().getSkip());
         for (int i = 0; i < readNO.length; i++) {
             //            values[readNO[i]].createTime();
             //            values[readNO[i]].createSeekBlock();
@@ -1041,12 +1054,14 @@ public class FilterBatchColumnReader<D> implements Closeable {
         return v;
     }
 
+    @Deprecated
     public void create() throws IOException {
         for (BlockColumnValues v : values) {
             v.create();
         }
     }
 
+    @Deprecated
     public void create(int no) throws IOException {
         values[no].create();
     }

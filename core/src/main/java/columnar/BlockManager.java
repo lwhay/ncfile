@@ -103,6 +103,7 @@ public class BlockManager {
         GlobalInformation.totalBlockManagerCreated++;
     }
 
+    @SuppressWarnings("rawtypes")
     public void openAio(BlockColumnValues[] columnValues) throws InterruptedException, IOException {
         if (AIO_OPEN) {
             ioService = Executors.newCachedThreadPool();
@@ -116,6 +117,19 @@ public class BlockManager {
             ioWorker.terminate();
             ioService.shutdown();
         }
+    }
+
+    public void setSkip(boolean openSkipping) {
+        if (AIO_OPEN) {
+            ioWorker.setSkip(openSkipping);
+        }
+    }
+
+    public boolean getSkip() {
+        if (AIO_OPEN) {
+            return ioWorker.getSkip();
+        }
+        return false;
     }
 
     public void trigger(boolean[] intends, BitSet[] valids) {
@@ -154,57 +168,29 @@ public class BlockManager {
 
     public PositionalBlock<Integer, BlockInputBuffer> fetch(int cidx, int block) throws InterruptedException {
         int found = -1;
-        /*System.out.println("\t\t>Dequeue: " + cursors[cidx] + " block: " + block + " cidx: " + cidx + " total: "
-                + ioWorker.getColumnValue(cidx).getBlockCount() + " name: " + ioWorker.getColumnValue(cidx).getName());*/
+        /*System.out.println("\t>Dequeue" + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
+                + ioWorker.getColumnValue(cidx).getBlockCount());*/
         while (found < 0) {
             if (cursors[cidx] < BlockManager.QUEUE_SLOT_DEFAULT_SIZE) {
                 while (cursors[cidx] < currentBlocks[cidx].length) {
                     if (currentBlocks[cidx][cursors[cidx]].getKey() == block) {
                         found = cursors[cidx]++;
-                        /*System.out.println("\t\t<Dequeue: " + cursors[cidx] + " block: " + block + " cidx: " + cidx
-                                + " total: " + ioWorker.getColumnValue(cidx).getBlockCount());*/
                         break;
                     }
                     ++cursors[cidx];
                 }
             }
             if (found < 0) {
-                /*if (bufferQueues[cidx].size() == 0) {
-                    System.out.println("fetch: " + " " + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
-                            + ioWorker.getColumnValue(cidx).getBlockCount());
-                }*/
-                /*boolean wantEmpty = false;
-                if (bufferQueues[cidx].size() == 0) {
-                    System.out.println("<path: " + Thread.currentThread().getId() + " " + block + " "
-                            + ioWorker.getColumnValue(cidx).getName() + " "
-                            + ioWorker.getColumnValue(cidx).getBlockCount());
-                    wantEmpty = true;
-                }*/
                 long begin = System.nanoTime();
                 currentBlocks[cidx] = bufferQueues[cidx].take();
                 aioFetchTime += (System.nanoTime() - begin);
-                /*if (wantEmpty) {
-                    System.out.println(">path: " + Thread.currentThread().getId() + " " + block + " "
-                            + ioWorker.getColumnValue(cidx).getName() + " "
-                            + ioWorker.getColumnValue(cidx).getBlockCount());
-                }*/
                 cursors[cidx] = 0;
             }
         }
+        /*System.out.println("\t<Dequeue" + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
+                + ioWorker.getColumnValue(cidx).getBlockCount());*/
         return currentBlocks[cidx][found];
     }
-
-    /*public PositionalBlock<Integer, BlockInputBuffer> fetch(int cidx, int block) throws InterruptedException {
-        PositionalBlock<Integer, BlockInputBuffer> intendedBlock;
-        do {
-            intendedBlock = bufferQueues[cidx].take();
-        } while (intendedBlock.getKey() < block);
-    
-        if (intendedBlock.getKey() != block) {
-            throw new NeciRuntimeException("Lose block: " + block + " by: " + intendedBlock.getKey() + " at: " + cidx);
-        }
-        return intendedBlock;
-    }*/
 
     public void blockAdd() {
         this.totalBlockCreation++;

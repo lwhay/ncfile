@@ -397,6 +397,14 @@ public class BatchColumnReader<D> implements Closeable {
     }
 
     public void create() throws IOException {
+        this.getBlockManager().setSkip(false);
+        boolean[] intended = new boolean[values.length];
+        for (int i = 0; i < readNO.length; i++) {
+            if (!values[readNO[i]].isArray()) {
+                intended[readNO[i]] = true;
+            }
+        }
+        reader.getBlockManager().trigger(intended, null);
         int i = 0;
         for (BlockColumnValues v : values) {
             if (valids[i++])

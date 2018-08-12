@@ -36,18 +36,14 @@ public class NeciTPCH extends ScanCompare {
         int max = Integer.parseInt(args[2]);
         int blockSize = Integer.parseInt(args[4]);
         long start = System.currentTimeMillis();
+        @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[1];
-        filters[0] = new ShipdateSmallerEqualFilter("1992-02-01");
+        filters[0] = new ShipdateSmallerEqualFilter("1998-09-01");
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         reader.createSchema(readSchema);
         int count = 0;
         reader.filter();
         reader.createFilterRead(max);
-        /*@SuppressWarnings("unused")
-        int offsetOrders = readSchema.getFields().size() - 1;
-        Schema orderSchema = readSchema.getFields().get(readSchema.getFields().size() - 1).schema().getElementType();
-        @SuppressWarnings("unused")
-        int offsetLines = orderSchema.getFields().size() - 1;*/
         Map<ByteBuffer, Map<ByteBuffer, float[]>> values = new HashMap<>();
         int valuecount = 0;
         while (reader.hasNext()) {
@@ -80,9 +76,6 @@ public class NeciTPCH extends ScanCompare {
         }
         long end = System.currentTimeMillis();
         System.out.println(valuecount);
-        /*for (Byte d : flag) {
-            System.out.println(new String(new byte[] { d }));
-        }*/
         System.out.println(count);
         System.out.println("NCFile time: " + (end - start) + " result: " + values.size() + " ios: "
                 + reader.getBlockManager().getTotalRead() + " aiotime: "
@@ -100,6 +93,7 @@ public class NeciTPCH extends ScanCompare {
         int max = Integer.parseInt(args[2]);
         int blockSize = Integer.parseInt(args[4]);
         long start = System.currentTimeMillis();
+        @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[3];
         filters[0] = new MktsegmentEqualFilter("BUILDING");
         filters[1] = new OrderdateSmallerFilter("1995-03-15");
@@ -120,6 +114,7 @@ public class NeciTPCH extends ScanCompare {
             if (!comp) {
                 continue;
             }
+            @SuppressWarnings("unchecked")
             List<Record> orders = (List<Record>) r.get(offsetOrders);
             for (Record order : orders) {
                 Long orderkey = (long) order.get("o_orderkey");
@@ -128,6 +123,7 @@ public class NeciTPCH extends ScanCompare {
                 if (!values.containsKey(dateship)) {
                     values.put(dateship, new HashMap<Long, Float>());
                 }
+                @SuppressWarnings("unchecked")
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 float value = .0f;
                 for (Record line : lines) {
@@ -167,6 +163,7 @@ public class NeciTPCH extends ScanCompare {
         int max = Integer.parseInt(args[2]);
         int blockSize = Integer.parseInt(args[4]);
         long start = System.currentTimeMillis();
+        @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[2];
         filters[0] = new OrderdateLeftBetweenFilter("1993-10-01", "1994-01-01");
         filters[1] = new ReturnflagEqualFilter(ByteBuffer.wrap("R".getBytes()));
@@ -193,9 +190,11 @@ public class NeciTPCH extends ScanCompare {
             if (!values.containsKey(ckey)) {
                 values.put(ckey, new HashMap<Long, Float>());
             }
+            @SuppressWarnings("unchecked")
             List<Record> orders = (List<Record>) r.get(offsetOrders);
             float value = .0f;
             for (Record order : orders) {
+                @SuppressWarnings("unchecked")
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 for (Record line : lines) {
                     value += (float) line.get("l_extendedprice") * (1 - (float) line.get("l_discount"));
@@ -234,6 +233,7 @@ public class NeciTPCH extends ScanCompare {
         int max = Integer.parseInt(args[2]);
         int blockSize = Integer.parseInt(args[4]);
         long start = System.currentTimeMillis();
+        @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[1];
         filters[0] = new ShipdateLeftBetweenFilter("1994-03-02", "1994-06-02");
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
@@ -307,11 +307,13 @@ public class NeciTPCH extends ScanCompare {
             }
             String c_name = r.get("c_name").toString();
             long c_ck = (long) r.get("c_custkey");
+            @SuppressWarnings("unchecked")
             List<Record> orders = (List<Record>) r.get(offsetOrders);
             for (Record order : orders) {
                 long o_ok = (long) order.get("o_orderkey");
                 String o_od = order.get("o_orderdate").toString();
                 float o_tp = (float) order.get("o_totalprice");
+                @SuppressWarnings("unchecked")
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 float sumqlt = .0f;
                 for (Record line : lines) {

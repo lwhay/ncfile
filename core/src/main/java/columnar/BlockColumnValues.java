@@ -230,9 +230,7 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
                 || (column.getBlockManager().isFetchingStage() && !column.metaData.isArray()))) {
             long begin = System.nanoTime();
             try {
-                /*System.out.println("\t<Fetch " + block + " cidx: " + column.metaData.getNumber());*/
                 values = bm.fetch(cidx, block).getValue();
-                /*System.out.println("\t>Fetch " + block + " cidx: " + column.metaData.getNumber());*/
             } catch (InterruptedException e) {
                 throw new NeciRuntimeException("Aio fetch error on: " + column.metaData.getName() + " idx: "
                         + column.metaData.getNumber() + " block: " + block);
