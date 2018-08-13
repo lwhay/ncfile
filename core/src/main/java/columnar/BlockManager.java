@@ -26,6 +26,13 @@ import misc.PositionalBlock;
  *
  */
 public class BlockManager {
+    public static final int MIN_PRIORITY = 1;
+    public static final int MAX_PRIORITY = 10;
+    public static final int DEFAULT_PRIORITY = 5;
+    public static final int CUTOFF_PRIORITY = 8;
+    public static final int BASIC_SLEEP_PERIOD = 5;
+    public static final int CUTOFF_SLEEP_PERIOD = 10;
+
     private final int blockSize;
     private final int cacheScale;
     private final int columnNumber;
@@ -37,6 +44,7 @@ public class BlockManager {
     public static boolean TRACE_IO = true;
     public static boolean FILE_LOCK = false;
     public static boolean SKIPPING_MODE = true;
+    public static boolean DYNAMIC_PRIORITY = true;
     public static int QUEUE_SLOT_DEFAULT_SIZE = 32;
     public static int QUEUE_LENGTH_LOW_THRESHOLD = 192;
     public static int QUEUE_LENGTH_HIGH_THRESHOLD = 256;
@@ -85,6 +93,7 @@ public class BlockManager {
             TRACE_IO = conf.path("TRACE_IO").asBoolean();
             FILE_LOCK = conf.path("FILE_LOCK").asBoolean();
             SKIPPING_MODE = conf.path("SKIPPING_MODE").asBoolean();
+            DYNAMIC_PRIORITY = conf.path("DYNAMIC_PRIORITY").asBoolean();
             QUEUE_SLOT_DEFAULT_SIZE = conf.path("QUEUE_SLOT_DEFAULT_SIZE").asInt();
             QUEUE_LENGTH_LOW_THRESHOLD = conf.path("QUEUE_LENGTH_LOW_THRESHOLD").asInt();
             QUEUE_LENGTH_HIGH_THRESHOLD = conf.path("QUEUE_LENGTH_HIGH_THRESHOLD").asInt();

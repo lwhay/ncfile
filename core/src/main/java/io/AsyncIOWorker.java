@@ -47,6 +47,11 @@ public class AsyncIOWorker implements Runnable {
     private FileLock serialReadLock = null;
     private boolean skippingMode = false;
     private int period = 10;
+    private long totalPayload = 0;
+    private long processedPayload = 0;
+    private long currentPriority = 5;
+    private int intendingColumns = 0;
+    private long lastProcessingPeriod = 0;
 
     @SuppressWarnings({ "static-access", "resource", "rawtypes" })
     public AsyncIOWorker(BlockColumnValues[] columnValues, BlockInputBufferQueue[] queues, Short ioPending)
@@ -120,6 +125,7 @@ public class AsyncIOWorker implements Runnable {
         isReady = false;
         this.intended = intends;
         this.valids = valids;
+        intendingColumns++;
         for (int i = 0; i < intended.length; i++) {
             if (intended[i]) {
                 blocks[i] = 0;
@@ -178,6 +184,7 @@ public class AsyncIOWorker implements Runnable {
         rows[cidx] = 0;
         intended[cidx] = true;
         valids[cidx] = valid;
+        intendingColumns++;
 
         synchronized (ioPending) {
             ioPending.notify();
@@ -313,10 +320,14 @@ public class AsyncIOWorker implements Runnable {
     private boolean skippingRead() throws IOException, InterruptedException {
         boolean idle = true;
         boolean completed = true;
+        totalPayload = 0;
+        processedPayload = 0;
         for (int i = 0; i < queues.length; i++) {
             if (!intended[i]) {
                 continue;
             }
+            totalPayload += columnValues[i].getBlockCount();
+            processedPayload += this.blocks[i];
             completed = false;
             if (queues[i].size() < BlockManager.QUEUE_LENGTH_LOW_THRESHOLD) {
                 idle = false;
@@ -518,17 +529,66 @@ public class AsyncIOWorker implements Runnable {
             }
             try {
                 boolean idle = true;
+                long begin = System.currentTimeMillis();
                 if (skippingMode) {
                     idle = skippingRead();
                 } else {
                     idle = sequentialRead();
                 }
-                if (idle) {
-                    period += 20;
-                } else {
-                    period = 0;
+                long thisProcessingPeriod = System.currentTimeMillis() - begin;
+                if (totalPayload > 0) {
+                    int priority =
+                            (int) (((totalPayload - processedPayload) * BlockManager.DEFAULT_PRIORITY) / totalPayload)
+                                    - (int) Math.log(intendingColumns);
+                    if (priority < 0) {
+                        priority = 0;
+                    }
+                    if (priority != currentPriority) {
+                        // 5 is the default priority;
+                        /*System.out.println(ManagementFactory.getRuntimeMXBean().getName() + " "
+                                + (BlockManager.DEFAULT_PRIORITY + priority) + " "
+                                + Thread.currentThread().getPriority() + " " + processedPayload + " " + totalPayload
+                                + " " + lastProcessingPeriod + " " + period + " " + intendingColumns + " " + priority);*/
+                        if (BlockManager.DYNAMIC_PRIORITY) {
+                            Thread.currentThread().setPriority(5 + priority);
+                        }
+                        currentPriority = priority;
+                    }
                 }
-                if (period > 10) {
+                if (idle) {
+                    if (BlockManager.DYNAMIC_PRIORITY) {
+                        period += BlockManager.BASIC_SLEEP_PERIOD
+                                * ((intendingColumns % 10) * BlockManager.DEFAULT_PRIORITY - currentPriority);
+                    } else {
+                        period += 20;
+                    }
+                } else {
+                    if (BlockManager.DYNAMIC_PRIORITY) {
+                        period = (int) (BlockManager.BASIC_SLEEP_PERIOD
+                                * ((intendingColumns % 10) * BlockManager.DEFAULT_PRIORITY - currentPriority));
+                        lastProcessingPeriod = thisProcessingPeriod;
+                        //intendingColumns++;
+                    } else {
+                        period = 0;
+                    }
+                }
+                /*if (idle) {
+                    period += lastProcessingPeriod * (intendingColumns * BlockManager.MAX_PRIORITY
+                            + BlockManager.MAX_PRIORITY - currentPriority)
+                            / ((1 + intendingColumns) * BlockManager.MAX_PRIORITY);
+                } else {
+                    period = (int) (lastProcessingPeriod * (intendingColumns * BlockManager.MAX_PRIORITY
+                            + BlockManager.MAX_PRIORITY - currentPriority)
+                            / ((1 + intendingColumns) * BlockManager.MAX_PRIORITY));
+                    lastProcessingPeriod = thisProcessingPeriod;
+                }*/
+                /*if (idle) {
+                period += (BlockManager.CUTOFF_SLEEP_PERIOD * intendingColumns
+                        + (BlockManager.MAX_PRIORITY - currentPriority));
+                } else {
+                    period = BlockManager.BASIC_SLEEP_PERIOD;
+                }*/
+                if (period > BlockManager.CUTOFF_SLEEP_PERIOD /*|| currentPriority < BlockManager.CUTOFF_PRIORITY*/) {
                     Thread.sleep(period);
                 }
             } catch (InterruptedException e) {
