@@ -46,10 +46,19 @@ public class NeciScan extends ScanCompare {
             if (!comp) {
                 continue;
             }
+            String mkts = r.get("c_mktsegment").toString();
+            if (mkts.compareTo("BUILDING") != 0) {
+                continue;
+            }
             @SuppressWarnings("unchecked")
             List<Record> orders = (List<Record>) r.get(offsetOrders);
+            boolean meet = false;
             for (Record order : orders) {
                 Long orderkey = (long) order.get("o_orderkey");
+                String odate = order.get("o_orderdate").toString();
+                if (odate.compareTo("1995-03-15") >= 0) {
+                    continue;
+                }
                 String dateship =
                         order.get("o_orderkey").toString().trim() + "|" + order.get("o_shippriority").toString().trim();
                 if (!values.containsKey(dateship)) {
@@ -59,13 +68,23 @@ public class NeciScan extends ScanCompare {
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 float value = .0f;
                 for (Record line : lines) {
+                    String sdate = line.get("l_shipdate").toString();
+                    if (sdate.compareTo("1995-03-15") <= 0) {
+                        continue;
+                    }
                     value += (float) line.get("l_extendedprice") * (1 - (float) line.get("l_discount"));
                     count++;
+                    meet = true;
                 }
-                if (!values.get(dateship).containsKey(orderkey)) {
-                    values.get(dateship).put(orderkey, .0f);
+                if (meet) {
+                    if (!values.containsKey(dateship)) {
+                        values.put(dateship, new HashMap<Long, Float>());
+                    }
+                    if (!values.get(dateship).containsKey(orderkey)) {
+                        values.get(dateship).put(orderkey, .0f);
+                    }
+                    values.get(dateship).put(orderkey, value);
                 }
-                values.get(dateship).put(orderkey, value);
             }
             //result += (float) r.get(1) * (float) r.get(2);
         }
@@ -110,10 +129,19 @@ public class NeciScan extends ScanCompare {
             if (!comp) {
                 continue;
             }
+            String mkts = r.get("c_mktsegment").toString();
+            if (mkts.compareTo("BUILDING") != 0) {
+                continue;
+            }
             @SuppressWarnings("unchecked")
             List<Record> orders = (List<Record>) r.get(offsetOrders);
+            boolean meet = false;
             for (Record order : orders) {
                 Long orderkey = (long) order.get("o_orderkey");
+                String odate = order.get("o_orderdate").toString();
+                if (odate.compareTo("1995-03-15") >= 0) {
+                    continue;
+                }
                 String dateship =
                         order.get("o_orderkey").toString().trim() + "|" + order.get("o_shippriority").toString().trim();
                 if (!values.containsKey(dateship)) {
@@ -123,13 +151,23 @@ public class NeciScan extends ScanCompare {
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 float value = .0f;
                 for (Record line : lines) {
+                    String sdate = line.get("l_shipdate").toString();
+                    if (sdate.compareTo("1995-03-15") <= 0) {
+                        continue;
+                    }
                     value += (float) line.get("l_extendedprice") * (1 - (float) line.get("l_discount"));
                     count++;
+                    meet = true;
                 }
-                if (!values.get(dateship).containsKey(orderkey)) {
-                    values.get(dateship).put(orderkey, .0f);
+                if (meet) {
+                    if (!values.containsKey(dateship)) {
+                        values.put(dateship, new HashMap<Long, Float>());
+                    }
+                    if (!values.get(dateship).containsKey(orderkey)) {
+                        values.get(dateship).put(orderkey, .0f);
+                    }
+                    values.get(dateship).put(orderkey, value);
                 }
-                values.get(dateship).put(orderkey, value);
             }
             //result += (float) r.get(1) * (float) r.get(2);
         }

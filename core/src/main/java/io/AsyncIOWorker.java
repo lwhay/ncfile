@@ -94,6 +94,10 @@ public class AsyncIOWorker implements Runnable {
         return columnValues[cidx];
     }
 
+    public BitSet getValid(int cidx) {
+        return valids[cidx];
+    }
+
     public void setSkip(boolean skippingMode) {
         this.skippingMode = skippingMode;
     }
@@ -353,20 +357,34 @@ public class AsyncIOWorker implements Runnable {
         long[] pos = new long[num];
         int[] ends = new int[num];
         byte[][] raws = new byte[num][];
-        String hint = "";
-        /*System.out.println(">Prepare " + cidx + " " + columns[cidx].metaData.getName() + " "
-                + columns[cidx].blockCount() + " " + packed + "\n" + hint);*/
+        /*String hint = "";
+        System.out.println(">Prepare " + cidx + " " + columns[cidx].metaData.getName() + " " + blocks[cidx] + " "
+                + columns[cidx].blockCount() + " " + num);*/
         while (packed < num && blocks[cidx] + cursor < columns[cidx].blockCount()) {
             int bid = blocks[cidx] + cursor;
             rows[cidx] = columns[cidx].firstRows[bid];
-            int m = valids[cidx].nextSetBit(this.rows[cidx]);
+            /*if (cidx == 24 && bid == 0) {
+                System.out.println(valids[cidx].get(0, 10260));
+                for (int t = 0; t < 10; t++) {
+                    String bits = "";
+                    for (int i = columns[cidx].firstRows[bid + t]; i < columns[cidx].lastRow(bid + t); i++) {
+                        if (valids[cidx].get(i)) {
+                            bits += "1";
+                        } else {
+                            bits += "0";
+                        }
+                    }
+                    System.out.println(bits);
+                }
+            }*/
+            /*int m = valids[cidx].nextSetBit(this.rows[cidx]);
             if (m >= 0 && m <= columns[cidx].lastRow(bid)) {
                 hint += "1";
             } else {
                 hint += "0";
-            }
+            }*/
             int nextHit = valids[cidx].nextSetBit(rows[cidx]);
-            if (columnValues[cidx].isArray() || nextHit >= 0 && nextHit <= columns[cidx].lastRow(bid)) {
+            if (columnValues[cidx].isArray() || bid == 0 || nextHit >= 0 && nextHit <= columns[cidx].lastRow(bid)) {
                 bids[packed] = bid;
                 pos[packed] = columns[cidx].blockStarts[bid];
                 ends[packed] = columns[cidx].blocks[bid].getCompressedSize();
@@ -376,7 +394,7 @@ public class AsyncIOWorker implements Runnable {
             cursor++;
         }
         /*System.out.println("<Prepare " + cidx + " " + columns[cidx].metaData.getName() + " "
-                + columns[cidx].blockCount() + " " + packed + "\n" + hint);*/
+                + columns[cidx].blockCount() + " " + packed + " " + cursor + "\n" + hint);*/
         blocks[cidx] += cursor;
 
         // Read.

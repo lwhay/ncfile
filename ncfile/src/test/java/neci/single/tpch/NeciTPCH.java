@@ -38,7 +38,7 @@ public class NeciTPCH extends ScanCompare {
         long start = System.currentTimeMillis();
         @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[1];
-        filters[0] = new ShipdateSmallerEqualFilter("1998-09-01");
+        filters[0] = new ShipdateSmallerEqualFilter("1992-01-03");
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         reader.createSchema(readSchema);
         int count = 0;

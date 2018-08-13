@@ -78,6 +78,8 @@ public class BatchColumnFileWriter {
         readers = new BatchColumnFileReader[files.length];
         for (int i = 0; i < files.length; i++) {
             readers[i] = new BatchColumnFileReader(files[i]);
+            // We can use Aio without skipping for better performance.
+            readers[i].getBlockManager().diableAio();
         }
     }
 

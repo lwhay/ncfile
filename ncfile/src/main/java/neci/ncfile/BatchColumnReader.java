@@ -441,6 +441,11 @@ public class BatchColumnReader<D> implements Closeable {
 
     @Override
     public void close() throws IOException {
+        try {
+            reader.getBlockManager().closeAio();
+        } catch (InterruptedException e) {
+            throw new NeciRuntimeException("Cannot close aio");
+        }
         reader.close();
     }
 }

@@ -15,6 +15,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import exceptions.NeciRuntimeException;
 import io.AsyncIOWorker;
 import io.BlockInputBuffer;
 import misc.BlockInputBufferQueue;
@@ -112,6 +113,12 @@ public class BlockManager {
         }
     }
 
+    public void diableAio() {
+        if (AIO_OPEN) {
+            AIO_OPEN = false;
+        }
+    }
+
     public void closeAio() throws InterruptedException {
         if (AIO_OPEN) {
             ioWorker.terminate();
@@ -168,8 +175,9 @@ public class BlockManager {
 
     public PositionalBlock<Integer, BlockInputBuffer> fetch(int cidx, int block) throws InterruptedException {
         int found = -1;
-        /*System.out.println("\t>Dequeue" + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
-                + ioWorker.getColumnValue(cidx).getBlockCount());*/
+        /*if (isFetching)
+            System.out.println("\t>Dequeue " + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
+                    + ioWorker.getColumnValue(cidx).getBlockCount());*/
         while (found < 0) {
             if (cursors[cidx] < BlockManager.QUEUE_SLOT_DEFAULT_SIZE) {
                 while (cursors[cidx] < currentBlocks[cidx].length) {
@@ -178,6 +186,23 @@ public class BlockManager {
                         break;
                     }
                     ++cursors[cidx];
+                    if (cursors[cidx] > block + 1) {
+                        /*System.out.println(ioWorker.getValid(cidx).get(0, 10260));
+                        for (int t = 0; t < 10; t++) {
+                            String hint = "";
+                            for (int i = ioWorker.getColumnValue(cidx).getColumnDescriptor().firstRows[cursors[cidx]
+                                    + t]; i < ioWorker.getColumnValue(cidx).getColumnDescriptor()
+                                            .lastRow(cursors[cidx] + t); i++) {
+                                if (ioWorker.getValid(cidx).get(i)) {
+                                    hint += "1";
+                                } else {
+                                    hint += "0";
+                                }
+                            }
+                            System.out.println("Exception on " + cidx + " " + block + "\n" + hint);
+                        }*/
+                        throw new NeciRuntimeException("Lose block on Sender: " + cidx + " " + block);
+                    }
                 }
             }
             if (found < 0) {
@@ -187,8 +212,9 @@ public class BlockManager {
                 cursors[cidx] = 0;
             }
         }
-        /*System.out.println("\t<Dequeue" + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
-                + ioWorker.getColumnValue(cidx).getBlockCount());*/
+        /*if (isFetching)
+            System.out.println("\t<Dequeue " + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
+                    + ioWorker.getColumnValue(cidx).getBlockCount());*/
         return currentBlocks[cidx][found];
     }
 
