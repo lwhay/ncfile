@@ -555,17 +555,25 @@ public class AsyncIOWorker implements Runnable {
                         currentPriority = priority;
                     }
                 }
+                int balancingPeriod = (int) (BlockManager.BASIC_SLEEP_PERIOD
+                        * ((intendingColumns % 10) * BlockManager.DEFAULT_PRIORITY - currentPriority));
                 if (idle) {
                     if (BlockManager.DYNAMIC_PRIORITY) {
-                        period += BlockManager.BASIC_SLEEP_PERIOD
-                                * ((intendingColumns % 10) * BlockManager.DEFAULT_PRIORITY - currentPriority);
+                        if (balancingPeriod > lastProcessingPeriod) {
+                            period += lastProcessingPeriod;
+                        } else {
+                            period += balancingPeriod;
+                        }
                     } else {
                         period += 20;
                     }
                 } else {
                     if (BlockManager.DYNAMIC_PRIORITY) {
-                        period = (int) (BlockManager.BASIC_SLEEP_PERIOD
-                                * ((intendingColumns % 10) * BlockManager.DEFAULT_PRIORITY - currentPriority));
+                        if (balancingPeriod > lastProcessingPeriod) {
+                            period = (int) lastProcessingPeriod;
+                        } else {
+                            period = balancingPeriod;
+                        }
                         lastProcessingPeriod = thisProcessingPeriod;
                         //intendingColumns++;
                     } else {

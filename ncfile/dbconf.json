@@ -1,7 +1,7 @@
 {
 	"AIO_OPEN": true,
 	"TRACE_IO": true,
-	"FILE_LOCK": false,
+	"FILE_LOCK": true,
 	"SKIPPING_MODE": true,
 	"DYNAMIC_PRIORITY": true,
 	"QUEUE_SLOT_DEFAULT_SIZE": 128,

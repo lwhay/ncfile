@@ -182,6 +182,7 @@ public class BlockManager {
         return this.bufferQueues;
     }
 
+    @SuppressWarnings("static-access")
     public PositionalBlock<Integer, BlockInputBuffer> fetch(int cidx, int block) throws InterruptedException {
         int found = -1;
         /*if (isFetching)
@@ -195,7 +196,7 @@ public class BlockManager {
                         break;
                     }
                     ++cursors[cidx];
-                    if (cursors[cidx] > block + 1) {
+                    if (this.SKIPPING_MODE && cursors[cidx] > block + 1) {
                         /*System.out.println(ioWorker.getValid(cidx).get(0, 10260));
                         for (int t = 0; t < 10; t++) {
                             String hint = "";
