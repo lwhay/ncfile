@@ -1,11 +1,13 @@
 {
-	"AIO_OPEN": true,
-	"TRACE_IO": true,
-	"FILE_LOCK": true,
-	"SKIPPING_MODE": true,
-	"DYNAMIC_PRIORITY": true,
-	"QUEUE_SLOT_DEFAULT_SIZE": 128,
-	"QUEUE_LENGTH_LOW_THRESHOLD": 56,
-	"QUEUE_LENGTH_HIGH_THRESHOLD": 64,
-	"MAX_FETCH_SIZE": 256
+        "AIO_OPEN": true,
+        "TRACE_IO": true,
+        "FILE_LOCK": true,
+        "SKIPPING_MODE": false,
+        "DYNAMIC_PRIORITY": true,
+        "BASIC_SLEEP_PERIOD": 5,
+        "CUTOFF_SLEEP_PERIOD": 5,
+        "QUEUE_SLOT_DEFAULT_SIZE": 256,
+        "QUEUE_LENGTH_LOW_THRESHOLD": 15,
+        "QUEUE_LENGTH_HIGH_THRESHOLD": 16,
+        "MAX_FETCH_SIZE": 256
 }

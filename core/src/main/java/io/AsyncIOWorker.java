@@ -565,7 +565,7 @@ public class AsyncIOWorker implements Runnable {
                             period += balancingPeriod;
                         }
                     } else {
-                        period += 20;
+                        period += BlockManager.BASIC_SLEEP_PERIOD;
                     }
                 } else {
                     if (BlockManager.DYNAMIC_PRIORITY) {
@@ -577,7 +577,7 @@ public class AsyncIOWorker implements Runnable {
                         lastProcessingPeriod = thisProcessingPeriod;
                         //intendingColumns++;
                     } else {
-                        period = 0;
+                        period = BlockManager.BASIC_SLEEP_PERIOD;
                     }
                 }
                 /*if (idle) {
