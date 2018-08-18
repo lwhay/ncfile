@@ -147,6 +147,10 @@ public class AsyncIOWorker implements Runnable {
         isReady = false;
     }
 
+    public boolean isValid(int cidx) {
+        return intended[cidx];
+    }
+
     public boolean trigger(int cidx, BitSet valid) {
         /*System.out.println("Trigger " + columns[cidx].metaData.getName());*/
         while (intended[cidx]) {

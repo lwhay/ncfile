@@ -219,6 +219,12 @@ public class BlockManager {
             }
             if (found < 0) {
                 long begin = System.nanoTime();
+                int idlePeriod = 1;
+                while (ioWorker != null && ioWorker.isValid(cidx)
+                        && bufferQueues[cidx].size() < QUEUE_LENGTH_LOW_THRESHOLD) {
+                    Thread.sleep(BASIC_SLEEP_PERIOD * idlePeriod);
+                    idlePeriod += BASIC_SLEEP_PERIOD;
+                }
                 currentBlocks[cidx] = bufferQueues[cidx].take();
                 aioFetchTime += (System.nanoTime() - begin);
                 cursors[cidx] = 0;
