@@ -221,7 +221,7 @@ public class BlockManager {
                 long begin = System.nanoTime();
                 int idlePeriod = 1;
                 while (ioWorker != null && ioWorker.isValid(cidx)
-                        && bufferQueues[cidx].size() < QUEUE_LENGTH_LOW_THRESHOLD) {
+                        && bufferQueues[cidx].size() < QUEUE_LENGTH_HIGH_THRESHOLD - QUEUE_LENGTH_LOW_THRESHOLD) {
                     Thread.sleep(BASIC_SLEEP_PERIOD * idlePeriod);
                     idlePeriod += BASIC_SLEEP_PERIOD;
                 }
