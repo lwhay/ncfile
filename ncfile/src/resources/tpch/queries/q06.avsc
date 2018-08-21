@@ -1,18 +1,6 @@
-{"type": "record", "name": "Customer",
- "fields": [
-	 {"name": "OrderList", "type":{"type": "array",
-	  "items":{"type": "record", "name": "Order",
-	   "fields": [
-		 {"name": "LineitemList", "type":{"type": "array",
-		  "items": {"type": "record", "name": "Lineitem",
+{"type": "record", "name": "Lineitem",
 		   "fields": [
 			 {"name": "l_extendedprice", "type": "float"},
 			 {"name": "l_discount", "type": "float"}
-         ]
-        }
-       }}
-     ]
-    }
-   }}
  ]
 }

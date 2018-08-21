@@ -1,0 +1,16 @@
+{"type": "record", "name": "Part",
+ "fields": [
+     {"name": "p_partkey", "type": "long", "order": "ignore"},
+     {"name": "p_mfgr", "type": "string"},
+     {"name": "p_type", "type": "string"},
+     {"name": "p_size", "type": "int"},
+	 {"name": "PartsuppList", "type":{"type": "array",
+	  "items":{"type": "record", "name": "Partsupp",
+	   "fields": [
+		 {"name": "ps_suppkey", "type": "long"}
+		 {"name": "ps_supplycost", "type": "float"}
+      ]
+	 }
+   }}
+ ]
+}
