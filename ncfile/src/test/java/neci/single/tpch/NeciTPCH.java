@@ -9,8 +9,11 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import neci.ncfile.FilterBatchColumnReader;
 import neci.ncfile.FilterOperator;
@@ -27,6 +30,7 @@ import neci.parallel.tpch.filter.PsizeEqualFilter;
 import neci.parallel.tpch.filter.PtypeLikeFilter;
 import neci.parallel.tpch.filter.QuantitySmallerFilter;
 import neci.parallel.tpch.filter.ReturnflagEqualFilter;
+import neci.parallel.tpch.filter.ShipdateBetweenFilter;
 import neci.parallel.tpch.filter.ShipdateLargerFilter;
 import neci.parallel.tpch.filter.ShipdateLeftBetweenFilter;
 import neci.parallel.tpch.filter.ShipdateSmallerEqualFilter;
@@ -440,18 +444,25 @@ public class NeciTPCH extends ScanCompare {
         int max = Integer.parseInt(args[2]);
         int blockSize = Integer.parseInt(args[4]);
         long start = System.currentTimeMillis();
+        Set<String> nations = new HashSet<>();
+        nations.add("GERMANY");
+        nations.add("FRANCE");
         BitSet indicators = new BitSet();
         indicators.set(3);
-        SupplierHelper minSuppcost = new SupplierHelper("ASIA", indicators);
+        SupplierHelper minSuppcost = new SupplierHelper("ANY", nations, indicators);
         minSuppcost.init();
         Map<Long, String[]> supplyNations = minSuppcost.getValidSuppCosts();
+        Map<Long, Integer> supplyNationKeys = new HashMap<>();
+        for (Entry<Long, String[]> entry : supplyNations.entrySet()) {
+            supplyNationKeys.put(entry.getKey(), Integer.parseInt(entry.getValue()[0]));
+        }
         Map<Integer, String> nationNames = minSuppcost.getNationNames();
         @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[3];
         // We have applied innermost verification for the equality of equal-region supplier and customer.
         filters[0] = new CnationkeyContainedbyFilter(nationNames.keySet());
-        filters[1] = new OrderdateLeftBetweenFilter("1994-01-01", "1995-01-01");
-        filters[2] = new LsuppkeyContainedbyFilter(supplyNations.keySet());
+        filters[1] = new LsuppkeyContainedbyFilter(supplyNations.keySet());
+        filters[2] = new ShipdateBetweenFilter("1995-01-01", "1996-12-31");
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         reader.createSchema(readSchema);
         int count = 0;
@@ -470,31 +481,33 @@ public class NeciTPCH extends ScanCompare {
                 continue;
             }
             int c_nationkey = (int) r.get("c_nationkey");
-            /*System.out.println(nationNames.get(c_nationkey));*/
             @SuppressWarnings("unchecked")
             List<Record> orders = (List<Record>) r.get(offsetOrders);
-            float value = .0f;
             for (Record order : orders) {
                 @SuppressWarnings("unchecked")
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 for (Record line : lines) {
                     long l_suppkey = (long) line.get("l_suppkey");
-                    if (Integer.parseInt(supplyNations.get(l_suppkey)[0]) == c_nationkey) {
+                    int suppNationKey = supplyNationKeys.get(l_suppkey);
+                    if (suppNationKey != c_nationkey) {
+                        String key = "";
+                        key += nationNames.get(c_nationkey);
+                        key += "|";
+                        key += nationNames.get(suppNationKey);
+                        key += "|";
+                        key += line.get("l_shipdate").toString().substring(0, 4);
+                        float value = .0f;
+                        if (values.containsKey(key)) {
+                            value = values.get(key);
+                        }
                         value += (float) line.get("l_extendedprice") * (1 - (float) line.get("l_discount"));
+                        values.put(key, value);
+                        count++;
                     } else {
-                        /*System.out.println("l-s-nk: " + Integer.parseInt(supplyNations.get(l_suppkey)[0]) + " c_nk: "
-                                + c_nationkey + " <-> " + nationNames.get(c_nationkey));*/
                         redundant++;
                     }
-                    count++;
                 }
             }
-            String nationName = nationNames.get(c_nationkey);
-            if (!values.containsKey(nationName)) {
-                values.put(nationName, .0f);
-            }
-            values.put(nationName, values.get(nationName) + value);
-            //result += (float) r.get(1) * (float) r.get(2);
         }
         result = result / sum * 100;
         long end = System.currentTimeMillis();
@@ -509,6 +522,7 @@ public class NeciTPCH extends ScanCompare {
                 + reader.getBlockManager().getReadLength() / reader.getBlockManager().getTotalRead());
         reader.close();
     }
+
     public static void Q10_FilteringScan(String[] args) throws IOException {
         File file = new File(args[0]);
         Schema readSchema = new Schema.Parser().parse(new File(args[1]));
@@ -728,6 +742,9 @@ public class NeciTPCH extends ScanCompare {
                 break;
             case "q06":
                 Q06_FilteringScan(args);
+                break;
+            case "q07":
+                Q07_FilteringScan(args);
                 break;
             case "q10":
                 Q10_FilteringScan(args);

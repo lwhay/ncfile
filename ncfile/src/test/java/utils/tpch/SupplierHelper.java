@@ -37,9 +37,16 @@ public class SupplierHelper {
 
     private Map<Integer, String> nationNames = new HashMap<>();
 
+    private Set<String> nations = null;
+
     public SupplierHelper(String region, BitSet indicators) {
         this.regionName = region;
         this.indicators = indicators;
+    }
+
+    public SupplierHelper(String region, Set<String> nations, BitSet indicators) {
+        this(region, indicators);
+        this.nations = nations;
     }
 
     public void init() throws IOException {
@@ -49,7 +56,7 @@ public class SupplierHelper {
         Set<Integer> regionKeys = new HashSet<>();
         while ((line = brg.readLine()) != null) {
             String[] flds = line.split("\\|");
-            if (flds[1].equals(regionName)) {
+            if (regionName.equals("ANY") || flds[1].equals(regionName)) {
                 regionKeys.add(Integer.parseInt(flds[0]));
             }
         }
@@ -58,9 +65,17 @@ public class SupplierHelper {
         Set<Integer> nationKeys = new HashSet<>();
         while ((line = brn.readLine()) != null) {
             String[] flds = line.split("\\|");
-            if (regionKeys.contains(Integer.parseInt(flds[2]))) {
-                nationKeys.add(Integer.parseInt(flds[0]));
-                nationNames.put(Integer.parseInt(flds[0]), flds[1]);
+            if (nations == null) {
+                if (regionKeys.contains(Integer.parseInt(flds[2]))) {
+                    nationKeys.add(Integer.parseInt(flds[0]));
+                    nationNames.put(Integer.parseInt(flds[0]), flds[1]);
+                }
+            } else {
+                if (regionKeys.contains(Integer.parseInt(flds[2])) && nations.contains(flds[1])) {
+                    nationKeys.add(Integer.parseInt(flds[0]));
+                    // nationNames satisfies both nations and regions.
+                    nationNames.put(Integer.parseInt(flds[0]), flds[1]);
+                }
             }
         }
         brn.close();

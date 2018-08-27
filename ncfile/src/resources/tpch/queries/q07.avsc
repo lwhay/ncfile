@@ -7,8 +7,10 @@
 		 {"name": "LineitemList", "type":{"type": "array",
 		  "items": {"type": "record", "name": "Lineitem",
 		   "fields": [
+			 {"name": "l_suppkey", "type": "long"},
 			 {"name": "l_extendedprice", "type": "float"},
-			 {"name": "l_discount", "type": "float"}
+			 {"name": "l_discount", "type": "float"},
+			 {"name": "l_shipdate", "type": "string"}
          ]
         }
        }}
