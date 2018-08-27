@@ -41,7 +41,7 @@ public class NeciPredicates {
         long start = System.currentTimeMillis();
         Set<String> nations = new HashSet<>();
         for (int i = 0; i < nationCount; i++) {
-            nations.add(args[5 + i]);
+            nations.add(args[7 + i]);
         }
         BitSet indicators = new BitSet();
         SupplierHelper minSuppcost = new SupplierHelper("ANY", indicators);
@@ -53,7 +53,7 @@ public class NeciPredicates {
         // We have applied innermost verification for the equality of equal-region supplier and customer.
         filters[0] = new CnationkeyContainedbyFilter(nationNames.keySet());
         filters[1] = new LsuppkeyContainedbyFilter(supplyNations.keySet());
-        filters[2] = new ShipdateBetweenFilter("1994-01-01", "1995-01-01");
+        filters[2] = new ShipdateBetweenFilter(args[5], args[6]);
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         reader.createSchema(readSchema);
         int count = 0;

@@ -43,6 +43,7 @@ public class BlockManager {
     public static boolean FILE_LOCK = false;
     public static boolean SKIPPING_MODE = true;
     public static boolean DYNAMIC_PRIORITY = true;
+    public static boolean READER_SLEEP = true;
     public static int BASIC_SLEEP_PERIOD = 5;
     public static int CUTOFF_SLEEP_PERIOD = 10;
     public static int QUEUE_SLOT_DEFAULT_SIZE = 32;
@@ -94,6 +95,7 @@ public class BlockManager {
             FILE_LOCK = conf.path("FILE_LOCK").asBoolean();
             SKIPPING_MODE = conf.path("SKIPPING_MODE").asBoolean();
             DYNAMIC_PRIORITY = conf.path("DYNAMIC_PRIORITY").asBoolean();
+            READER_SLEEP = conf.path("READER_SLEEP").asBoolean();
             BASIC_SLEEP_PERIOD = conf.path("BASIC_SLEEP_PERIOD").asInt();
             CUTOFF_SLEEP_PERIOD = conf.path("CUTOFF_SLEEP_PERIOD").asInt();
             QUEUE_SLOT_DEFAULT_SIZE = conf.path("QUEUE_SLOT_DEFAULT_SIZE").asInt();
@@ -220,10 +222,12 @@ public class BlockManager {
             if (found < 0) {
                 long begin = System.nanoTime();
                 int idlePeriod = 1;
-                while (ioWorker != null && ioWorker.isValid(cidx)
-                        && bufferQueues[cidx].size() < QUEUE_LENGTH_HIGH_THRESHOLD - QUEUE_LENGTH_LOW_THRESHOLD) {
-                    Thread.sleep(BASIC_SLEEP_PERIOD * idlePeriod);
-                    idlePeriod += BASIC_SLEEP_PERIOD;
+                if (READER_SLEEP) {
+                    while (ioWorker != null && ioWorker.isValid(cidx)
+                            && bufferQueues[cidx].size() < QUEUE_LENGTH_HIGH_THRESHOLD - QUEUE_LENGTH_LOW_THRESHOLD) {
+                        Thread.sleep(BASIC_SLEEP_PERIOD * idlePeriod);
+                        idlePeriod += BASIC_SLEEP_PERIOD;
+                    }
                 }
                 currentBlocks[cidx] = bufferQueues[cidx].take();
                 aioFetchTime += (System.nanoTime() - begin);
