@@ -515,7 +515,6 @@ public class AsyncIOWorker implements Runnable {
                                     bids[regular - (tid - pid)], dcpCaches[pid]);
                             /*System.out
                                     .println("\t<=" + bids[regular - (tid - pid)] + " v" + dcpCaches[pid] + " p" + pid);*/
-                            dcpCaches[pid] = null;
                         }
                     }
                     regular++;
