@@ -44,6 +44,7 @@ public class BlockManager {
     public static boolean SKIPPING_MODE = true;
     public static boolean DYNAMIC_PRIORITY = true;
     public static boolean READER_SLEEP = true;
+    public static int COMPRESSION_THREADS = 0;
     public static int BASIC_SLEEP_PERIOD = 5;
     public static int CUTOFF_SLEEP_PERIOD = 10;
     public static int QUEUE_SLOT_DEFAULT_SIZE = 32;
@@ -96,6 +97,7 @@ public class BlockManager {
             SKIPPING_MODE = conf.path("SKIPPING_MODE").asBoolean();
             DYNAMIC_PRIORITY = conf.path("DYNAMIC_PRIORITY").asBoolean();
             READER_SLEEP = conf.path("READER_SLEEP").asBoolean();
+            COMPRESSION_THREADS = conf.path("COMPRESSION_THREADS").asInt();
             BASIC_SLEEP_PERIOD = conf.path("BASIC_SLEEP_PERIOD").asInt();
             CUTOFF_SLEEP_PERIOD = conf.path("CUTOFF_SLEEP_PERIOD").asInt();
             QUEUE_SLOT_DEFAULT_SIZE = conf.path("QUEUE_SLOT_DEFAULT_SIZE").asInt();
@@ -230,10 +232,13 @@ public class BlockManager {
                     }
                 }
                 currentBlocks[cidx] = bufferQueues[cidx].take();
+                /*System.out.println("\t?" + block + " k" + currentBlocks[cidx][0].getKey() + " v"
+                        + currentBlocks[cidx][0].getValue());*/
                 aioFetchTime += (System.nanoTime() - begin);
                 cursors[cidx] = 0;
             }
         }
+        /*System.out.println("?" + block + " v" + currentBlocks[cidx][found].getValue());*/
         /*if (isFetching)
             System.out.println("\t<Dequeue " + block + " " + ioWorker.getColumnValue(cidx).getName() + " "
                     + ioWorker.getColumnValue(cidx).getBlockCount());*/
