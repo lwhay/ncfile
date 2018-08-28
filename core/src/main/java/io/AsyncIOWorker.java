@@ -240,7 +240,11 @@ public class AsyncIOWorker implements Runnable {
         }
         isReady = false;
         if (dcpWorkers != null) {
+            int runnerId = 0;
             for (Thread worker : dcpWorkers) {
+                synchronized (idling[runnerId]) {
+                    idling[runnerId].notify();
+                }
                 worker.interrupt();
             }
         }
@@ -597,7 +601,10 @@ public class AsyncIOWorker implements Runnable {
 
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.interrupted()) {
+                if (terminate) {
+                    System.exit(0);
+                }
                 synchronized (tid) {
                     try {
                         tid.wait();
