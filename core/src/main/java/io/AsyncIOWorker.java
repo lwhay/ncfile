@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import codec.Codec;
 import columnar.BlockColumnValues;
 import columnar.BlockManager;
 import columnar.ColumnDescriptor;
@@ -151,6 +152,14 @@ public class AsyncIOWorker implements Runnable {
             if (intended[i]) {
                 blocks[i] = 0;
                 rows[i] = 0;
+                if (dcpRunners != null) {
+                    for (DecompressionWorker runner : dcpRunners) {
+                        if (runner.getCodec() == null || !runner.getCodec().getClass().getName()
+                                .equals(columnValues[i].getCodec().getClass().getName())) {
+                            runner.setCodec(Codec.get(columns[i].metaData));
+                        }
+                    }
+                }
             }
         }
         synchronized (ioPending) {
@@ -211,6 +220,14 @@ public class AsyncIOWorker implements Runnable {
         valids[cidx] = valid;
         intendingColumns++;
 
+        if (dcpRunners != null) {
+            for (DecompressionWorker runner : dcpRunners) {
+                if (runner.getCodec() == null || !runner.getCodec().getClass().getName()
+                        .equals(columnValues[cidx].getCodec().getClass().getName())) {
+                    runner.setCodec(Codec.get(columns[cidx].metaData));
+                }
+            }
+        }
         synchronized (ioPending) {
             ioPending.notify();
         }
@@ -589,6 +606,7 @@ public class AsyncIOWorker implements Runnable {
         public boolean running = false;
         private final Integer tid;
         private List<DecompressionTask> tasks;
+        private Codec codec = null;
 
         public DecompressionWorker(Integer tid) {
             this.tid = tid;
@@ -600,6 +618,14 @@ public class AsyncIOWorker implements Runnable {
 
         public List<DecompressionTask> getTasks() {
             return tasks;
+        }
+
+        public void setCodec(Codec codec) {
+            this.codec = codec;
+        }
+
+        public Codec getCodec() {
+            return codec;
         }
 
         @Override
@@ -619,7 +645,8 @@ public class AsyncIOWorker implements Runnable {
                 try {
                     int taskId = 0;
                     for (DecompressionTask task : tasks) {
-                        dcpCaches[tid][taskId] = decompression(task.cidx, task.bidx, task.raw, task.len);
+                        dcpCaches[tid][taskId] = aioDecompression(codec, task.cidx, task.bidx, task.raw, task.len);
+                        //dcpCaches[tid][taskId] = decompression(task.cidx, task.bidx, task.raw, task.len);
                         taskId++;
                     }
                     while (running) {
@@ -632,6 +659,67 @@ public class AsyncIOWorker implements Runnable {
                 }
             }
         }
+    }
+
+    private BlockInputBuffer aioDecompression(Codec codec, int cidx, int bidx, byte[] raw, int len) throws IOException {
+        BlockInputBuffer value;
+        if (isUnion[cidx]) {
+            if (columns[cidx].getCodecName().equals("null")) {
+                value = new UnionInputBuffer(ByteBuffer.wrap(raw, 0, len), columns[cidx].blocks[bidx].getRowCount(),
+                        unionBits[cidx], unionArray[cidx]);
+            } else {
+                ByteBuffer data = null;
+                if (columns[cidx].blocks[bidx].getUncompressedSize() >= columns[cidx].blocks[bidx]
+                        .getCompressedSize()) {
+                    data = ByteBuffer.allocate(columns[cidx].blocks[bidx].getUncompressedSize());
+                } else {
+                    data = ByteBuffer.allocate(columns[cidx].blocks[bidx].getCompressedSize());
+                }
+                ByteBuffer buf3 =
+                        codec.decompress(ByteBuffer.wrap(raw, 0, columns[cidx].blocks[bidx].getLengthUnion()));
+                int pos0 = 0;
+                int len0 = buf3.limit();
+                System.arraycopy(buf3.array(), 0, data.array(), pos0, len0);
+                ByteBuffer buf1 = codec.decompress(ByteBuffer.wrap(raw, columns[cidx].blocks[bidx].getLengthUnion(),
+                        columns[cidx].blocks[bidx].getLengthOffset()));
+                int pos1 = buf3.remaining();
+                int len1 = buf1.remaining();
+                System.arraycopy(buf1.array(), buf1.position(), data.array(), pos1, len1);
+                int pos2 = -1;
+                int len2 = -1;
+                if (columns[cidx].blocks[bidx].getLengthPayload() != 0) {
+                    ByteBuffer buf2 = codec.decompress(ByteBuffer.wrap(raw,
+                            columns[cidx].blocks[bidx].getLengthUnion() + columns[cidx].blocks[bidx].getLengthOffset(),
+                            columns[cidx].blocks[bidx].getLengthPayload()));
+                    pos2 = buf3.remaining() + buf1.remaining();
+                    len2 = buf2.remaining();
+                    System.arraycopy(buf2.array(), buf2.position(), data.array(), pos2, len2);
+                }
+                value = new UnionInputBuffer(data, columns[cidx].blocks[bidx].getRowCount(), unionBits[cidx],
+                        unionArray[cidx]);
+            }
+        } else {
+            if (columns[cidx].getCodecName().equals("null")) {
+                value = new BlockInputBuffer(ByteBuffer.wrap(raw, 0, len), columns[cidx].blocks[bidx].getRowCount());
+            } else if (columns[cidx].blocks[bidx].getLengthOffset() != 0) {
+                ByteBuffer data = ByteBuffer.allocate(columns[cidx].blocks[bidx].getUncompressedSize());
+                ByteBuffer buf1 = codec.decompress(ByteBuffer.wrap(raw, columns[cidx].blocks[bidx].getLengthUnion(),
+                        columns[cidx].blocks[bidx].getLengthOffset()));
+                System.arraycopy(buf1.array(), 0, data.array(), 0, buf1.limit());
+                ByteBuffer buf2 = codec.decompress(ByteBuffer.wrap(raw,
+                        columns[cidx].blocks[bidx].getLengthUnion() + columns[cidx].blocks[bidx].getLengthOffset(),
+                        columns[cidx].blocks[bidx].getLengthPayload()));
+                System.arraycopy(buf2.array(), buf2.position(), data.array(), buf1.limit(), buf2.remaining());
+                value = new BlockInputBuffer(data, columns[cidx].blocks[bidx].getRowCount());
+            } else {
+                byte[] buf2 = codec.decompress(ByteBuffer.wrap(raw,
+                        columns[cidx].blocks[bidx].getLengthUnion() + columns[cidx].blocks[bidx].getLengthOffset(),
+                        columns[cidx].blocks[bidx].getLengthPayload())).array();
+                value = new BlockInputBuffer(ByteBuffer.wrap(buf2), columns[cidx].blocks[bidx].getRowCount());
+            }
+        }
+        /*System.out.println("%%%%c" + cidx + " b" + bidx + " v" + value + " l" + len);*/
+        return value;
     }
 
     private BlockInputBuffer decompression(int cidx, int bidx, byte[] raw, int len) throws IOException {
