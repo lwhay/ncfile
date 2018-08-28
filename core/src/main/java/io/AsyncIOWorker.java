@@ -54,7 +54,7 @@ public class AsyncIOWorker implements Runnable {
     private long lastProcessingPeriod = 0;
     private int CompressionThreads = 0;
 
-    private BlockInputBuffer[] dcpCaches;
+    private BlockInputBuffer[][] dcpCaches;
     private Integer[] idling;
     private Thread[] dcpWorkers;
     private DecompressionWorker[] dcpRunners;
@@ -101,7 +101,7 @@ public class AsyncIOWorker implements Runnable {
         if (skippingMode && BlockManager.COMPRESSION_THREADS > 0) {
             CompressionThreads = BlockManager.COMPRESSION_THREADS;
             idling = new Integer[CompressionThreads];
-            dcpCaches = new BlockInputBuffer[CompressionThreads];
+            dcpCaches = new BlockInputBuffer[CompressionThreads][];
             dcpWorkers = new Thread[CompressionThreads];
             dcpRunners = new DecompressionWorker[CompressionThreads];
             /*System.out.println("Number of compression threads: " + CompressionThreads);*/
@@ -110,6 +110,7 @@ public class AsyncIOWorker implements Runnable {
                 dcpRunners[i] = new DecompressionWorker(idling[i]);
                 dcpWorkers[i] = new Thread(dcpRunners[i]);
                 dcpWorkers[i].start();
+                dcpCaches[i] = new BlockInputBuffer[BlockManager.QUEUE_SLOT_DEFAULT_SIZE / CompressionThreads];
             }
         }
     }
@@ -246,6 +247,7 @@ public class AsyncIOWorker implements Runnable {
                     idling[runnerId].notify();
                 }
                 worker.interrupt();
+                runnerId++;
             }
         }
         System.exit(0);
@@ -490,86 +492,76 @@ public class AsyncIOWorker implements Runnable {
             for (int i = 0; i < packed / BlockManager.QUEUE_SLOT_DEFAULT_SIZE; i++) {
                 PositionalBlock<Integer, BlockInputBuffer>[] pbs =
                         new PositionalBlock[BlockManager.QUEUE_SLOT_DEFAULT_SIZE];
+                int taskGran = BlockManager.QUEUE_SLOT_DEFAULT_SIZE / CompressionThreads;
+                List<DecompressionTask> tasks = new ArrayList<DecompressionTask>();
+                int tid = 0;
                 for (int k = 0; k < BlockManager.QUEUE_SLOT_DEFAULT_SIZE; k++) {
-                    int tid = k % CompressionThreads;
-                    dcpRunners[tid].trigger(cidx, bids[regular], raws[regular], ends[regular]);
-                    while (!dcpRunners[tid].running) {
-                        synchronized (idling[tid]) {
-                            idling[tid].notify();
-                        }
-                    }
-                    /*System.out.println("\t==" + bids[regular] + " v" + dcpCaches[tid] + " p" + tid);*/
-                    if (tid == CompressionThreads - 1) {
-                        for (int pid = 0; pid < CompressionThreads; pid++) {
-                            /*System.out
-                                    .println("\t>=" + bids[regular - (tid - pid)] + " v" + dcpCaches[pid] + " p" + pid);*/
-                            synchronized (idling[pid]) {
-                                try {
-                                    idling[pid].wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                dcpRunners[pid].running = false;
+                    tasks.add(new DecompressionTask(cidx, bids[regular], raws[regular], ends[regular]));
+                    if ((k + 1) % taskGran == 0) {
+                        dcpRunners[tid].trigger(tasks);
+                        while (!dcpRunners[tid].running) {
+                            synchronized (idling[tid]) {
+                                idling[tid].notify();
                             }
-                            pbs[k - (tid - pid)] = new PositionalBlock<Integer, BlockInputBuffer>(
-                                    bids[regular - (tid - pid)], dcpCaches[pid]);
-                            /*System.out
-                                    .println("\t<=" + bids[regular - (tid - pid)] + " v" + dcpCaches[pid] + " p" + pid);*/
                         }
+                        tasks = new ArrayList<DecompressionTask>();
+                        tid++;
                     }
                     regular++;
                 }
-                /*System.out.println("*" + regular + " v" + pbs[0].getValue());*/
+
+                for (int pid = 0; pid < CompressionThreads; pid++) {
+                    synchronized (idling[pid]) {
+                        try {
+                            idling[pid].wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        dcpRunners[pid].running = false;
+                    }
+                    for (int k = 0; k < taskGran; k++) {
+                        pbs[pid * taskGran + k] = new PositionalBlock<Integer, BlockInputBuffer>(
+                                dcpRunners[pid].getTasks().get(k).bidx, dcpCaches[pid][k]);
+                    }
+                }
                 packedlist.add(pbs);
             }
 
             if (regular < packed) {
                 PositionalBlock<Integer, BlockInputBuffer>[] pbs = new PositionalBlock[packed - regular];
                 int rest = packed - regular;
+                int taskGran = rest / CompressionThreads + 1;
+                List<DecompressionTask> tasks = new ArrayList<DecompressionTask>();
+                int tid = 0;
                 for (int k = 0; k < rest; k++) {
-                    int tid = k % CompressionThreads;
-                    dcpRunners[tid].trigger(cidx, bids[regular], raws[regular], ends[regular]);
-                    while (!dcpRunners[tid].running) {
-                        synchronized (idling[tid]) {
-                            idling[tid].notify();
-                        }
-                    }
-                    if (tid == CompressionThreads - 1) {
-                        for (int pid = 0; pid < CompressionThreads; pid++) {
-                            /*System.out.println("\t>$" + bids[regular - (tid - pid)] + " t" + tid + " p" + pid
-                                    + " out of" + packed + " r" + regular);*/
-                            synchronized (idling[pid]) {
-                                try {
-                                    idling[pid].wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                dcpRunners[pid].running = false;
+                    tasks.add(new DecompressionTask(cidx, bids[regular], raws[regular], ends[regular]));
+                    if ((k + 1) % taskGran == 0 || k == rest - 1) {
+                        dcpRunners[tid].trigger(tasks);
+                        while (!dcpRunners[tid].running) {
+                            synchronized (idling[tid]) {
+                                idling[tid].notify();
                             }
-                            pbs[k - (tid - pid)] = new PositionalBlock<Integer, BlockInputBuffer>(
-                                    bids[regular - (tid - pid)], dcpCaches[pid]);
-                            /*System.out.println("\t<$" + bids[regular - (tid - pid)] + " t" + tid + " p" + pid
-                                    + " out of" + packed + " r" + regular);*/
                         }
-                    } else if (k == rest - 1) {
-                        for (int pid = 0; pid < rest % CompressionThreads; pid++) {
-                            /*System.out.println("\t>@" + bids[regular - (tid - pid)] + " t" + tid + " p" + pid
-                                    + " out of" + packed + " r" + regular);*/
-                            synchronized (idling[pid]) {
-                                try {
-                                    idling[pid].wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                dcpRunners[pid].running = false;
-                            }
-                            pbs[k - (tid - pid)] = new PositionalBlock<Integer, BlockInputBuffer>(
-                                    bids[regular - (tid - pid)], dcpCaches[pid]);
-                            /*System.out.println("\t<@" + bids[regular - (tid - pid)] + " t" + tid + " p" + pid
-                                    + " out of" + packed + " r" + regular);*/
-                        }
+                        tasks = new ArrayList<DecompressionTask>();
+                        tid++;
                     }
                     regular++;
+                }
+                int producedBlock = 0;
+                for (int pid = 0; pid < tid; pid++) {
+                    synchronized (idling[pid]) {
+                        try {
+                            idling[pid].wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        dcpRunners[pid].running = false;
+                    }
+                    for (int k = 0; k < dcpRunners[pid].getTasks().size(); k++) {
+                        pbs[producedBlock] = new PositionalBlock<Integer, BlockInputBuffer>(
+                                dcpRunners[pid].getTasks().get(k).bidx, dcpCaches[pid][k]);
+                        producedBlock++;
+                    }
                 }
                 packedlist.add(pbs);
             }
@@ -579,23 +571,35 @@ public class AsyncIOWorker implements Runnable {
         return packedlist;
     }
 
+    private class DecompressionTask {
+        public int cidx;
+        public int bidx;
+        public byte[] raw;
+        public int len;
+
+        public DecompressionTask(int cidx, int bidx, byte[] raw, int len) {
+            this.cidx = cidx;
+            this.bidx = bidx;
+            this.raw = raw;
+            this.len = len;
+        }
+    }
+
     private class DecompressionWorker implements Runnable {
         public boolean running = false;
         private final Integer tid;
-        int cidx;
-        int bidx;
-        byte[] raw;
-        int len;
+        private List<DecompressionTask> tasks;
 
         public DecompressionWorker(Integer tid) {
             this.tid = tid;
         }
 
-        public void trigger(int cidx, int bidx, byte[] raw, int len) {
-            this.cidx = cidx;
-            this.bidx = bidx;
-            this.raw = raw;
-            this.len = len;
+        public void trigger(List<DecompressionTask> tasks) {
+            this.tasks = tasks;
+        }
+
+        public List<DecompressionTask> getTasks() {
+            return tasks;
         }
 
         @Override
@@ -612,15 +616,17 @@ public class AsyncIOWorker implements Runnable {
                     }
                     running = true;
                 }
-                /*System.out.println(">t" + tid + " c" + cidx + " b" + bidx + " l" + len);*/
                 try {
-                    dcpCaches[tid] = decompression(cidx, bidx, raw, len);
+                    int taskId = 0;
+                    for (DecompressionTask task : tasks) {
+                        dcpCaches[tid][taskId] = decompression(task.cidx, task.bidx, task.raw, task.len);
+                        taskId++;
+                    }
                     while (running) {
                         synchronized (tid) {
                             tid.notify();
                         }
                     }
-                    /*System.out.println("<t" + tid + " c" + cidx + " b" + bidx + " l" + len);*/
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
