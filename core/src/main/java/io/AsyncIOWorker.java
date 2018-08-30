@@ -461,6 +461,28 @@ public class AsyncIOWorker implements Runnable {
                 ends[packed] = columns[cidx].blocks[bid].getCompressedSize();
                 raws[packed] = new byte[ends[packed] + columnValues[cidx].getChecksum().size()];
                 packed++;
+            } else {
+                if (nextHit > columns[cidx].lastRow(bid)) {
+                    for (int k = bid + 1; k < columns[cidx].blockCount(); k++) {
+                        if (nextHit <= columns[cidx].lastRow(k)) {
+                            bids[packed] = k;
+                            pos[packed] = columns[cidx].blockStarts[k];
+                            ends[packed] = columns[cidx].blocks[k].getCompressedSize();
+                            raws[packed] = new byte[ends[packed] + columnValues[cidx].getChecksum().size()];
+                            packed++;
+                            cursor += (k - bid);
+                            rows[cidx] = columns[cidx].firstRows[blocks[cidx] + cursor];
+                            /*System.out.println(
+                                    cidx + " c" + cursor + " k" + k + " bid" + bid + " next" + nextHit + " all"
+                                            + columns[cidx].lastRow(k) + " bc" + columns[cidx].blockCount());*/
+                            break;
+                        }
+                    }
+                }
+                if (nextHit < 0 || nextHit >= columns[cidx].lastRow()) {
+                    cursor = columns[cidx].blockCount() - blocks[cidx] - 1;
+                    //System.out.println("Hello sb." + nextHit);
+                }
             }
             cursor++;
         }
