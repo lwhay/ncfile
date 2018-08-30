@@ -47,6 +47,7 @@ public class AsyncIOWorker implements Runnable {
     private FileChannel mmc = null;
     private FileLock serialReadLock = null;
     private boolean skippingMode = false;
+    private boolean isFetching = false;
     private int period = 10;
     private long totalPayload = 0;
     private long processedPayload = 0;
@@ -148,6 +149,7 @@ public class AsyncIOWorker implements Runnable {
                 }
             }
         }
+        isFetching = true;
         isReady = false;
         this.intended = intends;
         this.valids = valids;
@@ -452,7 +454,8 @@ public class AsyncIOWorker implements Runnable {
                 hint += "0";
             }*/
             int nextHit = valids[cidx].nextSetBit(rows[cidx]);
-            if (columnValues[cidx].isArray() || bid == 0 || nextHit >= 0 && nextHit <= columns[cidx].lastRow(bid)) {
+            if ((!isFetching && columnValues[cidx].isArray()) || bid == 0
+                    || nextHit >= 0 && nextHit <= columns[cidx].lastRow(bid)) {
                 bids[packed] = bid;
                 pos[packed] = columns[cidx].blockStarts[bid];
                 ends[packed] = columns[cidx].blocks[bid].getCompressedSize();

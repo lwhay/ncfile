@@ -63,10 +63,15 @@ public class NeciPredicates {
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         reader.createSchema(readSchema);
         int count = 0;
+        long fb = System.currentTimeMillis();
         reader.filter();
+        System.out.println("filtering: " + (System.currentTimeMillis() - fb));
+        fb = System.currentTimeMillis();
         double result = 0.00;
         double sum = 0.00;
         reader.createFilterRead(max);
+        System.out.println("create: " + (System.currentTimeMillis() - fb));
+        fb = System.currentTimeMillis();
         int offsetOrders = readSchema.getFields().size() - 1;
         Schema orderSchema = readSchema.getFields().get(readSchema.getFields().size() - 1).schema().getElementType();
         int offsetLines = orderSchema.getFields().size() - 1;
@@ -106,6 +111,7 @@ public class NeciPredicates {
                 }
             }
         }
+        System.out.println("aggregating: " + (System.currentTimeMillis() - fb));
         result = result / sum * 100;
         long end = System.currentTimeMillis();
         System.out.println(values.size() + " fine-grained: " + count + " redundant: " + redundant);
