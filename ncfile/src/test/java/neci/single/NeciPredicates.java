@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import neci.ncfile.FilterBatchColumnReader;
@@ -44,9 +45,14 @@ public class NeciPredicates {
             nations.add(args[7 + i]);
         }
         BitSet indicators = new BitSet();
-        SupplierHelper minSuppcost = new SupplierHelper("ANY", indicators);
+        indicators.set(3);
+        SupplierHelper minSuppcost = new SupplierHelper("ANY", nations, indicators);
         minSuppcost.init();
         Map<Long, String[]> supplyNations = minSuppcost.getValidSuppCosts();
+        Map<Long, Integer> supplyNationKeys = new HashMap<>();
+        for (Entry<Long, String[]> entry : supplyNations.entrySet()) {
+            supplyNationKeys.put(entry.getKey(), Integer.parseInt(entry.getValue()[0]));
+        }
         Map<Integer, String> nationNames = minSuppcost.getNationNames();
         @SuppressWarnings("rawtypes")
         FilterOperator[] filters = new FilterOperator[3];
@@ -79,7 +85,7 @@ public class NeciPredicates {
                 List<Record> lines = (List<Record>) order.get(offsetLines);
                 for (Record line : lines) {
                     long l_suppkey = (long) line.get("l_suppkey");
-                    int suppNationKey = Integer.parseInt(supplyNations.get(l_suppkey)[0]);
+                    int suppNationKey = supplyNationKeys.get(l_suppkey);
                     if (suppNationKey != c_nationkey) {
                         String key = "";
                         key += nationNames.get(c_nationkey);
@@ -93,10 +99,10 @@ public class NeciPredicates {
                         }
                         value += (float) line.get("l_extendedprice") * (1 - (float) line.get("l_discount"));
                         values.put(key, value);
+                        count++;
                     } else {
                         redundant++;
                     }
-                    count++;
                 }
             }
         }

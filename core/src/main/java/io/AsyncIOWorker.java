@@ -76,6 +76,7 @@ public class AsyncIOWorker implements Runnable {
         this.ioReady = 0;
         intended = new boolean[columnValues.length];
         valids = new BitSet[columnValues.length];
+        boolean useCompression = false;
         for (int i = 0; i < columnValues.length; i++) {
             if (columnValues[i] != null) {
                 this.columns[i] = columnValues[i].getColumnDescriptor();
@@ -97,9 +98,12 @@ public class AsyncIOWorker implements Runnable {
                 if (!skippingMode && columns[i].getBlockManager().SKIPPING_MODE) {
                     skippingMode = true;
                 }
+                if (!columns[i].getCodecName().equals("null")) {
+                    useCompression = true;
+                }
             }
         }
-        if (skippingMode && BlockManager.COMPRESSION_THREADS > 0) {
+        if (skippingMode && useCompression && BlockManager.COMPRESSION_THREADS > 0) {
             CompressionThreads = BlockManager.COMPRESSION_THREADS;
             idling = new Integer[CompressionThreads];
             dcpCaches = new BlockInputBuffer[CompressionThreads][];
