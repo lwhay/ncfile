@@ -27,7 +27,7 @@ import java.util.zip.InflaterOutputStream;
 /**
  * Implements DEFLATE (RFC1951) compression and decompression.
  */
-class DeflateCodec extends Codec {
+class DeflateSafeCodec extends Codec {
     private ByteArrayOutputStream outputBuffer;
     private Deflater deflater;
     private Inflater inflater;
@@ -48,7 +48,7 @@ class DeflateCodec extends Codec {
 
     private void writeAndClose(ByteBuffer data, OutputStream out) throws IOException {
         out.write(data.array(), data.position(), data.remaining());
-        /*out.flush();*/
+        out.flush();
         out.close();
     }
 
@@ -64,6 +64,18 @@ class DeflateCodec extends Codec {
             deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
         deflater.reset();
         return deflater;
+    }
+
+    @SuppressWarnings("unused")
+    private static class ByteArrayOutputStreamExposed extends ByteArrayOutputStream {
+
+        public ByteArrayOutputStreamExposed(int size) {
+            super(size);
+        }
+
+        public void writeTo(byte[] buf) throws IOException {
+            System.arraycopy(this.buf, 0, buf, 0, count);
+        }
     }
 
     private ByteArrayOutputStream getOutputBuffer(int suggestedLength) {

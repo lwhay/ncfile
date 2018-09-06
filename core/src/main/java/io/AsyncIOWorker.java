@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import codec.Codec;
+import codec.CodecFactory;
 import columnar.BlockColumnValues;
 import columnar.BlockManager;
 import columnar.ColumnDescriptor;
@@ -162,7 +162,7 @@ public class AsyncIOWorker implements Runnable {
                     for (DecompressionWorker runner : dcpRunners) {
                         if (runner.getCodec() == null || !runner.getCodec().getClass().getName()
                                 .equals(columnValues[i].getCodec().getClass().getName())) {
-                            runner.setCodec(Codec.get(columns[i].metaData));
+                            runner.setCodec(new CodecFactory(columns[i].metaData));
                         }
                     }
                 }
@@ -230,7 +230,7 @@ public class AsyncIOWorker implements Runnable {
             for (DecompressionWorker runner : dcpRunners) {
                 if (runner.getCodec() == null || !runner.getCodec().getClass().getName()
                         .equals(columnValues[cidx].getCodec().getClass().getName())) {
-                    runner.setCodec(Codec.get(columns[cidx].metaData));
+                    runner.setCodec(new CodecFactory(columns[cidx].metaData));
                 }
             }
         }
@@ -635,7 +635,7 @@ public class AsyncIOWorker implements Runnable {
         public boolean running = false;
         private final Integer tid;
         private List<DecompressionTask> tasks;
-        private Codec codec = null;
+        private CodecFactory codec = null;
 
         public DecompressionWorker(Integer tid) {
             this.tid = tid;
@@ -649,11 +649,11 @@ public class AsyncIOWorker implements Runnable {
             return tasks;
         }
 
-        public void setCodec(Codec codec) {
+        public void setCodec(CodecFactory codec) {
             this.codec = codec;
         }
 
-        public Codec getCodec() {
+        public CodecFactory getCodec() {
             return codec;
         }
 
@@ -673,14 +673,22 @@ public class AsyncIOWorker implements Runnable {
                 }
                 try {
                     int taskId = 0;
-                    for (DecompressionTask task : tasks) {
-                        dcpCaches[tid][taskId] = aioDecompression(codec, task.cidx, task.bidx, task.raw, task.len);
-                        //dcpCaches[tid][taskId] = decompression(task.cidx, task.bidx, task.raw, task.len);
-                        taskId++;
-                    }
-                    while (running) {
-                        synchronized (tid) {
-                            tid.notify();
+                    if (tasks != null) { // When terminate command is triggered by close, tasks equals null.
+                        for (DecompressionTask task : tasks) {
+                            dcpCaches[tid][taskId] = aioDecompression(codec, task.cidx, task.bidx, task.raw, task.len);
+                            //dcpCaches[tid][taskId] = decompression(task.cidx, task.bidx, task.raw, task.len);
+                            taskId++;
+                        }
+                        while (running) {
+                            synchronized (tid) {
+                                tid.notify();
+                            }
+                        }
+                    } else {
+                        try {
+                            Thread.sleep(BlockManager.CUTOFF_SLEEP_PERIOD);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
                     }
                 } catch (IOException e) {
@@ -690,7 +698,8 @@ public class AsyncIOWorker implements Runnable {
         }
     }
 
-    private BlockInputBuffer aioDecompression(Codec codec, int cidx, int bidx, byte[] raw, int len) throws IOException {
+    private BlockInputBuffer aioDecompression(CodecFactory codec, int cidx, int bidx, byte[] raw, int len)
+            throws IOException {
         BlockInputBuffer value;
         if (isUnion[cidx]) {
             if (columns[cidx].getCodecName().equals("null")) {
@@ -724,27 +733,34 @@ public class AsyncIOWorker implements Runnable {
                     len2 = buf2.remaining();
                     System.arraycopy(buf2.array(), buf2.position(), data.array(), pos2, len2);
                 }
-                value = new UnionInputBuffer(data, columns[cidx].blocks[bidx].getRowCount(), unionBits[cidx],
+                int total = len0 + len1 + len2;
+                ByteBuffer rewind = ByteBuffer.allocate(total);
+                System.arraycopy(data.array(), 0, rewind.array(), 0, total);
+                value = new UnionInputBuffer(rewind, columns[cidx].blocks[bidx].getRowCount(), unionBits[cidx],
                         unionArray[cidx]);
             }
         } else {
             if (columns[cidx].getCodecName().equals("null")) {
                 value = new BlockInputBuffer(ByteBuffer.wrap(raw, 0, len), columns[cidx].blocks[bidx].getRowCount());
             } else if (columns[cidx].blocks[bidx].getLengthOffset() != 0) {
-                ByteBuffer data = ByteBuffer.allocate(columns[cidx].blocks[bidx].getUncompressedSize());
                 ByteBuffer buf1 = codec.decompress(ByteBuffer.wrap(raw, columns[cidx].blocks[bidx].getLengthUnion(),
                         columns[cidx].blocks[bidx].getLengthOffset()));
-                System.arraycopy(buf1.array(), 0, data.array(), 0, buf1.limit());
                 ByteBuffer buf2 = codec.decompress(ByteBuffer.wrap(raw,
                         columns[cidx].blocks[bidx].getLengthUnion() + columns[cidx].blocks[bidx].getLengthOffset(),
                         columns[cidx].blocks[bidx].getLengthPayload()));
-                System.arraycopy(buf2.array(), buf2.position(), data.array(), buf1.limit(), buf2.remaining());
+                int total = buf1.remaining() + buf2.remaining();
+                ByteBuffer data = ByteBuffer.allocate(total);
+                System.arraycopy(buf1.array(), 0, data.array(), 0, buf1.remaining());
+                System.arraycopy(buf2.array(), buf2.position(), data.array(), buf1.remaining(), buf2.remaining());
                 value = new BlockInputBuffer(data, columns[cidx].blocks[bidx].getRowCount());
             } else {
-                byte[] buf2 = codec.decompress(ByteBuffer.wrap(raw,
+                ByteBuffer buf2 = codec.decompress(ByteBuffer.wrap(raw,
                         columns[cidx].blocks[bidx].getLengthUnion() + columns[cidx].blocks[bidx].getLengthOffset(),
-                        columns[cidx].blocks[bidx].getLengthPayload())).array();
-                value = new BlockInputBuffer(ByteBuffer.wrap(buf2), columns[cidx].blocks[bidx].getRowCount());
+                        columns[cidx].blocks[bidx].getLengthPayload()));
+                int total = buf2.remaining();
+                ByteBuffer data = ByteBuffer.allocate(total);
+                System.arraycopy(buf2.array(), 0, data.array(), 0, total);
+                value = new BlockInputBuffer(/*ByteBuffer.wrap(buf2)*/data, columns[cidx].blocks[bidx].getRowCount());
             }
         }
         /*System.out.println("%%%%c" + cidx + " b" + bidx + " v" + value + " l" + len);*/

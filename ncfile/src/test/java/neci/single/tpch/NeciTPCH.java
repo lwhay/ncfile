@@ -197,7 +197,13 @@ public class NeciTPCH extends ScanCompare {
         FilterBatchColumnReader<Record> reader = new FilterBatchColumnReader<Record>(file, filters, blockSize);
         reader.createSchema(readSchema);
         int count = 0;
-        reader.filter();
+        try {
+            reader.filter();
+        } catch (Exception e) {
+            System.out.println("to be handled 1");
+            reader.close();
+            System.exit(-1);
+        }
         double result = 0.00;
         double sum = 0.00;
         reader.createFilterRead(max);
@@ -206,8 +212,15 @@ public class NeciTPCH extends ScanCompare {
         int offsetLines = orderSchema.getFields().size() - 1;
         Map<String, Map<Long, Float>> values = new HashMap<>();
         while (reader.hasNext()) {
-            Record r = reader.next();
-            if (!comp) {
+            Record r = null;
+            try {
+                r = reader.next();
+            } catch (Exception e) {
+                System.out.println("to be handled 2");
+                reader.close();
+                System.exit(-1);
+            }
+            if (!comp || r == null) {
                 continue;
             }
             @SuppressWarnings("unchecked")
