@@ -617,6 +617,11 @@ public class AsyncIOWorker implements Runnable {
                     }
                 }
                 packedlist.add(pbs);
+                /*if (columns[cidx].getBlockManager().markBegin && !columns[cidx].getBlockManager().markEnd) {
+                    System.out.println(
+                        "\t\t\taioloads " + columns[cidx].metaData.getName() + " " + valids[cidx].cardinality() + " of "
+                                + columns[cidx].lastRow());
+                }*/
             }
         }
 

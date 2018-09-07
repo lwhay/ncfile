@@ -72,6 +72,10 @@ public class BlockManager {
     private Short ioPending = 0;
     private boolean isFetching = false;
 
+    // For end-to-end debugging.
+    /*public boolean markBegin = false;
+    public boolean markEnd = false;*/
+
     public BlockManager(int bs, int cs) {
         this(bs, cs, 0);
     }

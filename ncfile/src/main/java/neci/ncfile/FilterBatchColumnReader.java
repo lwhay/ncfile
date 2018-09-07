@@ -749,6 +749,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
 
     @SuppressWarnings("static-access")
     public void createFilterRead(int max) throws IOException {
+        /*long begin = System.currentTimeMillis();*/
         assert (!noFilters);
         this.defaultMax = max;
         reader.getBlockManager().setSkip(reader.getBlockManager().SKIPPING_MODE);
@@ -769,6 +770,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         readValue = new Object[readNO.length][];
         readLength = new HashMap<String, Integer>();
         readImplPri();
+        /*System.out.println("\tfilterReader: " + (System.currentTimeMillis() - begin));*/
     }
 
     public void createRead(int max) throws IOException {
@@ -836,6 +838,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
     }
 
     private void readImplPri() throws IOException {
+        /*reader.getBlockManager().markBegin = true;*/
         long start = System.currentTimeMillis();
         setStart = new int[readNO.length];
         readSet = new int[readNO.length];
@@ -869,6 +872,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
         long end = System.currentTimeMillis();
         System.out.println("read set tran time: " + (end - start));
 
+        /*long begin = System.currentTimeMillis();*/
         boolean[] intended = new boolean[values.length];
         BitSet[] masksets = new BitSet[values.length];
         for (int i = 0; i < readNO.length; i++) {
@@ -878,11 +882,15 @@ public class FilterBatchColumnReader<D> implements Closeable {
             }
         }
         reader.getBlockManager().trigger(intended, masksets);
+        /*System.out.println("\t\ttrigger: " + (System.currentTimeMillis() - begin));
+        begin = System.currentTimeMillis();*/
         for (int i = 0; i < readNO.length; i++) {
             //            values[readNO[i]].createTime();
             //            values[readNO[i]].createSeekBlock();
             values[readNO[i]].create();
         }
+        /*System.out.println("\t\tcreate: " + (System.currentTimeMillis() - begin));
+        begin = System.currentTimeMillis();*/
 
         for (int i = 0; i < readNO.length; i++) {
             filterSet = chooseSet.get(readSet[i]);
@@ -891,8 +899,12 @@ public class FilterBatchColumnReader<D> implements Closeable {
             readPri(i);
         }
 
+        /*System.out.println("\t\treadPri: " + (System.currentTimeMillis() - begin));
+        begin = System.currentTimeMillis();*/
         all -= readLength.get(readParent);
         readIndex = new int[readNO.length];
+        /*System.out.println("\t\tpost: " + (System.currentTimeMillis() - begin));
+        reader.getBlockManager().markEnd = true;*/
     }
 
     private void readImpl() throws IOException {
@@ -916,6 +928,7 @@ public class FilterBatchColumnReader<D> implements Closeable {
     private void readPri(int c) throws IOException {
         int length = readLength.get(currentParent);
         readValue[c] = new Object[length];
+        /*long begin = System.currentTimeMillis();*/
         if (values[readNO[c]].isArray()) {
             BitSet set = chooseSet.get(readSet[c + 1]);
             int changeArr = 0;
@@ -953,6 +966,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
             }
             readLength.put(values[readNO[c]].getName(), changeArr);
             setStart[c] = p;
+            /*if (!reader.getBlockManager().markEnd)
+                System.out.println("\t\t\tarray: " + (System.currentTimeMillis() - begin) + " "
+                        + values[readNO[c]].getName() + " " + filterSet.cardinality() + " " + in + " " + length);*/
         } else {
             int in = 0;
             int m = setStart[c];
@@ -963,6 +979,9 @@ public class FilterBatchColumnReader<D> implements Closeable {
                 m = filterSet.nextSetBit(++m);
             }
             setStart[c] = m;
+            /*if (!reader.getBlockManager().markEnd)
+                System.out.println("\t\t\tnormal: " + (System.currentTimeMillis() - begin) + " "
+                        + values[readNO[c]].getName() + " " + filterSet.cardinality() + " " + in + " " + length);*/
         }
     }
 
