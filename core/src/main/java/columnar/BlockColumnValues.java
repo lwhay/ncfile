@@ -177,8 +177,23 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
      * Seek to the named row.
      */
     public void seek(int r) throws IOException {
-        if (r < row || r >= column.lastRow(block)) // not in current block
-            startBlock(column.findBlock(r)); // seek to block start
+        /*boolean trace = false;
+        int oldrow = row;
+        long begin = System.currentTimeMillis();*/
+        if (r == 0) {
+            /*trace = true;*/
+            if (row == 0) {
+                previous = null;
+                return;
+            }
+        }
+        if (r < row || r >= column.lastRow(block)) {// not in current block
+            if (r == 0) {
+                startBlock(0);
+            } else {
+                startBlock(column.findBlock(r)); // seek to block start
+            }
+        }
         if (r > row) { // skip within block
             if (column.metaData.isArray())
                 values.skipLength(r - row);
@@ -186,6 +201,11 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
                 values.skipValue(type, r - row);
             row = r;
         }
+        /*if (trace) {
+            System.out.println("\t\t\t " + r + " " + oldrow + " " + (System.currentTimeMillis() - begin) + " "
+                    + column.metaData.getName());
+            trace = true;
+        }*/
         previous = null;
     }
 
@@ -226,11 +246,16 @@ public class BlockColumnValues<T extends Comparable> implements Iterator<T>, Ite
         //                }
         this.block = block;
         this.row = column.firstRows[block];
-        if (column.getBlockManager().AIO_OPEN && (!column.getBlockManager().isFetchingStage()
+        if (block != 0 && column.getBlockManager().AIO_OPEN && (!column.getBlockManager().isFetchingStage()
                 || (column.getBlockManager().isFetchingStage() && !column.metaData.isArray()))) {
             long begin = System.nanoTime();
             try {
+                long mb = System.currentTimeMillis();
                 values = bm.fetch(cidx, block).getValue();
+                if (block == 0) {
+                    System.out.println(
+                            "\t\t\t\tFetch " + column.metaData.getName() + " " + (System.currentTimeMillis() - mb));
+                }
             } catch (InterruptedException e) {
                 throw new NeciRuntimeException("Aio fetch error on: " + column.metaData.getName() + " idx: "
                         + column.metaData.getNumber() + " block: " + block);

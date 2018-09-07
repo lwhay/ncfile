@@ -156,8 +156,8 @@ public class AsyncIOWorker implements Runnable {
         intendingColumns++;
         for (int i = 0; i < intended.length; i++) {
             if (intended[i]) {
-                blocks[i] = 0;
-                rows[i] = 0;
+                blocks[i] = 1;
+                rows[i] = columns[i].lastRow(0) + 1;
                 if (dcpRunners != null) {
                     for (DecompressionWorker runner : dcpRunners) {
                         if (runner.getCodec() == null || !runner.getCodec().getClass().getName()
@@ -220,8 +220,8 @@ public class AsyncIOWorker implements Runnable {
         }
         isReady = false;
 
-        blocks[cidx] = 0;
-        rows[cidx] = 0;
+        blocks[cidx] = 1;
+        rows[cidx] = columns[cidx].lastRow(0) + 1;
         intended[cidx] = true;
         valids[cidx] = valid;
         intendingColumns++;
@@ -454,7 +454,7 @@ public class AsyncIOWorker implements Runnable {
                 hint += "0";
             }*/
             int nextHit = valids[cidx].nextSetBit(rows[cidx]);
-            if ((!isFetching && columnValues[cidx].isArray()) || bid == 0
+            if ((!isFetching && columnValues[cidx].isArray()) /*|| bid == 0*/
                     || nextHit >= 0 && nextHit <= columns[cidx].lastRow(bid)) {
                 bids[packed] = bid;
                 pos[packed] = columns[cidx].blockStarts[bid];
@@ -463,7 +463,15 @@ public class AsyncIOWorker implements Runnable {
                 packed++;
             } else {
                 if (nextHit > columns[cidx].lastRow(bid)) {
-                    for (int k = bid + 1; k < columns[cidx].blockCount(); k++) {
+                    int k = columns[cidx].findBlock(nextHit);
+                    bids[packed] = k;
+                    pos[packed] = columns[cidx].blockStarts[k];
+                    ends[packed] = columns[cidx].blocks[k].getCompressedSize();
+                    raws[packed] = new byte[ends[packed] + columnValues[cidx].getChecksum().size()];
+                    packed++;
+                    cursor += (k - bid);
+                    rows[cidx] = columns[cidx].firstRows[blocks[cidx] + cursor];
+                    /*for (int k = bid + 1; k < columns[cidx].blockCount(); k++) {
                         if (nextHit <= columns[cidx].lastRow(k)) {
                             bids[packed] = k;
                             pos[packed] = columns[cidx].blockStarts[k];
@@ -472,12 +480,11 @@ public class AsyncIOWorker implements Runnable {
                             packed++;
                             cursor += (k - bid);
                             rows[cidx] = columns[cidx].firstRows[blocks[cidx] + cursor];
-                            /*System.out.println(
-                                    cidx + " c" + cursor + " k" + k + " bid" + bid + " next" + nextHit + " all"
-                                            + columns[cidx].lastRow(k) + " bc" + columns[cidx].blockCount());*/
+                            System.out.println(cidx + " c" + cursor + " k" + k + " bid" + bid + " next" + nextHit
+                                    + " all" + columns[cidx].lastRow(k) + " bc" + columns[cidx].blockCount());
                             break;
                         }
-                    }
+                    }*/
                 }
                 if (nextHit < 0 || nextHit >= columns[cidx].lastRow()) {
                     cursor = columns[cidx].blockCount() - blocks[cidx] - 1;
