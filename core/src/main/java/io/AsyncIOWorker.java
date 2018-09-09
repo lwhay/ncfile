@@ -243,13 +243,6 @@ public class AsyncIOWorker implements Runnable {
     public void terminate() {
         /*System.out.println("Terminate");*/
         terminate = true;
-        if (mmc != null) {
-            try {
-                mmc.close();
-            } catch (IOException e) {
-                throw new NeciRuntimeException("Cannot close lockfile");
-            }
-        }
         while (!isReady) {
             synchronized (ioReady) {
                 try {
@@ -271,6 +264,13 @@ public class AsyncIOWorker implements Runnable {
                 }
                 worker.interrupt();
                 runnerId++;
+            }
+        }
+        if (mmc != null) {
+            try {
+                mmc.close();
+            } catch (IOException e) {
+                throw new NeciRuntimeException("Cannot close lockfile");
             }
         }
         System.exit(0);
@@ -369,7 +369,11 @@ public class AsyncIOWorker implements Runnable {
         BlockInputBuffer[] values = new BlockInputBuffer[num];
         long beginCompression = System.nanoTime();
         for (int i = 0; i < num; i++) {
-            values[i] = decompression(cidx, this.blocks[cidx] + i, raws[i], ends[i]);
+            try {
+                values[i] = decompression(cidx, this.blocks[cidx] + i, raws[i], ends[i]);
+            } catch (Exception e) {
+                System.out.println("to be handled ...");
+            }
         }
         columns[cidx].getBlockManager().compressionTimeAdd(System.nanoTime() - beginCompression);
         return values;
